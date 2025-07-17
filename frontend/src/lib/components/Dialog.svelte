@@ -30,7 +30,12 @@
 			on:click={handleDialogClick}
 			transition:scale={{ duration: 200, start: 0.95 }}
 		>
-			<slot />
+			<div class="dialog-header">
+				<slot name="header" />
+			</div>
+			<div class="dialog-content">
+				<slot />
+			</div>
 		</div>
 	</div>
 {/if}
@@ -53,7 +58,6 @@
 	.dialog {
 		background-color: white;
 		border-radius: 8px;
-		padding: 1.5rem;
 		box-shadow:
 			0 20px 25px -5px rgba(0, 0, 0, 0.1),
 			0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -62,6 +66,14 @@
 		overflow-x: hidden;
 		overflow-y: auto;
 		animation: dialog-appear 0.2s ease-out;
+	}
+
+	.dialog-header {
+		padding: 1.5rem 1.5rem 0.75rem 1.5rem;
+	}
+
+	.dialog-content {
+		padding: 0.75rem 1.5rem 1.5rem 1.5rem;
 	}
 
 	@keyframes dialog-appear {

@@ -7,7 +7,7 @@
         <nav>
             <a
                 href="/professor/relatorios"
-                class:active={$page.url.pathname === "/professor/relatorios"}
+                class:active={$page.url.pathname.includes("/relatorios")}
             >
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -30,7 +30,7 @@
             </a>
             <a
                 href="/professor/turmas"
-                class:active={$page.url.pathname === "/professor/turmas"}
+                class:active={$page.url.pathname.includes("/turmas")}
             >
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -50,7 +50,7 @@
             </a>
             <a
                 href="/professor/perfil"
-                class:active={$page.url.pathname === "/professor/perfil"}
+                class:active={$page.url.pathname.includes("/perfil")}
             >
                 <svg
                     xmlns="http://www.w3.org/2000/svg"

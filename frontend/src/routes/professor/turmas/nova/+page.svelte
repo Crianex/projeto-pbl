@@ -157,6 +157,7 @@
     open={searchDialogOpen}
     on:close={() => (searchDialogOpen = false)}
     on:select={handleAlunoSelected}
+    exclude_turma_id={null}
 />
 
 <style>

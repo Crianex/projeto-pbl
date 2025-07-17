@@ -6,6 +6,7 @@
     import { onMount } from "svelte";
 
     export let open = false;
+    export let exclude_turma_id: string | null = null;
 
     let searchQuery = "";
     let loading = false;
@@ -15,8 +16,10 @@
         nome_completo: string;
         email: string;
     }> = [];
+    let hasInitialLoad = false;
 
-    $: if (open && results.length === 0) {
+    $: if (open && !hasInitialLoad) {
+        hasInitialLoad = true;
         loadAllAlunos();
     }
 
@@ -24,7 +27,9 @@
         try {
             loading = true;
             error = null;
-            const data = await api.get("/alunos/list");
+            const data = await api.get(
+                `/alunos/search?query=%20&exclude_turma_id=${exclude_turma_id || ""}`,
+            );
             results = data.sort((a: any, b: any) =>
                 a.nome_completo.localeCompare(b.nome_completo),
             );
@@ -47,7 +52,7 @@
             loading = true;
             error = null;
             const data = await api.get(
-                `/alunos/search?query=${encodeURIComponent(query)}`,
+                `/alunos/search?query=${encodeURIComponent(query)}&exclude_turma_id=${exclude_turma_id || ""}`,
             );
             results = data;
         } catch (err) {
@@ -72,6 +77,7 @@
     function handleClose() {
         searchQuery = "";
         error = null;
+        hasInitialLoad = false;
         dispatch("close");
     }
 
