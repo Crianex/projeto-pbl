@@ -1,5 +1,6 @@
-<script>
-	export let metrics = [];
+<script lang="ts">
+	export let metrics: { label: string; value: string; fraction?: string }[] =
+		[];
 	// metrics format: [{ label: 'Label', value: '100', fraction: '7/100' }]
 </script>
 
@@ -35,7 +36,7 @@
 	.metric-value {
 		font-size: 32px;
 		font-weight: 700;
-		color: #21272A;
+		color: #21272a;
 		line-height: 1.2;
 		margin-bottom: 4px;
 	}
@@ -59,11 +60,11 @@
 			gap: 24px;
 			justify-content: space-between;
 		}
-		
+
 		.metric-item {
 			min-width: 100px;
 		}
-		
+
 		.metric-value {
 			font-size: 24px;
 		}
@@ -74,9 +75,9 @@
 			flex-direction: column;
 			gap: 16px;
 		}
-		
+
 		.metric-item {
 			width: 100%;
 		}
 	}
-</style> 
+</style>
