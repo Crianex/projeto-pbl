@@ -50,30 +50,35 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background-color: rgba(0, 0, 0, 0.4);
-		backdrop-filter: blur(4px);
+		background: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%);
+		backdrop-filter: blur(12px);
 		z-index: 1000;
 	}
 
 	.dialog {
-		background-color: white;
-		border-radius: 8px;
+		background: rgba(255, 255, 255, 0.95);
+		backdrop-filter: blur(20px);
+		border-radius: 24px;
+		border: 1px solid rgba(255, 255, 255, 0.2);
 		box-shadow:
-			0 20px 25px -5px rgba(0, 0, 0, 0.1),
-			0 10px 10px -5px rgba(0, 0, 0, 0.04);
+			0 30px 60px rgba(0, 0, 0, 0.15),
+			0 20px 40px rgba(0, 0, 0, 0.1),
+			0 10px 20px rgba(0, 0, 0, 0.08);
 		max-width: 90vw;
 		max-height: 90vh;
 		overflow-x: hidden;
 		overflow-y: auto;
-		animation: dialog-appear 0.2s ease-out;
+		animation: dialog-appear 0.3s ease-out;
+		transition: all 0.3s ease;
 	}
 
 	.dialog-header {
-		padding: 1.5rem 1.5rem 0.75rem 1.5rem;
+		padding: 2rem 2.5rem 1rem 2.5rem;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
 	.dialog-content {
-		padding: 0.75rem 1.5rem 1.5rem 1.5rem;
+		padding: 1rem 2.5rem 2rem 2.5rem;
 	}
 
 	@keyframes dialog-appear {

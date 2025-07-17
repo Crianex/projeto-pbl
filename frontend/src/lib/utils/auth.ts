@@ -118,6 +118,24 @@ export async function initializeAuth() {
     }
 }
 
+// Logout function
+export async function logout() {
+    try {
+        logger.info('Logging out user');
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            logger.error('Error during logout:', error);
+            throw error;
+        }
+        currentUser.set(null);
+        await goto('/login');
+        logger.info('User logged out successfully');
+    } catch (error) {
+        logger.error('Failed to logout:', error);
+        throw error;
+    }
+}
+
 // Listen for auth changes
 supabase.auth.onAuthStateChange(async (event, session) => {
     logger.info('Auth state changed:', { event });

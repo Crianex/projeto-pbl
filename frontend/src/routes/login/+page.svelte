@@ -1,5 +1,7 @@
 <script lang="ts">
     import Button from "$lib/components/Button.svelte";
+    import Input from "$lib/components/Input.svelte";
+    import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
     import { supabase } from "$lib/supabase";
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
@@ -87,10 +89,12 @@
 </svelte:head>
 
 {#if checkingSession}
-    <div class="loading-container">
-        <div class="loading-spinner"></div>
-        <p>Verificando sessão...</p>
-    </div>
+    <LoadingSpinner 
+        size="lg" 
+        color="primary" 
+        text="Verificando sessão..." 
+        center={true}
+    />
 {:else}
     <div class="login-container">
         <h1>Login</h1>
@@ -103,24 +107,28 @@
 
         <form on:submit|preventDefault={handleLogin}>
             <div class="form-group">
-                <label for="email">Email</label>
-                <input
+                <Input
                     type="email"
                     id="email"
+                    label="Email"
                     bind:value={email}
+                    placeholder="seu@email.com"
                     required
                     disabled={loading}
+                    autocomplete="email"
                 />
             </div>
 
             <div class="form-group">
-                <label for="password">Senha</label>
-                <input
+                <Input
                     type="password"
                     id="password"
+                    label="Senha"
                     bind:value={password}
+                    placeholder="Digite sua senha"
                     required
                     disabled={loading}
+                    autocomplete="current-password"
                 />
             </div>
 
@@ -141,6 +149,31 @@
                     {loading}
                     variant="secondary"
                 >
+                    <div class="google-icon">
+                        <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 18 18"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                fill="#4285F4"
+                                d="M18 9.2c0-.6-.1-1.2-.2-1.8H9.2v3.4h4.9c-.2 1.1-.9 2-1.8 2.6v2.2h2.9c1.7-1.6 2.8-3.9 2.8-6.4z"
+                            />
+                            <path
+                                fill="#34A853"
+                                d="M9.2 18c2.4 0 4.5-.8 6-2.2l-2.9-2.2c-.8.6-1.9.9-3.1.9-2.4 0-4.4-1.6-5.1-3.8H1.1v2.3C2.6 15.4 5.7 18 9.2 18z"
+                            />
+                            <path
+                                fill="#FBBC04"
+                                d="M4.1 10.7c-.2-.6-.3-1.2-.3-1.8s.1-1.2.3-1.8V4.8H1.1C.4 6.1 0 7.5 0 9s.4 2.9 1.1 4.2l3-2.5z"
+                            />
+                            <path
+                                fill="#EA4335"
+                                d="M9.2 3.6c1.3 0 2.5.4 3.4 1.3l2.5-2.5C13.7.7 11.6 0 9.2 0 5.7 0 2.6 2.6 1.1 5.9l3 2.5c.7-2.2 2.7-3.8 5.1-3.8z"
+                            />
+                        </svg>
+                    </div>
                     {loading ? "Entrando..." : "Entrar com Google"}
                 </Button>
             </div>
@@ -154,90 +187,106 @@
 {/if}
 
 <style>
-    .login-container {
-        max-width: 400px;
-        margin: 2rem auto;
+    :global(body) {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #e9ecef 100%);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    }
+
+    :global(main) {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
         padding: 2rem;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-sizing: border-box;
+    }
+
+    .login-container {
+        width: 100%;
+        max-width: 420px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 3rem 2.5rem;
+        box-shadow: 
+            0 25px 50px rgba(0, 0, 0, 0.15),
+            0 15px 35px rgba(0, 0, 0, 0.1),
+            0 5px 15px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .login-container:hover {
+        transform: translateY(-2px);
+        box-shadow: 
+            0 30px 60px rgba(0, 0, 0, 0.2),
+            0 20px 40px rgba(0, 0, 0, 0.15),
+            0 10px 20px rgba(0, 0, 0, 0.1);
     }
 
     h1 {
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 2.5rem;
+        color: #2d3748;
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: -0.025em;
     }
 
     .form-group {
-        margin-bottom: 1rem;
-    }
-
-    label {
-        display: block;
-        margin-bottom: 0.5rem;
-    }
-
-    input {
-        width: 100%;
-        padding: 0.5rem;
-        border: 1px solid #ddd;
-        border-radius: 4px;
+        margin-bottom: 1.5rem;
     }
 
     .button-group {
         display: flex;
         flex-direction: column;
         gap: 1rem;
-        margin-top: 1.5rem;
+        margin-top: 2rem;
     }
 
     .links {
-        margin-top: 1.5rem;
+        margin-top: 2rem;
         text-align: center;
         display: flex;
         justify-content: space-between;
+        gap: 1rem;
     }
 
     .links a {
-        color: #666;
+        color: #667eea;
         text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        padding: 0.5rem;
+        border-radius: 6px;
     }
 
     .links a:hover {
-        text-decoration: underline;
+        color: #5a67d8;
+        background: rgba(102, 126, 234, 0.1);
+        text-decoration: none;
+        transform: translateY(-1px);
     }
 
     .error-message {
-        background-color: #fee;
-        color: #c00;
-        padding: 0.5rem;
-        border-radius: 4px;
-        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
+        color: #c53030;
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        border: 1px solid #fc8181;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(197, 48, 48, 0.1);
     }
 
-    .loading-container {
+    .google-icon {
         display: flex;
-        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        height: 100vh;
     }
 
-    .loading-spinner {
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #3498db;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        margin-bottom: 1rem;
-    }
 
-    @keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-        100% {
-            transform: rotate(360deg);
-        }
-    }
 </style>

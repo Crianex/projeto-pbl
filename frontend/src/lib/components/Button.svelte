@@ -14,67 +14,88 @@
 
 <style>
     .button {
-        padding: 0.75rem 1.5rem;
+        padding: 1rem 2rem;
         border: none;
-        border-radius: 4px;
+        border-radius: 12px;
         font-size: 1rem;
-        font-weight: 500;
+        font-weight: 600;
         cursor: pointer;
-        transition:
-            background-color 0.2s,
-            transform 0.1s;
+        transition: all 0.3s ease;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
         width: 100%;
+        letter-spacing: 0.025em;
+        position: relative;
+        overflow: hidden;
     }
 
     .button:disabled {
-        opacity: 0.7;
+        opacity: 0.6;
         cursor: not-allowed;
+        transform: none !important;
     }
 
     .button:active:not(:disabled) {
-        transform: scale(0.98);
+        transform: translateY(1px);
     }
 
     .primary {
-        background-color: #0f62fe;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
+        box-shadow: 
+            0 10px 25px rgba(102, 126, 234, 0.3),
+            0 4px 12px rgba(102, 126, 234, 0.2);
     }
 
     .primary:hover:not(:disabled) {
-        background-color: #0043ce;
+        transform: translateY(-2px);
+        box-shadow: 
+            0 15px 35px rgba(102, 126, 234, 0.4),
+            0 8px 20px rgba(102, 126, 234, 0.3);
     }
 
     .secondary {
-        background-color: #ffffff;
-        color: #0f62fe;
-        border: 2px solid #0f62fe;
+        background: rgba(255, 255, 255, 0.9);
+        color: #667eea;
+        border: 2px solid #667eea;
+        backdrop-filter: blur(10px);
+        box-shadow: 
+            0 8px 20px rgba(102, 126, 234, 0.15),
+            0 3px 8px rgba(102, 126, 234, 0.1);
     }
 
     .secondary:hover:not(:disabled) {
-        background-color: #f4f4f4;
+        background: rgba(255, 255, 255, 1);
+        transform: translateY(-2px);
+        box-shadow: 
+            0 12px 25px rgba(102, 126, 234, 0.2),
+            0 5px 12px rgba(102, 126, 234, 0.15);
     }
 
     .danger {
-        background-color: #da1e28;
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
         color: white;
+        box-shadow: 
+            0 10px 25px rgba(238, 90, 82, 0.3),
+            0 4px 12px rgba(238, 90, 82, 0.2);
     }
 
     .danger:hover:not(:disabled) {
-        background-color: #bc1a23;
+        transform: translateY(-2px);
+        box-shadow: 
+            0 15px 35px rgba(238, 90, 82, 0.4),
+            0 8px 20px rgba(238, 90, 82, 0.3);
     }
 
     .loading-spinner {
-        width: 16px;
-        height: 16px;
+        width: 18px;
+        height: 18px;
         border: 2px solid rgba(255, 255, 255, 0.3);
         border-radius: 50%;
         border-top-color: #fff;
         animation: spin 1s linear infinite;
-        margin-right: 0.5rem;
     }
 
     @keyframes spin {

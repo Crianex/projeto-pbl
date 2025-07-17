@@ -1,5 +1,17 @@
 <script lang="ts">
     import { page } from "$app/stores";
+    import { logout } from "$lib/utils/auth";
+    import { logger } from "$lib/utils/logger";
+
+    async function handleLogout() {
+        try {
+            await logout();
+        } catch (error) {
+            logger.error('Erro durante logout:', error);
+            // Você pode adicionar uma notificação de erro aqui se tiver um sistema de notificações
+            console.error('Erro durante logout:', error);
+        }
+    }
 </script>
 
 <div class="layout">
@@ -88,11 +100,7 @@
             </a>
         </nav>
         <div class="logout">
-            <button
-                on:click={() => {
-                    /* TODO: Implement logout */
-                }}
-            >
+            <button on:click={handleLogout}>
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"

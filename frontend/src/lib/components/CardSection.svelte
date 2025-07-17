@@ -29,20 +29,27 @@
 <style>
 	.card-section {
 		width: 100%;
-		padding: 20px 32px;
-		border-radius: 8px;
+		padding: 2rem 2.5rem;
+		border-radius: 20px;
 		cursor: pointer;
-		transition:
-			transform 0.2s,
-			box-shadow 0.2s;
+		transition: all 0.3s ease;
 		display: block;
 		text-decoration: none;
 		color: inherit;
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		backdrop-filter: blur(10px);
+		box-shadow: 
+			0 15px 35px rgba(0, 0, 0, 0.08),
+			0 8px 20px rgba(0, 0, 0, 0.06),
+			0 3px 8px rgba(0, 0, 0, 0.04);
 	}
 
 	.card-section:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+		transform: translateY(-4px);
+		box-shadow: 
+			0 25px 50px rgba(0, 0, 0, 0.12),
+			0 15px 30px rgba(0, 0, 0, 0.08),
+			0 8px 15px rgba(0, 0, 0, 0.06);
 	}
 
 	.content {
