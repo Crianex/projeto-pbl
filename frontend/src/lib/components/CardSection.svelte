@@ -1,13 +1,14 @@
 <script>
-	export let title = '';
-	export let subtitle = '';
-	export let metrics = '';
-	export let bgColor = '#F2F4F8';
-	export let textColor = '#21272A';
-	export let subtitleColor = '#697077';
+	export let title = "";
+	export let subtitle = "";
+	export let metrics = "";
+	export let bgColor = "#F2F4F8";
+	export let textColor = "#21272A";
+	export let subtitleColor = "#697077";
+	export let href = "";
 </script>
 
-<div class="card-section" style="background-color: {bgColor};">
+<a {href} class="card-section" style="background-color: {bgColor};">
 	<div class="content">
 		{#if title}
 			<h2 class="title" style="color: {textColor};">{title}</h2>
@@ -18,9 +19,12 @@
 		{#if metrics}
 			<div class="metrics" style="color: {textColor};">{metrics}</div>
 		{/if}
+		<div class="icon">
+			<slot name="icon" />
+		</div>
 		<slot />
 	</div>
-</div>
+</a>
 
 <style>
 	.card-section {
@@ -28,11 +32,31 @@
 		padding: 20px 32px;
 		border-radius: 8px;
 		margin-bottom: 16px;
+		cursor: pointer;
+		transition:
+			transform 0.2s,
+			box-shadow 0.2s;
+		display: block;
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.card-section:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 	}
 
 	.content {
 		max-width: 1376px;
 		margin: 0 auto;
+	}
+
+	.icon {
+		margin-bottom: 16px;
+	}
+
+	.icon :global(svg) {
+		color: #1a1a1a;
 	}
 
 	.title {
@@ -58,13 +82,13 @@
 		.card-section {
 			padding: 16px 20px;
 		}
-		
+
 		.title {
 			font-size: 20px;
 		}
-		
+
 		.metrics {
 			font-size: 16px;
 		}
 	}
-</style> 
+</style>

@@ -1,28 +1,127 @@
 import { goto } from '$app/navigation';
-import type { AlunoModel, ProfessorModel } from '../interfaces/user';
+import { writable } from 'svelte/store';
+import { supabase } from '../supabase';
+import { api, APIError } from './api';
+import { logger } from './logger';
+import type { AlunoModel, BaseUser, ProfessorModel } from '$lib/interfaces/interfaces';
+import { redirect } from '@sveltejs/kit';
 
-export type User = AlunoModel | ProfessorModel;
+export const currentUser = writable<BaseUser | null>(null);
 
-export function isAluno(user: User | null): user is AlunoModel {
+export function isAluno(user: BaseUser | null): user is AlunoModel {
+    console.log('isAluno', user);
     return user?.tipo === 'aluno';
 }
 
-export function isProfessor(user: User | null): user is ProfessorModel {
+export function isProfessor(user: BaseUser | null): user is ProfessorModel {
+    console.log('isProfessor', user);
     return user?.tipo === 'professor';
 }
 
-export async function protectProfessorRoute(user: User | null) {
+export async function protectProfessorRoute(user: BaseUser | null) {
     if (!user || !isProfessor(user)) {
-        await goto('/');
+        logger.info('User is not a professor, redirecting to login');
+        await redirect(303, '/login');
         return false;
     }
     return true;
 }
 
-export async function protectAlunoRoute(user: User | null) {
+export async function protectAlunoRoute(user: BaseUser | null) {
     if (!user || !isAluno(user)) {
-        await goto('/');
+        logger.info('User is not an aluno, redirecting to login');
+        await redirect(303, '/login');
         return false;
     }
     return true;
-} 
+}
+
+export async function createOrGetUser(session: any): Promise<BaseUser | null> {
+    try {
+        const { user: supabaseUser } = session;
+
+        if (!supabaseUser) {
+            logger.error('No Supabase user found in session');
+            return null;
+        }
+
+        // First, try to find existing user as aluno by email
+        try {
+            const alunoResponse = await api.get(`/alunos/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`);
+            logger.info('Found existing aluno', { email: supabaseUser.email });
+            return {
+                ...alunoResponse,
+                tipo: 'aluno' as const
+            };
+        } catch (error) {
+            if (error instanceof APIError && error.status === 404) {
+                // Continue to try professor
+            } else {
+                throw error;
+            }
+        }
+
+        // Then try as professor
+        try {
+            const professorResponse = await api.get(`/professores/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`);
+            logger.info('Found existing professor', { email: supabaseUser.email });
+            return {
+                ...professorResponse,
+                tipo: 'professor' as const
+            };
+        } catch (error) {
+            if (error instanceof APIError && error.status === 404) {
+                // Continue to create new user
+            } else {
+                throw error;
+            }
+        }
+
+        // If no user found, create new aluno by default
+        logger.info('Creating new aluno account', { email: supabaseUser.email });
+        const newUser = await api.post('/alunos/create', {
+            email: supabaseUser.email,
+            nome_completo: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'Novo Usuário'
+        });
+
+        return {
+            ...newUser,
+            tipo: 'aluno' as const
+        };
+
+    } catch (error) {
+        logger.error('Error in createOrGetUser:', error);
+        throw error;
+    }
+}
+
+// Initialize the store with the current session
+export async function initializeAuth() {
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            const user = await createOrGetUser(session);
+            currentUser.set(user);
+        }
+    } catch (error) {
+        logger.error('Error initializing auth:', error);
+        currentUser.set(null);
+    }
+}
+
+// Listen for auth changes
+supabase.auth.onAuthStateChange(async (event, session) => {
+    logger.info('Auth state changed:', { event });
+
+    if (event === 'SIGNED_IN' && session) {
+        try {
+            const user = await createOrGetUser(session);
+            currentUser.set(user);
+        } catch (error) {
+            logger.error('Error handling sign in:', error);
+            currentUser.set(null);
+        }
+    } else if (event === 'SIGNED_OUT') {
+        currentUser.set(null);
+    }
+}); 

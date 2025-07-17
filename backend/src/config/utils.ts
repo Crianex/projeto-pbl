@@ -1,6 +1,6 @@
-import logger from "./logger";
+import logger from "../utils/logger";
 import { SupabaseWrapper } from "./supabase_wrapper";
-import { createControllerLogger } from "./utils/controller_logger";
+import { createControllerLogger } from "../utils/controller_logger";
 import { Request } from "express";
 
 

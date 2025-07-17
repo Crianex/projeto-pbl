@@ -1,7 +1,8 @@
-import { protectAlunoRoute } from '$lib/utils/auth';
+import { currentUser, protectAlunoRoute } from '$lib/utils/auth';
 import type { LayoutLoad } from './$types';
+import { get } from 'svelte/store';
 
-export const load: LayoutLoad = async ({ data }) => {
-    await protectAlunoRoute((data as any)?.user);
-    return data;
+export const load: LayoutLoad = async () => {
+    await protectAlunoRoute(get(currentUser));
+    return {};
 }; 

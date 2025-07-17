@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { supabase } from './config/supabase'
+import { supabase } from './config/supabase_wrapper'
 import express, { Express, Request, Response } from 'express';
 import dotenv from "dotenv";
 import { Utils } from './config/utils';
@@ -7,8 +7,15 @@ import { EndpointController, RequestType } from './config/interfaces';
 import fileUpload from 'express-fileupload';
 import bodyParser from 'body-parser';
 import cors from "cors";
-import logger from './config/logger';
+import logger from './utils/logger';
 import path from 'path';
+
+// Import controllers
+import { AlunoController } from './controllers/AlunoController';
+import { ProfessorController } from './controllers/ProfessorController';
+import { TurmaController } from './controllers/TurmaController';
+import { ProblemaController } from './controllers/ProblemaController';
+import { AvaliacaoController } from './controllers/AvaliacaoController';
 
 dotenv.config();
 
@@ -54,6 +61,11 @@ process.on('unhandledRejection', (reason, promise) => {
 const router = express.Router();
 
 const controllers: EndpointController[] = [
+    AlunoController,
+    ProfessorController,
+    TurmaController,
+    ProblemaController,
+    AvaliacaoController
 ];
 router.get('/', (req: Request, res: Response) => {
     logger.info(`\b[GET][/]`);

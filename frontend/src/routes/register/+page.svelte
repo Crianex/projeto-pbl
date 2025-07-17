@@ -1,19 +1,63 @@
 <script lang="ts">
     import Button from "$lib/components/Button.svelte";
+    import { supabase } from "$lib/supabase";
+    import { goto } from "$app/navigation";
 
     let email = "";
     let password = "";
     let confirmPassword = "";
     let name = "";
+    let errorMessage = "";
+    let loading = false;
 
-    function handleRegister() {
-        console.log("Register attempt:", { email, password, name });
-        // TODO: Implement register logic
+    async function handleRegister() {
+        if (!formValid) return;
+
+        loading = true;
+        errorMessage = "";
+
+        try {
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        nome_completo: name,
+                    },
+                },
+            });
+
+            if (error) throw error;
+
+            if (data) {
+                // Registration successful
+                await goto("/auth/callback");
+            }
+        } catch (err: any) {
+            console.error("Registration error:", err);
+            errorMessage =
+                err.message || "An error occurred during registration";
+        } finally {
+            loading = false;
+        }
     }
 
-    function handleGoogleRegister() {
-        console.log("Google register attempt");
-        // TODO: Implement Google OAuth
+    async function handleGoogleRegister() {
+        try {
+            errorMessage = "";
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: "google",
+                options: {
+                    redirectTo: `${window.location.origin}/auth/callback`,
+                },
+            });
+
+            if (error) throw error;
+        } catch (err: any) {
+            console.error("Google registration error:", err);
+            errorMessage =
+                err.message || "An error occurred during Google registration";
+        }
     }
 
     $: passwordsMatch = password === confirmPassword;
@@ -32,6 +76,12 @@
             <h1>Criar Conta</h1>
             <p class="subtitle">Preencha os dados para se registrar</p>
         </div>
+
+        {#if errorMessage}
+            <div class="error-banner">
+                {errorMessage}
+            </div>
+        {/if}
 
         <form on:submit|preventDefault={handleRegister}>
             <div class="form-group">
@@ -81,7 +131,9 @@
                 {/if}
             </div>
 
-            <Button variant="primary" disabled={!formValid}>Criar conta</Button>
+            <Button variant="primary" disabled={!formValid || loading}>
+                {loading ? "Criando conta..." : "Criar conta"}
+            </Button>
         </form>
 
         <div class="divider">
@@ -269,6 +321,16 @@
 
     .login-link a:hover {
         text-decoration: underline;
+    }
+
+    .error-banner {
+        background-color: #ffebee;
+        color: #d32f2f;
+        padding: 0.75rem;
+        border-radius: 4px;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        font-size: 0.9rem;
     }
 
     @media (max-width: 480px) {

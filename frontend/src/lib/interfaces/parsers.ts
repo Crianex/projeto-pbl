@@ -1,4 +1,4 @@
-import { Aluno, Professor, Problema, Turma } from '../config/interfaces';
+import{ type AlunoModel, type ProfessorModel, type ProblemaModel, type TurmaModel, parseToProfessorModel, parseToAlunoModel } from '$lib/interfaces/interfaces';
 
 /**
  * Parses raw Supabase data into strongly typed interfaces
@@ -15,38 +15,26 @@ export const Parsers = {
     parseTurmas
 }
 
-function parseAluno(data: any): Aluno {
-    return {
-        id_aluno: data.id_aluno,
-        created_at: data.created_at ? new Date(data.created_at) : new Date(),
-        nome_completo: data.nome_completo || null,
-        email: data.email || null
-    };
+function parseAluno(data: any): AlunoModel {
+    return parseToAlunoModel(data);
 }
 
-function parseProblema(data: any): Problema {
+function parseProblema(data: any): ProblemaModel {
     return {
         id_problema: data.id_problema,
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
         data_inicio: data.data_inicio ? new Date(data.data_inicio) : null,
         data_fim: data.data_fim ? new Date(data.data_fim) : null,
         nome_problema: data.nome_problema || null,
-        id_turma: data.id_turma || null,
-        media_geral: data.media_geral || null,
-        criterios: data.criterios || null
+        id_turma: data.id_turma || null
     };
 }
 
-function parseProfessor(data: any): Professor {
-    return {
-        id_professor: data.id_professor,
-        created_at: data.created_at ? new Date(data.created_at) : new Date(),
-        nome_completo: data.nome_completo || null,
-        email: data.email || null
-    };
+function parseProfessor(data: any): ProfessorModel {
+    return parseToProfessorModel(data);
 }
 
-function parseTurma(data: any): Turma {
+function parseTurma(data: any): TurmaModel {
     return {
         id_turma: data.id_turma,
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
@@ -59,18 +47,18 @@ function parseTurma(data: any): Turma {
 
 
 
-function parseAlunos(data: any[]): Aluno[] {
+function parseAlunos(data: any[]): AlunoModel[] {
     return data.map(item => parseAluno(item));
 }
 
-function parseProblemas(data: any[]): Problema[] {
+function parseProblemas(data: any[]): ProblemaModel[] {
     return data.map(item => parseProblema(item));
 }
 
-function parseProfessores(data: any[]): Professor[] {
+function parseProfessores(data: any[]): ProfessorModel[] {
     return data.map(item => parseProfessor(item));
 }
 
-function parseTurmas(data: any[]): Turma[] {
+function parseTurmas(data: any[]): TurmaModel[] {
     return data.map(item => parseTurma(item));
 } 

@@ -1,4 +1,4 @@
-import logger from './config/logger';
+import logger from './logger';
 
 export class ControllerLogger {
     private controller: string;

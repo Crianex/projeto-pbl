@@ -6,7 +6,6 @@ export enum RequestType {
     POST = "POST",
     PUT = "PUT",
     DELETE = "DELETE",
-    
 }
 
 export interface EndpointController {
@@ -16,7 +15,6 @@ export interface EndpointController {
     };
 }
 
-
 export interface Aluno {
     id_aluno: number;
     created_at: Date;
@@ -24,6 +22,21 @@ export interface Aluno {
     email: string | null;
 }
 
+export interface AlunoPorTurma {
+    id_aluno_por_turma: number;
+    created_at: Date;
+    id_turma: number | null;
+    id_aluno: number | null;
+}
+
+export interface Avaliacao {
+    id_avaliacao: number;
+    created_at: Date;
+    id_problema: number | null;
+    id_aluno_avaliador: number | null;
+    id_aluno_avaliado: number | null;
+    notas: string;
+}
 
 export interface Problema {
     id_problema: number;
@@ -32,6 +45,15 @@ export interface Problema {
     data_fim: Date | null;
     nome_problema: string | null;
     id_turma: number | null;
+    media_geral: number | null;
+    criterios: string;
+}
+
+export interface ProblemaPorTurma {
+    id_problema_por_turma: number;
+    created_at: Date;
+    id_turma: number | null;
+    id_problema: number | null;
 }
 
 export interface Professor {
@@ -42,12 +64,12 @@ export interface Professor {
 }
 
 export interface Turma {
-    id_turma: number; 
+    id_turma: number;
     created_at: Date;
     id_professor: number | null;
     nome_turma: string | null;
     professor: Professor | null;
     alunos: Aluno[] | null;
-} 
+}
 
 
