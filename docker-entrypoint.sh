@@ -23,8 +23,8 @@ chmod 666 docker-compose.yml nginx.conf view-logs.sh test-env.sh test-git.sh Doc
 chmod -R 755 /app 2>/dev/null || echo "📝 Directory permissions setup"
 
 # Create necessary directories with proper permissions
-mkdir -p /app/logs /app/backend/logs /app/backend/servidor/logs 2>/dev/null || echo "📝 Some directories already exist"
-chmod 775 /app/logs /app/backend/logs /app/backend/servidor/logs 2>/dev/null || echo "📝 Directory permissions setup"
+mkdir -p /app/logs /app/backend/logs /app/backend/logs 2>/dev/null || echo "📝 Some directories already exist"
+chmod 775 /app/logs /app/backend/logs /app/backend/logs 2>/dev/null || echo "📝 Directory permissions setup"
 
 # Configure git for mounted volumes
 echo "🔧 Configuring git for mounted directories..."
@@ -93,8 +93,8 @@ else
     echo "⚠️  Git repository not found"
 fi
 
-# Build the command (working from backend/servidor directory)
-COMMAND="cd /app/backend/servidor && python start_and_monitor.py --branch ${GIT_BRANCH:-main}"
+# Build the command (working from backend directory)
+COMMAND="cd /app/backend/ && python start_and_monitor.py --branch ${GIT_BRANCH:-main}"
 
 # No fork repository setup - feature removed
 
