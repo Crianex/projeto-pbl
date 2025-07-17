@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { fade, scale } from 'svelte/transition';
-	import { createEventDispatcher } from 'svelte';
+	import { fade, scale } from "svelte/transition";
+	import { createEventDispatcher } from "svelte";
 
 	export let open = false;
 	export let closeOnClickOutside = true;
@@ -9,7 +9,7 @@
 
 	function handleClose() {
 		if (closeOnClickOutside) {
-			dispatch('close');
+			dispatch("close");
 		}
 	}
 
@@ -54,10 +54,12 @@
 		background-color: white;
 		border-radius: 8px;
 		padding: 1.5rem;
-		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+		box-shadow:
+			0 20px 25px -5px rgba(0, 0, 0, 0.1),
 			0 10px 10px -5px rgba(0, 0, 0, 0.04);
 		max-width: 90vw;
 		max-height: 90vh;
+		overflow-x: hidden;
 		overflow-y: auto;
 		animation: dialog-appear 0.2s ease-out;
 	}
@@ -91,4 +93,4 @@
 	.dialog::-webkit-scrollbar-thumb:hover {
 		background: #555;
 	}
-</style> 
+</style>

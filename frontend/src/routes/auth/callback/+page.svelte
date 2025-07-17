@@ -3,44 +3,34 @@
     import { goto } from "$app/navigation";
     import { supabase } from "$lib/supabase";
     import { logger } from "$lib/utils/logger";
-    import { currentUser, createOrGetUser } from "$lib/utils/auth";
+    import { currentUser } from "$lib/utils/auth";
 
     onMount(() => {
         logger.info("Auth callback page loaded, waiting for session...");
 
-        // Handle the OAuth callback
-        supabase.auth.onAuthStateChange(async (event, session) => {
-            logger.info("Auth state changed", { event });
+        // Handle the OAuth callback - only handle redirects, auth state is managed globally
+        const unsubscribe = currentUser.subscribe((user) => {
+            if (user) {
+                logger.info(
+                    "User signed in and created/retrieved successfully",
+                    {
+                        userId: user.id,
+                        userType: user.tipo,
+                    },
+                );
 
-            if (event === "SIGNED_IN" && session) {
-                try {
-                    const user = await createOrGetUser(session);
-                    currentUser.set(user);
-
-                    logger.info(
-                        "User signed in and created/retrieved successfully",
-                        {
-                            userId: user?.id,
-                            userType: user?.tipo,
-                        },
-                    );
-
-                    // Redirect based on user type
-                    if (user?.tipo === "professor") {
-                        goto("/professor/turmas");
-                    } else {
-                        goto("/aluno");
-                    }
-                } catch (error) {
-                    logger.error("Failed to create/get user", { error });
-                    goto("/login?error=user-creation-failed");
+                // Redirect based on user type
+                if (user.tipo === "professor") {
+                    goto("/professor/turmas");
+                } else {
+                    goto("/aluno");
                 }
-            } else if (event === "SIGNED_OUT") {
-                logger.warn("User signed out during callback");
-                currentUser.set(null);
-                goto("/login");
             }
         });
+
+        return () => {
+            unsubscribe();
+        };
     });
 </script>
 

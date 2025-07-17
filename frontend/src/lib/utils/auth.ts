@@ -7,6 +7,7 @@ import type { AlunoModel, BaseUser, ProfessorModel } from '$lib/interfaces/inter
 import { redirect } from '@sveltejs/kit';
 
 export const currentUser = writable<BaseUser | null>(null);
+let isInitializing = false;
 
 export function isAluno(user: BaseUser | null): user is AlunoModel {
     console.log('isAluno', user);
@@ -97,7 +98,13 @@ export async function createOrGetUser(session: any): Promise<BaseUser | null> {
 
 // Initialize the store with the current session
 export async function initializeAuth() {
+    if (isInitializing) {
+        logger.info('Auth initialization already in progress, skipping');
+        return;
+    }
+
     try {
+        isInitializing = true;
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
             const user = await createOrGetUser(session);
@@ -106,12 +113,19 @@ export async function initializeAuth() {
     } catch (error) {
         logger.error('Error initializing auth:', error);
         currentUser.set(null);
+    } finally {
+        isInitializing = false;
     }
 }
 
 // Listen for auth changes
 supabase.auth.onAuthStateChange(async (event, session) => {
     logger.info('Auth state changed:', { event });
+
+    if (isInitializing) {
+        logger.info('Auth initialization in progress, skipping auth state change handler');
+        return;
+    }
 
     if (event === 'SIGNED_IN' && session) {
         try {

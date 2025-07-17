@@ -31,7 +31,6 @@
 		width: 100%;
 		padding: 20px 32px;
 		border-radius: 8px;
-		margin-bottom: 16px;
 		cursor: pointer;
 		transition:
 			transform 0.2s,

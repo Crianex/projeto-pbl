@@ -23,11 +23,20 @@ export const TurmaController: EndpointController = {
                 return res.status(500).json({ error: error.message });
             }
 
+            logger.info(`Fetched ${data.length} turmas`);
+
             return res.json(data);
         }),
 
         'get': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            const { id } = req.params;
+            const { id } = req.query;
+
+            if (!id) {
+                logger.error('No ID provided');
+                return res.status(400).json({ error: 'No ID provided' });
+            }
+
+            logger.info(`Fetching turma ${id}`);
             const { data, error } = await supabase
                 .from('turmas')
                 .select(`
@@ -44,6 +53,7 @@ export const TurmaController: EndpointController = {
             }
 
             if (!data) {
+                logger.error(`Turma ${id} not found`);
                 return res.status(404).json({ error: 'Turma not found' });
             }
 
@@ -70,7 +80,7 @@ export const TurmaController: EndpointController = {
         }),
 
         'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
-            const { id } = req.params;
+            const { id } = req.query;
             const { nome_turma, id_professor } = req.body;
             const { data, error } = await supabase
                 .from('turmas')
@@ -95,7 +105,7 @@ export const TurmaController: EndpointController = {
         }),
 
         'delete': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
-            const { id } = req.params;
+            const { id } = req.query;
             const { error } = await supabase
                 .from('turmas')
                 .delete()
@@ -129,7 +139,7 @@ export const TurmaController: EndpointController = {
         }),
 
         'remove-aluno': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
-            const { id_turma, id_aluno } = req.params;
+            const { id_turma, id_aluno } = req.query;
             const { error } = await supabase
                 .from('alunos_por_turma')
                 .delete()

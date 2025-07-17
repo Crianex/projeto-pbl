@@ -1,61 +1,65 @@
 <script lang="ts">
     import Button from "$lib/components/Button.svelte";
+    import Dialog from "$lib/components/Dialog.svelte";
     import type { TurmaModel } from "$lib/interfaces/interfaces";
+    import { api } from "$lib/utils/api";
+    import { onMount } from "svelte";
+    import { goto } from "$app/navigation";
 
-    let turmas: TurmaModel[] = [
-        {
-            id_turma: 1,
-            nome_turma: "Turma 1",
-            created_at: new Date(),
-            id_professor: 1,
-            professor: null,
-            alunos: [],
-        },
-        {
-            id_turma: 2,
-            nome_turma: "Turma 2",
-            created_at: new Date(),
-            id_professor: 1,
-            professor: null,
-            alunos: [],
-        },
-        {
-            id_turma: 3,
-            nome_turma: "Turma 3",
-            created_at: new Date(),
-            id_professor: 1,
-            professor: null,
-            alunos: [],
-        },
-        {
-            id_turma: 4,
-            nome_turma: "Turma 4",
-            created_at: new Date(),
-            id_professor: 1,
-            professor: null,
-            alunos: [],
-        },
-        {
-            id_turma: 5,
-            nome_turma: "Turma 5",
-            created_at: new Date(),
-            id_professor: 1,
-            professor: null,
-            alunos: [],
-        },
-        {
-            id_turma: 6,
-            nome_turma: "Turma 6",
-            created_at: new Date(),
-            id_professor: 1,
-            professor: null,
-            alunos: [],
-        },
-    ];
+    let turmas: TurmaModel[] = [];
+    let loading = true;
+    let error: string | null = null;
+    let deleteConfirmOpen = false;
+    let turmaToDelete: TurmaModel | null = null;
+    let openDropdownId: number | null = null;
 
     let currentPage = 1;
     let itemsPerPage = 5;
     let searchQuery = "";
+
+    async function fetchTurmas() {
+        try {
+            loading = true;
+            error = null;
+            const data = await api.get("/turmas/list");
+            turmas = data;
+        } catch (err) {
+            error =
+                err instanceof Error ? err.message : "Failed to fetch turmas";
+            console.error("Error fetching turmas:", err);
+        } finally {
+            loading = false;
+        }
+    }
+
+    onMount(() => {
+        fetchTurmas();
+        // Add click outside listener
+        document.addEventListener("click", handleClickOutside);
+        return () => {
+            document.removeEventListener("click", handleClickOutside);
+        };
+    });
+
+    function handleClickOutside(event: MouseEvent) {
+        const dropdowns = document.querySelectorAll(".dropdown");
+        let clickedInsideDropdown = false;
+
+        dropdowns.forEach((dropdown) => {
+            if (dropdown.contains(event.target as Node)) {
+                clickedInsideDropdown = true;
+            }
+        });
+
+        if (!clickedInsideDropdown) {
+            openDropdownId = null;
+        }
+    }
+
+    function toggleDropdown(event: MouseEvent, turmaId: number) {
+        event.stopPropagation();
+        openDropdownId = openDropdownId === turmaId ? null : turmaId;
+    }
 
     $: filteredTurmas = turmas.filter((turma) =>
         turma.nome_turma?.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -67,8 +71,35 @@
         currentPage * itemsPerPage,
     );
 
-    function handleCreateTurma() {
-        // TODO: Implement create turma functionality
+    async function handleCreateTurma() {
+        await goto("/professor/turmas/nova");
+    }
+
+    async function handleDeleteTurma() {
+        if (!turmaToDelete) return;
+
+        try {
+            loading = true;
+            await api.delete(`/turmas/delete?id=${turmaToDelete.id_turma}`);
+            await fetchTurmas();
+            closeDeleteConfirm();
+        } catch (err) {
+            error =
+                err instanceof Error ? err.message : "Failed to delete turma";
+            console.error("Error deleting turma:", err);
+        } finally {
+            loading = false;
+        }
+    }
+
+    function openDeleteConfirm(turma: TurmaModel) {
+        turmaToDelete = turma;
+        deleteConfirmOpen = true;
+    }
+
+    function closeDeleteConfirm() {
+        deleteConfirmOpen = false;
+        turmaToDelete = null;
     }
 </script>
 
@@ -87,57 +118,132 @@
         </div>
     </div>
 
-    <div class="turmas-list">
-        {#each paginatedTurmas as turma (turma.id_turma)}
-            <div class="turma-item">
-                <span>{turma.nome_turma}</span>
-                <button class="more-options">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                    >
-                        <circle cx="12" cy="12" r="1" />
-                        <circle cx="19" cy="12" r="1" />
-                        <circle cx="5" cy="12" r="1" />
-                    </svg>
-                </button>
-            </div>
-        {/each}
-    </div>
-
-    <div class="pagination">
-        <button
-            class="page-nav"
-            disabled={currentPage === 1}
-            on:click={() => currentPage--}
-        >
-            Previous
-        </button>
-
-        {#each Array(totalPages) as _, i}
-            <button
-                class="page-number"
-                class:active={currentPage === i + 1}
-                on:click={() => (currentPage = i + 1)}
+    {#if loading}
+        <div class="loading">Carregando turmas...</div>
+    {:else if error}
+        <div class="error">
+            <p>{error}</p>
+            <Button variant="secondary" on:click={fetchTurmas}
+                >Tentar novamente</Button
             >
-                {i + 1}
-            </button>
-        {/each}
+        </div>
+    {:else if turmas.length === 0}
+        <div class="empty-state">
+            <p>Nenhuma turma encontrada.</p>
+        </div>
+    {:else}
+        <div class="turmas-list">
+            {#each paginatedTurmas as turma (turma.id_turma)}
+                <div class="turma-item">
+                    <span>{turma.nome_turma}</span>
+                    <div class="actions">
+                        <a
+                            href={`/professor/turmas/${turma.id_turma}`}
+                            class="btn-primary"
+                        >
+                            Editar
+                        </a>
+                        <div class="dropdown">
+                            <button
+                                class="more-options"
+                                on:click={(e) =>
+                                    toggleDropdown(e, turma.id_turma)}
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <circle cx="12" cy="12" r="1" />
+                                    <circle cx="19" cy="12" r="1" />
+                                    <circle cx="5" cy="12" r="1" />
+                                </svg>
+                            </button>
+                            <div
+                                class="dropdown-content"
+                                class:show={openDropdownId === turma.id_turma}
+                            >
+                                <button
+                                    class="dropdown-item delete"
+                                    on:click={() => openDeleteConfirm(turma)}
+                                >
+                                    <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+                                            fill="currentColor"
+                                        />
+                                    </svg>
+                                    Excluir turma
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {/each}
+        </div>
 
-        <button
-            class="page-nav"
-            disabled={currentPage === totalPages}
-            on:click={() => currentPage++}
-        >
-            Next
-        </button>
-    </div>
+        <div class="pagination">
+            <button
+                class="page-nav"
+                disabled={currentPage === 1}
+                on:click={() => currentPage--}
+            >
+                Previous
+            </button>
+
+            {#each Array(totalPages) as _, i}
+                <button
+                    class="page-number"
+                    class:active={currentPage === i + 1}
+                    on:click={() => (currentPage = i + 1)}
+                >
+                    {i + 1}
+                </button>
+            {/each}
+
+            <button
+                class="page-nav"
+                disabled={currentPage === totalPages}
+                on:click={() => currentPage++}
+            >
+                Next
+            </button>
+        </div>
+    {/if}
 </div>
+
+<Dialog open={deleteConfirmOpen} on:close={closeDeleteConfirm}>
+    <svelte:fragment slot="header">
+        <h2>Confirmar exclusão</h2>
+    </svelte:fragment>
+    <div class="delete-confirm-content">
+        <p>
+            Tem certeza que deseja excluir a turma "{turmaToDelete?.nome_turma}"?
+        </p>
+        <p class="warning">
+            Esta ação não pode ser desfeita e todos os dados da turma serão
+            perdidos.
+        </p>
+        <div class="dialog-actions">
+            <Button variant="secondary" on:click={closeDeleteConfirm}>
+                Cancelar
+            </Button>
+            <Button variant="danger" on:click={handleDeleteTurma}>
+                Excluir turma
+            </Button>
+        </div>
+    </div>
+</Dialog>
 
 <style>
     .turmas-container {
@@ -173,7 +279,7 @@
         background: white;
         border: 1px solid #e9ecef;
         border-radius: 8px;
-        overflow: hidden;
+        overflow: visible; /* Changed from hidden to visible */
     }
 
     .turma-item {
@@ -188,6 +294,27 @@
         border-bottom: none;
     }
 
+    .actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    :global(.btn-primary) {
+        display: inline-block;
+        padding: 0.375rem 0.75rem;
+        background: #0d6efd;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        transition: background-color 0.2s;
+    }
+
+    :global(.btn-primary:hover) {
+        background: #0b5ed7;
+    }
+
     .more-options {
         background: none;
         border: none;
@@ -198,6 +325,50 @@
     }
 
     .more-options:hover {
+        background-color: #f8f9fa;
+    }
+
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 100%;
+        background-color: white;
+        min-width: 160px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+        z-index: 1;
+        margin-top: 0.25rem;
+    }
+
+    .dropdown-content.show {
+        display: block;
+    }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 0.5rem 1rem;
+        border: none;
+        background: none;
+        text-align: left;
+        cursor: pointer;
+        color: #212529;
+        font-size: 0.875rem;
+    }
+
+    .dropdown-item.delete {
+        color: #dc3545;
+    }
+
+    .dropdown-item:hover {
         background-color: #f8f9fa;
     }
 
@@ -231,5 +402,43 @@
     .page-nav:hover:not(:disabled),
     .page-number:hover:not(.active) {
         background: #f8f9fa;
+    }
+
+    .loading,
+    .error,
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+    }
+
+    .error {
+        color: #dc3545;
+    }
+
+    .error button {
+        margin-top: 1rem;
+    }
+
+    .delete-confirm-content {
+        padding: 1rem;
+    }
+
+    .delete-confirm-content p {
+        margin-bottom: 1rem;
+    }
+
+    .delete-confirm-content .warning {
+        color: #dc3545;
+        font-size: 0.875rem;
+    }
+
+    .dialog-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
     }
 </style>

@@ -9,6 +9,28 @@ const logger = createControllerLogger('Aluno', 'Controller');
 export const AlunoController: EndpointController = {
     name: 'alunos',
     routes: {
+        'search': new Pair(RequestType.GET, async (req: Request, res: Response) => {
+            const { query } = req.query;
+
+            if (!query) {
+                return res.status(400).json({ error: 'Search query is required' });
+            }
+
+            const { data, error } = await supabase
+                .from('alunos')
+                .select('*')
+                .ilike('nome_completo', `%${query}%`)
+                .order('nome_completo', { ascending: true })
+                .limit(10);
+
+            if (error) {
+                logger.error(`Error searching alunos: ${error.message}`);
+                return res.status(500).json({ error: error.message });
+            }
+
+            return res.json(data);
+        }),
+
         'list': new Pair(RequestType.GET, async (req: Request, res: Response) => {
             const { data, error } = await supabase
                 .from('alunos')
