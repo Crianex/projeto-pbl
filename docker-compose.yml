@@ -48,7 +48,8 @@ services:
       - "6719:6719"   # Backend HTTP (main port)
       - "4503:4503"   # Additional port if needed
     volumes:
-      - ./nginx.local.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro  # Mount SSL certificates
     depends_on:
       backend:
         condition: service_healthy
