@@ -64,10 +64,10 @@ services:
     command: >
       sh -c "
         echo 'Checking SSL certificate files...' &&
-        if [ -f /etc/letsencrypt/live/projeto-pbl.com/fullchain.pem ] && [ -f /etc/letsencrypt/live/projeto-pbl.com/privkey.pem ]; then
+        if [ -f /etc/letsencrypt/live/no-fluxo-api.shop/fullchain.pem ] && [ -f /etc/letsencrypt/live/no-fluxo-api.shop/privkey.pem ]; then
           echo 'SSL certificates found, testing readability...' &&
-          cat /etc/letsencrypt/live/projeto-pbl.com/fullchain.pem | head -5 &&
-          cat /etc/letsencrypt/live/projeto-pbl.com/privkey.pem | head -5 &&
+          cat /etc/letsencrypt/live/no-fluxo-api.shop/fullchain.pem | head -5 &&
+          cat /etc/letsencrypt/live/no-fluxo-api.shop/privkey.pem | head -5 &&
           echo 'Testing nginx configuration with SSL...' &&
           nginx -t &&
           echo 'SSL certificates validated, starting nginx with HTTPS termination...' &&
