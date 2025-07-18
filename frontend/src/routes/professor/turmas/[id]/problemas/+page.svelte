@@ -5,6 +5,10 @@
     import { api } from "$lib/utils/api";
     import { goto } from "$app/navigation";
     import Dialog from "$lib/components/Dialog.svelte";
+    import { problemaStore } from "$lib/utils/stores";
+    import { Parsers } from "$lib/interfaces/parsers";
+    import type { ProblemaModel } from "$lib/interfaces/interfaces";
+    import { Utils } from "$lib/utils/utils";
 
     const turmaId = $page.params.id;
 
@@ -12,13 +16,7 @@
         nome_turma: "",
         id_professor: "",
     };
-    let problemas: Array<{
-        id_problema: number;
-        nome_problema: string;
-        data_inicio: string;
-        data_fim: string;
-        media_geral: number;
-    }> = [];
+    let problemas: ProblemaModel[] = [];
     let loading = true;
     let error: string | null = null;
     let deleteConfirmOpen = false;
@@ -36,11 +34,13 @@
                 id_professor: turmaData.id_professor,
             };
 
-            // Fetch problemas for this turma
-            const problemasData = await api.get(`/problemas/list`);
-            problemas = problemasData.filter(
-                (p: any) => p.id_turma === parseInt(turmaId),
+            // Fetch problemas for this turma using the new endpoint
+            const problemasData = await api.get(
+                `/problemas/list-by-turma?id_turma=${turmaId}`,
             );
+            const parsedProblemas = Parsers.parseProblemas(problemasData);
+            problemas = parsedProblemas;
+            problemaStore.set(parsedProblemas);
         } catch (err) {
             error = err instanceof Error ? err.message : "Failed to fetch data";
             console.error("Error fetching data:", err);
@@ -60,6 +60,11 @@
             loading = true;
             await api.delete(
                 `/problemas/delete?id=${problemaToDelete.id_problema}`,
+            );
+            problemaStore.update((ps) =>
+                ps.filter(
+                    (p) => p.id_problema !== problemaToDelete.id_problema,
+                ),
             );
             await fetchData();
             closeDeleteConfirm();
@@ -84,11 +89,14 @@
         problemaToDelete = null;
     }
 
-    function formatDate(dateString: string) {
-        return new Date(dateString).toLocaleDateString("pt-BR");
-    }
-
     onMount(fetchData);
+
+    // Subscribe to the store
+    problemaStore.subscribe((value) => {
+        if (value.length > 0) {
+            problemas = value;
+        }
+    });
 </script>
 
 <div class="container">
@@ -137,20 +145,22 @@
         </div>
     {:else}
         <div class="problemas-list">
-            {#each problemas as problema (problema.id_problema)}
+            {#each problemas as problema}
                 <div class="problema-item">
                     <div class="problema-info">
                         <h3>{problema.nome_problema}</h3>
                         <div class="problema-details">
                             <span
-                                >Período: {formatDate(problema.data_inicio)} - {formatDate(
-                                    problema.data_fim,
+                                >Período: {Utils.formatDate(
+                                    problema.data_inicio || new Date(),
+                                )} - {Utils.formatDate(
+                                    problema.data_fim || new Date(),
                                 )}</span
                             >
                             <span
-                                >Média geral: {problema.media_geral.toFixed(
+                                >Média geral: {problema.media_geral?.toFixed(
                                     2,
-                                )}</span
+                                ) || "0.00"}</span
                             >
                         </div>
                     </div>

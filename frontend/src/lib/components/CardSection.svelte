@@ -1,4 +1,5 @@
 <script>
+	import { classNames } from "$lib/utils/utils";
 	export let title = "";
 	export let subtitle = "";
 	export let metrics = "";
@@ -6,9 +7,16 @@
 	export let textColor = "#21272A";
 	export let subtitleColor = "#697077";
 	export let href = "";
+
+	let className = "";
+	$: className = $$props.class;
 </script>
 
-<a {href} class="card-section" style="background-color: {bgColor};">
+<a
+	{href}
+	class={classNames("card-section", className)}
+	style="background-color: {bgColor};"
+>
 	<div class="content">
 		{#if title}
 			<h2 class="title" style="color: {textColor};">{title}</h2>
@@ -29,8 +37,8 @@
 <style>
 	.card-section {
 		width: 100%;
-		padding: 2rem 2.5rem;
-		border-radius: 20px;
+		padding: 1rem;
+		border-radius: 12px;
 		cursor: pointer;
 		transition: all 0.3s ease;
 		display: block;
@@ -38,16 +46,15 @@
 		color: inherit;
 		border: 1px solid rgba(255, 255, 255, 0.2);
 		backdrop-filter: blur(10px);
-		box-shadow: 
-			0 15px 35px rgba(0, 0, 0, 0.08),
+		box-sizing: border-box;
+		box-shadow:
 			0 8px 20px rgba(0, 0, 0, 0.06),
 			0 3px 8px rgba(0, 0, 0, 0.04);
 	}
 
 	.card-section:hover {
-		transform: translateY(-4px);
-		box-shadow: 
-			0 25px 50px rgba(0, 0, 0, 0.12),
+		transform: translateY(-2px);
+		box-shadow:
 			0 15px 30px rgba(0, 0, 0, 0.08),
 			0 8px 15px rgba(0, 0, 0, 0.06);
 	}
@@ -58,7 +65,7 @@
 	}
 
 	.icon {
-		margin-bottom: 16px;
+		margin-bottom: 12px;
 	}
 
 	.icon :global(svg) {
@@ -66,35 +73,35 @@
 	}
 
 	.title {
-		font-size: 24px;
+		font-size: 20px;
 		font-weight: 600;
-		margin: 0 0 8px 0;
+		margin: 0 0 4px 0;
 		line-height: 1.3;
 	}
 
 	.subtitle {
-		font-size: 14px;
-		margin: 0 0 12px 0;
+		font-size: 13px;
+		margin: 0 0 8px 0;
 		line-height: 1.4;
 	}
 
 	.metrics {
-		font-size: 18px;
+		font-size: 16px;
 		font-weight: 500;
 		margin: 0;
 	}
 
 	@media (max-width: 768px) {
 		.card-section {
-			padding: 16px 20px;
+			padding: 12px 16px;
 		}
 
 		.title {
-			font-size: 20px;
+			font-size: 18px;
 		}
 
 		.metrics {
-			font-size: 16px;
+			font-size: 14px;
 		}
 	}
 </style>

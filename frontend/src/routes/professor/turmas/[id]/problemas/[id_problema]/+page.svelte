@@ -3,118 +3,378 @@
     import { page } from "$app/stores";
     import { api } from "$lib/utils/api";
     import type { ProblemaModel } from "$lib/interfaces/interfaces";
-    import type { Column } from "$lib/interfaces/column";
+    import { Parsers } from "$lib/interfaces/parsers";
     import Button from "$lib/components/Button.svelte";
     import Container from "$lib/components/Container.svelte";
-    import CardSection from "$lib/components/CardSection.svelte";
     import Table from "$lib/components/Table.svelte";
-    import MetricsRow from "$lib/components/MetricsRow.svelte";
-    import { goto } from "$app/navigation";
 
     let problema: ProblemaModel | null = null;
-    let avaliacoes: any[] = [];
+    let avaliacoesEnviadas: any[] = [];
+    let avaliacoesRecebidas: any[] = [];
     let loading = true;
     let error: string | null = null;
+    let currentPageEnviadas = 1;
+    let currentPageRecebidas = 1;
+    let itemsPerPage = 5;
 
     onMount(async () => {
         try {
             const id_problema = $page.params.id_problema;
             const [problemaData, avaliacoesData] = await Promise.all([
-                api.get(`/problemas/get/${id_problema}`),
-                api.get(`/problemas/get-avaliacoes/${id_problema}`),
+                api.get(`/problemas/get?id_problema=${id_problema}`),
+                api.get(`/problemas/get-avaliacoes?id_problema=${id_problema}`),
             ]);
-            problema = problemaData;
-            avaliacoes = avaliacoesData;
+            problema = Parsers.parseProblema(problemaData);
+
+            // Separate avaliacoes into enviadas and recebidas
+            // This is a placeholder - adjust according to your actual data structure
+            avaliacoesEnviadas = avaliacoesData.filter(
+                (av: any) => av.tipo === "enviada",
+            );
+            avaliacoesRecebidas = avaliacoesData.filter(
+                (av: any) => av.tipo === "recebida",
+            );
         } catch (e: any) {
-            error = e.message || "Erro ao carregar o problema";
+            error = e.message || "Erro ao carregar as avaliações";
         } finally {
             loading = false;
         }
     });
 
-    const formatDate = (date: Date | null) => {
-        if (!date) return "Não definido";
-        return new Date(date).toLocaleDateString("pt-BR");
-    };
-
-    const avaliacoesColumns: Column[] = [
-        { key: "avaliador.nome_completo", label: "Avaliador" },
-        { key: "avaliado.nome_completo", label: "Avaliado" },
-        {
-            key: "notas",
-            label: "Média",
-            render: (row: any) => {
-                try {
-                    const notasObj = JSON.parse(row.notas);
-                    const values = Object.values(notasObj) as number[];
-                    if (values.length === 0) return "0.0";
-                    const avg =
-                        values.reduce((a, b) => a + b, 0) / values.length;
-                    return avg.toFixed(1);
-                } catch {
-                    return "0.0";
-                }
-            },
-        },
-    ];
-
-    function handleBack() {
-        const turmaId = $page.params.id;
-        goto(`/professor/turmas/${turmaId}/problemas`);
+    function formatNotas(notas: string) {
+        try {
+            const { competencia, habilidade, atitude } = JSON.parse(notas);
+            return `(${competencia}/1,${habilidade}/1,${atitude}/1)`;
+        } catch {
+            return "(0/1,0/1,0/1)";
+        }
     }
+
+    function handleAvaliarAluno() {
+        // Implement the evaluation logic
+        console.log("Avaliar aluno clicked");
+    }
+
+    $: totalPagesEnviadas = Math.ceil(avaliacoesEnviadas.length / itemsPerPage);
+    $: totalPagesRecebidas = Math.ceil(
+        avaliacoesRecebidas.length / itemsPerPage,
+    );
+    $: paginatedEnviadas = avaliacoesEnviadas.slice(
+        (currentPageEnviadas - 1) * itemsPerPage,
+        currentPageEnviadas * itemsPerPage,
+    );
+    $: paginatedRecebidas = avaliacoesRecebidas.slice(
+        (currentPageRecebidas - 1) * itemsPerPage,
+        currentPageRecebidas * itemsPerPage,
+    );
 </script>
 
 <Container>
     {#if loading}
-        <div class="flex justify-center items-center h-64">
-            <div
-                class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"
-            ></div>
+        <div class="loading-container">
+            <div class="loading-spinner" />
         </div>
     {:else if error}
-        <div
-            class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
-            role="alert"
-        >
-            <strong class="font-bold">Erro!</strong>
-            <span class="block sm:inline">{error}</span>
+        <div class="error-alert" role="alert">
+            <strong>Erro!</strong>
+            <span>{error}</span>
         </div>
-    {:else if problema}
-        <div class="space-y-6">
-            <div class="flex justify-between items-center">
-                <h1 class="text-2xl font-bold">{problema.nome_problema}</h1>
-                <Button variant="secondary" on:click={handleBack}>Voltar</Button
-                >
+    {:else}
+        <div class="content-wrapper">
+            <div class="header">
+                <h1>Avaliações do Aluno</h1>
             </div>
 
-            <CardSection title="Informações Gerais">
-                <MetricsRow
-                    metrics={[
-                        {
-                            label: "Data de Início",
-                            value: formatDate(problema.data_inicio),
-                        },
-                        {
-                            label: "Data de Fim",
-                            value: formatDate(problema.data_fim),
-                        },
-                        {
-                            label: "Média Geral",
-                            value: problema.media_geral?.toFixed(1) || "0.0",
-                        },
-                    ]}
-                />
-            </CardSection>
+            <div class="avaliacoes-section">
+                <h2>Avaliações Enviadas</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Aluno</th>
+                                <th>Notas (C/H/A)</th>
+                                <th>Enviada para</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {#each paginatedEnviadas as avaliacao}
+                                <tr>
+                                    <td class="aluno-cell">
+                                        <img
+                                            src={avaliacao.aluno?.avatar || ""}
+                                            alt=""
+                                            class="avatar"
+                                        />
+                                        <span
+                                            >{avaliacao.aluno?.nome ||
+                                                "Nome não disponível"}</span
+                                        >
+                                    </td>
+                                    <td>{formatNotas(avaliacao.notas)}</td>
+                                    <td class="aluno-cell">
+                                        <img
+                                            src={avaliacao.enviada_para
+                                                ?.avatar || ""}
+                                            alt=""
+                                            class="avatar"
+                                        />
+                                        <span
+                                            >{avaliacao.enviada_para?.nome ||
+                                                "Nome não disponível"}</span
+                                        >
+                                    </td>
+                                </tr>
+                            {/each}
+                        </tbody>
+                    </table>
+                </div>
 
-            <CardSection title="Avaliações">
-                {#if avaliacoes.length > 0}
-                    <Table columns={avaliacoesColumns} rows={avaliacoes} />
-                {:else}
-                    <div class="text-center py-8 text-gray-500">
-                        Nenhuma avaliação registrada
-                    </div>
-                {/if}
-            </CardSection>
+                <div class="pagination">
+                    <button
+                        class="page-nav"
+                        disabled={currentPageEnviadas === 1}
+                        on:click={() => currentPageEnviadas--}
+                    >
+                        &lt;
+                    </button>
+                    <span class="page-number active">{currentPageEnviadas}</span
+                    >
+                    {#if currentPageEnviadas < totalPagesEnviadas}
+                        <span class="page-number"
+                            >{currentPageEnviadas + 1}</span
+                        >
+                    {/if}
+                    <button
+                        class="page-nav"
+                        disabled={currentPageEnviadas === totalPagesEnviadas}
+                        on:click={() => currentPageEnviadas++}
+                    >
+                        &gt;
+                    </button>
+                </div>
+            </div>
+
+            <div class="avaliacoes-section">
+                <h2>Avaliações Recebidas</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Aluno</th>
+                                <th>Notas (C/H/A)</th>
+                                <th>Enviada para</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {#each paginatedRecebidas as avaliacao}
+                                <tr>
+                                    <td class="aluno-cell">
+                                        <img
+                                            src={avaliacao.aluno?.avatar || ""}
+                                            alt=""
+                                            class="avatar"
+                                        />
+                                        <span
+                                            >{avaliacao.aluno?.nome ||
+                                                "Nome não disponível"}</span
+                                        >
+                                    </td>
+                                    <td>{formatNotas(avaliacao.notas)}</td>
+                                    <td class="aluno-cell">
+                                        <img
+                                            src={avaliacao.enviada_para
+                                                ?.avatar || ""}
+                                            alt=""
+                                            class="avatar"
+                                        />
+                                        <span
+                                            >{avaliacao.enviada_para?.nome ||
+                                                "Nome não disponível"}</span
+                                        >
+                                    </td>
+                                </tr>
+                            {/each}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination">
+                    <button
+                        class="page-nav"
+                        disabled={currentPageRecebidas === 1}
+                        on:click={() => currentPageRecebidas--}
+                    >
+                        &lt;
+                    </button>
+                    <span class="page-number active"
+                        >{currentPageRecebidas}</span
+                    >
+                    {#if currentPageRecebidas < totalPagesRecebidas}
+                        <span class="page-number"
+                            >{currentPageRecebidas + 1}</span
+                        >
+                    {/if}
+                    <button
+                        class="page-nav"
+                        disabled={currentPageRecebidas === totalPagesRecebidas}
+                        on:click={() => currentPageRecebidas++}
+                    >
+                        &gt;
+                    </button>
+                </div>
+            </div>
+
+            <div class="actions">
+                <Button variant="primary" on:click={handleAvaliarAluno}
+                    >Avaliar Aluno</Button
+                >
+            </div>
         </div>
     {/if}
 </Container>
+
+<style>
+    .content-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .header h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .avaliacoes-section {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .avaliacoes-section h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: #333;
+    }
+
+    .table-container {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th {
+        text-align: left;
+        padding: 1rem;
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #495057;
+    }
+
+    td {
+        padding: 1rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .aluno-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .page-nav {
+        padding: 0.5rem 1rem;
+        border: 1px solid #dee2e6;
+        background: white;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+
+    .page-nav:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .page-number {
+        padding: 0.5rem 1rem;
+        border: 1px solid #dee2e6;
+        background: white;
+        border-radius: 4px;
+    }
+
+    .page-number.active {
+        background: #0d6efd;
+        color: white;
+        border-color: #0d6efd;
+    }
+
+    .actions {
+        display: flex;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 16rem;
+    }
+
+    .loading-spinner {
+        width: 2rem;
+        height: 2rem;
+        border: 2px solid #e2e8f0;
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .error-alert {
+        background-color: #fee2e2;
+        border: 1px solid #ef4444;
+        color: #b91c1c;
+        padding: 0.75rem 1rem;
+        border-radius: 0.375rem;
+    }
+
+    .error-alert strong {
+        font-weight: 700;
+        margin-right: 0.5rem;
+    }
+</style>

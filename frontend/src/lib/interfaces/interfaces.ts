@@ -11,6 +11,7 @@ export interface ProblemaModel {
     nome_problema: string | null;
     id_turma: number | null;
     media_geral: number | null;
+    turma: TurmaModel | null;
 }
 
 export interface TurmaModel {

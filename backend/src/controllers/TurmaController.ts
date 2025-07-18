@@ -15,7 +15,7 @@ export const TurmaController: EndpointController = {
                 .select(`
                     *,
                     professor:professores(*),
-                    alunos:alunos_por_turma(alunos(*))
+                    alunos:alunos_por_turma(alunos:alunos(*))
                 `);
 
             if (error) {

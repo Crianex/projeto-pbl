@@ -3,7 +3,7 @@ import { writable } from 'svelte/store';
 import { supabase } from '../supabase';
 import { api, APIError } from './api';
 import { logger } from './logger';
-import type { AlunoModel, BaseUser, ProfessorModel } from '$lib/interfaces/interfaces';
+import { parseToAlunoModel, parseToProfessorModel, type AlunoModel, type BaseUser, type ProfessorModel } from '$lib/interfaces/interfaces';
 import { redirect } from '@sveltejs/kit';
 
 export const currentUser = writable<BaseUser | null>(null);
@@ -50,10 +50,8 @@ export async function createOrGetUser(session: any): Promise<BaseUser | null> {
         try {
             const alunoResponse = await api.get(`/alunos/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`);
             logger.info('Found existing aluno', { email: supabaseUser.email });
-            return {
-                ...alunoResponse,
-                tipo: 'aluno' as const
-            };
+            var userAluno = parseToAlunoModel(alunoResponse);
+            return userAluno;
         } catch (error) {
             if (error instanceof APIError && error.status === 404) {
                 // Continue to try professor
@@ -66,10 +64,8 @@ export async function createOrGetUser(session: any): Promise<BaseUser | null> {
         try {
             const professorResponse = await api.get(`/professores/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`);
             logger.info('Found existing professor', { email: supabaseUser.email });
-            return {
-                ...professorResponse,
-                tipo: 'professor' as const
-            };
+            var userProfessor = parseToProfessorModel(professorResponse);
+            return userProfessor;
         } catch (error) {
             if (error instanceof APIError && error.status === 404) {
                 // Continue to create new user
@@ -85,10 +81,10 @@ export async function createOrGetUser(session: any): Promise<BaseUser | null> {
             nome_completo: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'Novo Usuário'
         });
 
-        return {
-            ...newUser,
-            tipo: 'aluno' as const
-        };
+        var user = parseToAlunoModel(newUser);
+
+        return user;
+
 
     } catch (error) {
         logger.error('Error in createOrGetUser:', error);

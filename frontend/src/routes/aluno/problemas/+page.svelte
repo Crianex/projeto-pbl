@@ -7,13 +7,17 @@
     import Toast from "$lib/components/Toast.svelte";
     import type { Column } from "$lib/interfaces/column";
     import { api } from "$lib/utils/api";
+    import { Utils } from "$lib/utils/utils";
+    import type { ProblemaModel } from "$lib/interfaces/interfaces";
+    import { currentUser } from "$lib/utils/auth";
+    import { Parsers } from "$lib/interfaces/parsers";
 
-    let problems: any[] = [];
+    let problems: ProblemaModel[] = [];
     let loading = true;
     let error: string | null = null;
     let showToast = false;
     let toastMessage: string = "";
-    let toastType: 'success' | 'error' | 'info' = 'error';
+    let toastType: "success" | "error" | "info" = "error";
 
     const columns: Column[] = [
         {
@@ -25,25 +29,25 @@
             key: "data_inicio",
             label: "Data de Início",
             sortable: true,
-            render: (row: any) =>
-                new Date(row.data_inicio).toLocaleDateString('pt-BR'),
+            render: (row: ProblemaModel) => Utils.formatDate(row.data_inicio),
         },
         {
             key: "data_fim",
             label: "Data de Término",
             sortable: true,
-            render: (row: any) => new Date(row.data_fim).toLocaleDateString('pt-BR'),
+            render: (row: ProblemaModel) => Utils.formatDate(row.data_fim),
         },
         {
             key: "media_geral",
             label: "Média Geral",
             sortable: true,
-            render: (row: any) => row.media_geral.toFixed(2),
+            render: (row: ProblemaModel) =>
+                row.media_geral ? row.media_geral.toFixed(2) : "0.00",
         },
         {
             key: "actions",
             label: "Ações",
-            render: (row: any) => ({
+            render: (row: ProblemaModel) => ({
                 component: "a",
                 props: {
                     href: `/aluno/problemas/${row.id_problema}`,
@@ -58,16 +62,20 @@
         try {
             loading = true;
             error = null;
-            problems = await api.get("/problemas/list");
-            
+            problems = await api.get(
+                "/problemas/list?id_aluno=" + $currentUser?.id,
+            );
+
+            problems = Parsers.parseProblemas(problems);
+
             if (problems.length === 0) {
-                toastType = 'info';
+                toastType = "info";
                 toastMessage = "Nenhum problema foi encontrado no momento.";
                 showToast = true;
             }
         } catch (e: any) {
             error = e.message || "Erro ao carregar problemas";
-            toastType = 'error';
+            toastType = "error";
             toastMessage = error || "Erro ao carregar problemas";
             showToast = true;
         } finally {
@@ -93,10 +101,10 @@
         <div class="content">
             {#if loading}
                 <div class="loading-section">
-                    <LoadingSpinner 
-                        size="lg" 
-                        color="primary" 
-                        text="Carregando problemas..." 
+                    <LoadingSpinner
+                        size="lg"
+                        color="primary"
+                        text="Carregando problemas..."
                         center={true}
                     />
                 </div>
@@ -106,10 +114,10 @@
                         <div class="error-icon">⚠️</div>
                         <h3>Ops! Algo deu errado</h3>
                         <p>Não foi possível carregar os problemas.</p>
-                        <Button 
-                            variant="primary" 
+                        <Button
+                            variant="primary"
                             on:click={fetchProblems}
-                            loading={loading}
+                            {loading}
                         >
                             Tentar Novamente
                         </Button>
@@ -120,11 +128,11 @@
                     <div class="empty-content">
                         <div class="empty-icon">📚</div>
                         <h3>Nenhum problema disponível</h3>
-                        <p>Não há problemas cadastrados no momento. Volte mais tarde ou entre em contato com seu professor.</p>
-                        <Button 
-                            variant="secondary" 
-                            on:click={fetchProblems}
-                        >
+                        <p>
+                            Não há problemas cadastrados no momento. Volte mais
+                            tarde ou entre em contato com seu professor.
+                        </p>
+                        <Button variant="secondary" on:click={fetchProblems}>
                             Atualizar
                         </Button>
                     </div>
@@ -137,17 +145,22 @@
 </div>
 
 {#if showToast}
-    <Toast 
+    <Toast
         type={toastType}
-        title={toastType === 'error' ? 'Erro!' : 'Informação'}
+        title={toastType === "error" ? "Erro!" : "Informação"}
         message={toastMessage}
-        on:dismiss={() => showToast = false}
+        on:dismiss={() => (showToast = false)}
     />
 {/if}
 
 <style>
     :global(body) {
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #e9ecef 100%);
+        background: linear-gradient(
+            135deg,
+            #ffffff 0%,
+            #f8f9fa 50%,
+            #e9ecef 100%
+        );
         min-height: 100vh;
     }
 
@@ -309,15 +322,15 @@
         .page-wrapper {
             padding: 3rem;
         }
-        
+
         .header h1 {
             font-size: 3rem;
         }
-        
+
         .subtitle {
             font-size: 1.2rem;
         }
-        
+
         .error-content,
         .empty-content {
             max-width: 500px;
@@ -329,7 +342,7 @@
         .page-wrapper {
             padding: 4rem;
         }
-        
+
         .header {
             margin-bottom: 3rem;
         }
@@ -340,7 +353,7 @@
         .page-wrapper {
             padding: 2.5rem;
         }
-        
+
         .header h1 {
             font-size: 2.75rem;
         }
@@ -397,7 +410,7 @@
         :global(.content table) {
             font-size: 0.875rem;
         }
-        
+
         :global(.btn-action) {
             padding: 0.375rem 0.75rem;
             font-size: 0.8rem;
@@ -428,4 +441,3 @@
         }
     }
 </style>
-

@@ -20,7 +20,7 @@
 
 <style>
     .button {
-        padding: 1rem 2rem;
+        padding: 0.5rem 1rem;
         border: none;
         border-radius: 12px;
         font-size: 1rem;

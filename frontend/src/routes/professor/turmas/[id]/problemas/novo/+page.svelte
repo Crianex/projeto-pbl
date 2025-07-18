@@ -3,6 +3,8 @@
     import { goto } from "$app/navigation";
     import Button from "$lib/components/Button.svelte";
     import { api } from "$lib/utils/api";
+    import { problemaStore } from "$lib/utils/stores";
+    import { Parsers } from "$lib/interfaces/parsers";
 
     const turmaId = $page.params.id;
 
@@ -24,6 +26,20 @@
         data_fim: "",
         criterios: getDefaultCriterios(),
     };
+
+    // Add date validation
+    $: {
+        if (formData.data_inicio && formData.data_fim) {
+            const startDate = new Date(formData.data_inicio);
+            const endDate = new Date(formData.data_fim);
+            if (startDate > endDate) {
+                formData.data_fim = formData.data_inicio;
+            }
+        }
+    }
+
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split("T")[0];
 
     function getDefaultCriterios(): CriteriosGroup {
         return {
@@ -151,7 +167,12 @@
                 criterios: JSON.stringify(formData.criterios),
             };
 
-            await api.post("/problemas/create", payload);
+            const response = await api.post("/problemas/create", payload);
+
+            // Parse the response and add to store
+            const newProblema = Parsers.parseProblema(response);
+            problemaStore.update((problemas) => [...problemas, newProblema]);
+
             await goto(`/professor/turmas/${turmaId}/problemas`);
         } catch (err) {
             error =
@@ -213,6 +234,7 @@
                 type="date"
                 id="data_inicio"
                 bind:value={formData.data_inicio}
+                min={today}
                 required
             />
         </div>
@@ -223,8 +245,15 @@
                 type="date"
                 id="data_fim"
                 bind:value={formData.data_fim}
+                min={formData.data_inicio || today}
+                disabled={!formData.data_inicio}
                 required
             />
+            {#if !formData.data_inicio}
+                <span class="helper-text"
+                    >Selecione uma data de início primeiro</span
+                >
+            {/if}
         </div>
 
         <div class="criterios-section">
@@ -320,9 +349,10 @@
 
 <style>
     .container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 2rem;
+        margin: 2rem auto;
+        padding: 1rem 2rem;
+        height: 100%;
+        width: 100%;
     }
 
     .header {
@@ -372,8 +402,8 @@
     }
 
     .form-group input {
-        width: 100%;
         padding: 0.75rem;
+        width: 100%;
         border: 1px solid #ddd;
         border-radius: 4px;
         font-size: 1rem;
@@ -402,33 +432,39 @@
 
     .criterios-header h2 {
         font-size: 1.25rem;
+        font-weight: 600;
         margin: 0;
     }
 
     .criterio-group {
         margin-bottom: 2rem;
-        padding: 1.5rem;
-        background: #f8f9fa;
-        border-radius: 8px;
     }
 
     .criterio-group h3 {
-        margin: 0 0 1rem 0;
         font-size: 1.1rem;
+        font-weight: 500;
         color: #495057;
+        margin: 0 0 1rem 0;
     }
 
     .criterios-list {
         display: flex;
         flex-direction: column;
         gap: 1rem;
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        overflow: hidden;
     }
 
     .criterio-item {
         background: white;
         padding: 1rem;
-        border-radius: 4px;
-        border: 1px solid #dee2e6;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .criterio-item:last-child {
+        border-bottom: none;
     }
 
     .criterio-header {
@@ -439,32 +475,52 @@
         margin-bottom: 1rem;
     }
 
+    .criterio-header input {
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+
     .nota-maxima {
         display: flex;
         align-items: center;
         gap: 0.5rem;
     }
 
-    .nota-maxima input {
-        width: 80px;
+    .nota-maxima label {
+        color: #495057;
+        font-size: 0.875rem;
     }
 
-    .criterio-item textarea {
-        width: 100%;
+    .nota-maxima input {
+        width: 80px;
         padding: 0.75rem;
         border: 1px solid #ddd;
         border-radius: 4px;
         font-size: 1rem;
+    }
+
+    .criterio-item textarea {
+        width: 100%;
+
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
         resize: vertical;
+        min-height: 10rem;
     }
 
     .remove-button {
         background: none;
         border: none;
-        padding: 0.25rem;
         cursor: pointer;
+        padding: 0.5rem;
         color: #dc3545;
         border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .remove-button:hover {
@@ -478,5 +534,21 @@
         margin-top: 2rem;
         padding-top: 1rem;
         border-top: 1px solid #e9ecef;
+    }
+
+    :global(.criterios-list .button) {
+        margin: 1rem;
+    }
+
+    .helper-text {
+        display: block;
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
+    .form-group input:disabled {
+        background-color: #e9ecef;
+        cursor: not-allowed;
     }
 </style>

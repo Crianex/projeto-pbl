@@ -27,7 +27,8 @@ function parseProblema(data: any): ProblemaModel {
         data_fim: data.data_fim ? new Date(data.data_fim) : null,
         nome_problema: data.nome_problema || null,
         id_turma: data.id_turma || null,
-        media_geral: data.media_geral || null
+        media_geral: data.media_geral || null,
+        turma: data.turma ? parseTurma(data.turma) : null
     };
 }
 
@@ -36,13 +37,14 @@ function parseProfessor(data: any): ProfessorModel {
 }
 
 function parseTurma(data: any): TurmaModel {
+
     return {
         id_turma: data.id_turma,
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
         id_professor: data.id_professor || null,
         nome_turma: data.nome_turma || null,
         professor: data.professores ? parseProfessor(data.professores) : null,
-        alunos: data.alunos ? data.alunos.map((aluno: any) => parseAluno(aluno)) : null
+        alunos: data.alunos ? data.alunos.map((aluno: any) => parseAluno(aluno.alunos)) : null
     };
 }
 

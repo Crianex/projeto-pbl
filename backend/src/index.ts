@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { supabase } from './config/supabase_wrapper'
-import express, { Express, Request, Response } from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import dotenv from "dotenv";
 import { Utils } from './config/utils';
 import { EndpointController, RequestType } from './config/interfaces';
@@ -19,39 +19,68 @@ import { AvaliacaoController } from './controllers/AvaliacaoController';
 
 dotenv.config();
 
-
 logger.info('Supabase client initialized');
+
+// Enhanced error logging function
+const logError = (error: Error, context: string = '', additionalInfo: any = {}) => {
+    logger.error({
+        message: `Error in ${context}:`,
+        error: {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+        },
+        ...additionalInfo,
+        timestamp: new Date().toISOString()
+    });
+};
 
 // Handle Node.js process termination
 const cleanup = () => {
+    logger.info('Server cleanup initiated');
+    // Add any cleanup logic here
 };
 
-
 // Handle normal exit
-process.on('exit', cleanup);
+process.on('exit', (code) => {
+    logger.info(`Process exit with code: ${code}`);
+    cleanup();
+});
 
 // Handle CTRL+C
 process.on('SIGINT', () => {
+    logger.info('Received SIGINT signal');
     cleanup();
     process.exit(0);
 });
 
 process.on('SIGTERM', () => {
+    logger.info('Received SIGTERM signal');
     cleanup();
     process.exit(0);
 });
 
-
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
-    logger.error('Uncaught Exception:', err);
+    logError(err, 'Uncaught Exception', {
+        processMemory: process.memoryUsage(),
+        processUptime: process.uptime()
+    });
     cleanup();
     process.exit(1);
 });
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-    logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+process.on('unhandledRejection', (reason: any, promise) => {
+    logError(
+        reason instanceof Error ? reason : new Error(String(reason)),
+        'Unhandled Promise Rejection',
+        {
+            promise: promise.toString(),
+            processMemory: process.memoryUsage(),
+            processUptime: process.uptime()
+        }
+    );
     cleanup();
     process.exit(1);
 });
@@ -97,6 +126,39 @@ router.get('/', (req: Request, res: Response) => {
     });
 });
 
+// Enhanced error handling middleware for route callbacks
+const handleRouteError = (error: any, req: Request, res: Response, routePath: string) => {
+    const errorContext = {
+        route: routePath,
+        method: req.method,
+        url: req.url,
+        params: req.params,
+        query: req.query,
+        body: req.body,
+        headers: {
+            ...req.headers,
+            authorization: req.headers.authorization ? '[REDACTED]' : undefined
+        },
+        timestamp: new Date().toISOString()
+    };
+
+    logError(
+        error instanceof Error ? error : new Error(String(error)),
+        `Route Handler Error: ${routePath}`,
+        errorContext
+    );
+
+    const isOperationalError = error.isOperational || error.status;
+    const statusCode = error.status || 500;
+    const message = isOperationalError ? error.message : 'Internal server error';
+
+    res.status(statusCode).json({
+        error: message,
+        path: routePath,
+        timestamp: new Date().toISOString()
+    });
+};
+
 controllers.forEach(controller => {
     Object.keys(controller.routes).forEach(route_name => {
         const route = controller.routes[route_name];
@@ -110,48 +172,53 @@ controllers.forEach(controller => {
             case RequestType.GET:
                 router.get(routePath, async (req: Request, res: Response) => {
                     try {
-                        logger.http(`\b[GET][${routePath}]`);
+                        logger.http(`\b[GET][${routePath}] Request received`, {
+                            params: req.params,
+                            query: req.query
+                        });
                         await callback(req, res);
                         logger.http(`\b[GET][${routePath}] completed successfully`);
                     } catch (error) {
-                        logger.error(`\b[GET][${routePath}] Error: ${error}`);
-                        res.status(500).json({ error: 'Internal server error' });
+                        handleRouteError(error, req, res, routePath);
                     }
                 });
                 break;
             case RequestType.POST:
                 router.post(routePath, async (req: Request, res: Response) => {
                     try {
-                        logger.http(`\b[POST][${routePath}]`);
+                        logger.http(`\b[POST][${routePath}] Request received`, {
+                            params: req.params
+                        });
                         await callback(req, res);
                         logger.http(`\b[POST][${routePath}] completed successfully`);
                     } catch (error) {
-                        logger.error(`\b[POST][${routePath}] Error: ${error}`);
-                        res.status(500).json({ error: 'Internal server error' });
+                        handleRouteError(error, req, res, routePath);
                     }
                 });
                 break;
             case RequestType.PUT:
                 router.put(routePath, async (req: Request, res: Response) => {
                     try {
-                        logger.http(`\b[PUT][${routePath}]`);
+                        logger.http(`\b[PUT][${routePath}] Request received`, {
+                            params: req.params
+                        });
                         await callback(req, res);
                         logger.http(`\b[PUT][${routePath}] completed successfully`);
                     } catch (error) {
-                        logger.error(`\b[PUT][${routePath}] Error: ${error}`);
-                        res.status(500).json({ error: 'Internal server error' });
+                        handleRouteError(error, req, res, routePath);
                     }
                 });
                 break;
             case RequestType.DELETE:
                 router.delete(routePath, async (req: Request, res: Response) => {
                     try {
-                        logger.http(`\b[DELETE][${routePath}]`);
+                        logger.http(`\b[DELETE][${routePath}] Request received`, {
+                            params: req.params
+                        });
                         await callback(req, res);
                         logger.http(`\b[DELETE][${routePath}] completed successfully`);
                     } catch (error) {
-                        logger.error(`\b[DELETE][${routePath}] Error: ${error}`);
-                        res.status(500).json({ error: 'Internal server error' });
+                        handleRouteError(error, req, res, routePath);
                     }
                 });
                 break;

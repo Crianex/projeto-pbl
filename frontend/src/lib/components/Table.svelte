@@ -143,6 +143,8 @@
                                 <span class="ellipsis" title="Actions"
                                     >&#x22EE;</span
                                 >
+                            {:else if col.render}
+                                {@html col.render(row)}
                             {:else}
                                 {row[col.key]}
                             {/if}
