@@ -1,71 +1,136 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { page } from "$app/stores";
+    import { goto } from "$app/navigation";
     import { api } from "$lib/utils/api";
-    import type { ProblemaModel } from "$lib/interfaces/interfaces";
+    import type {
+        AlunoModel,
+        ProblemaModel,
+        TurmaModel,
+    } from "$lib/interfaces/interfaces";
     import { Parsers } from "$lib/interfaces/parsers";
     import Button from "$lib/components/Button.svelte";
     import Container from "$lib/components/Container.svelte";
     import Table from "$lib/components/Table.svelte";
 
+    interface AlunoComMedia extends AlunoModel {
+        mediaNotas: {
+            competencia: number;
+            habilidade: number;
+            atitude: number;
+        };
+    }
+
     let problema: ProblemaModel | null = null;
-    let avaliacoesEnviadas: any[] = [];
-    let avaliacoesRecebidas: any[] = [];
+    let turma: TurmaModel | null = null;
     let loading = true;
     let error: string | null = null;
-    let currentPageEnviadas = 1;
-    let currentPageRecebidas = 1;
-    let itemsPerPage = 5;
+    let currentPage = 1;
+    let itemsPerPage = 10;
+    let alunos: AlunoComMedia[] = [];
 
     onMount(async () => {
         try {
-            const id_problema = $page.params.id_problema;
-            const [problemaData, avaliacoesData] = await Promise.all([
-                api.get(`/problemas/get?id_problema=${id_problema}`),
-                api.get(`/problemas/get-avaliacoes?id_problema=${id_problema}`),
-            ]);
-            problema = Parsers.parseProblema(problemaData);
+            const { id_problema, id } = $page.params;
 
-            // Separate avaliacoes into enviadas and recebidas
-            // This is a placeholder - adjust according to your actual data structure
-            avaliacoesEnviadas = avaliacoesData.filter(
-                (av: any) => av.tipo === "enviada",
-            );
-            avaliacoesRecebidas = avaliacoesData.filter(
-                (av: any) => av.tipo === "recebida",
-            );
+            // Get both problema and turma data
+            const [problemaData, turmaData] = await Promise.all([
+                api.get(`/problemas/get?id_problema=${id_problema}`),
+                api.get(`/turmas/get?id_turma=${id}`),
+            ]);
+
+            problema = Parsers.parseProblema(problemaData);
+            turma = Parsers.parseTurma(turmaData);
+
+            if (!turma?.alunos) {
+                throw new Error("Não há alunos nesta turma");
+            }
+
+            // Get avaliações for each aluno
+            const avaliacoesPromises = turma.alunos.map(async (aluno) => {
+                try {
+                    const avaliacoes = await api.get(
+                        `/avaliacoes/list?id_problema=${id_problema}&id_aluno=${aluno.id}`,
+                    );
+                    const mediaNotas = calcularMedia(avaliacoes);
+                    return {
+                        ...aluno,
+                        mediaNotas,
+                    };
+                } catch (e) {
+                    // If there's an error getting avaliacoes, return aluno with zero grades
+                    return {
+                        ...aluno,
+                        mediaNotas: {
+                            competencia: 0,
+                            habilidade: 0,
+                            atitude: 0,
+                        },
+                    };
+                }
+            });
+
+            alunos = await Promise.all(avaliacoesPromises);
         } catch (e: any) {
-            error = e.message || "Erro ao carregar as avaliações";
+            error = e.message || "Erro ao carregar os dados";
         } finally {
             loading = false;
         }
     });
 
-    function formatNotas(notas: string) {
-        try {
-            const { competencia, habilidade, atitude } = JSON.parse(notas);
-            return `(${competencia}/1,${habilidade}/1,${atitude}/1)`;
-        } catch {
-            return "(0/1,0/1,0/1)";
-        }
+    function calcularMedia(avaliacoes: any[]) {
+        if (!avaliacoes.length)
+            return { competencia: 0, habilidade: 0, atitude: 0 };
+
+        // Separate received and sent evaluations
+        const avaliacoesRecebidas = avaliacoes.filter(
+            (av) => av.id_aluno_avaliado === av.id_aluno,
+        );
+
+        if (!avaliacoesRecebidas.length)
+            return { competencia: 0, habilidade: 0, atitude: 0 };
+
+        const soma = avaliacoesRecebidas.reduce(
+            (acc, av) => {
+                try {
+                    const notas = JSON.parse(av.notas);
+                    return {
+                        competencia: acc.competencia + (notas.competencia || 0),
+                        habilidade: acc.habilidade + (notas.habilidade || 0),
+                        atitude: acc.atitude + (notas.atitude || 0),
+                    };
+                } catch {
+                    return acc;
+                }
+            },
+            { competencia: 0, habilidade: 0, atitude: 0 },
+        );
+
+        return {
+            competencia: Number(
+                (soma.competencia / avaliacoesRecebidas.length).toFixed(2),
+            ),
+            habilidade: Number(
+                (soma.habilidade / avaliacoesRecebidas.length).toFixed(2),
+            ),
+            atitude: Number(
+                (soma.atitude / avaliacoesRecebidas.length).toFixed(2),
+            ),
+        };
     }
 
-    function handleAvaliarAluno() {
-        // Implement the evaluation logic
-        console.log("Avaliar aluno clicked");
+    function formatMedia(media: AlunoComMedia["mediaNotas"]) {
+        return `(${media.competencia}, ${media.habilidade}, ${media.atitude})`;
     }
 
-    $: totalPagesEnviadas = Math.ceil(avaliacoesEnviadas.length / itemsPerPage);
-    $: totalPagesRecebidas = Math.ceil(
-        avaliacoesRecebidas.length / itemsPerPage,
-    );
-    $: paginatedEnviadas = avaliacoesEnviadas.slice(
-        (currentPageEnviadas - 1) * itemsPerPage,
-        currentPageEnviadas * itemsPerPage,
-    );
-    $: paginatedRecebidas = avaliacoesRecebidas.slice(
-        (currentPageRecebidas - 1) * itemsPerPage,
-        currentPageRecebidas * itemsPerPage,
+    function verDetalhes(id_aluno: string) {
+        goto(`${$page.url.pathname}/${id_aluno}`);
+    }
+
+    $: totalPages = Math.ceil(alunos.length / itemsPerPage);
+    $: paginatedAlunos = alunos.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage,
     );
 </script>
 
@@ -82,46 +147,39 @@
     {:else}
         <div class="content-wrapper">
             <div class="header">
-                <h1>Avaliações do Aluno</h1>
+                <h1>Alunos - {problema?.nome_problema || ""}</h1>
             </div>
 
-            <div class="avaliacoes-section">
-                <h2>Avaliações Enviadas</h2>
+            <div class="alunos-section">
                 <div class="table-container">
                     <table>
                         <thead>
                             <tr>
                                 <th>Aluno</th>
-                                <th>Notas (C/H/A)</th>
-                                <th>Enviada para</th>
+                                <th>Média (C/H/A)</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {#each paginatedEnviadas as avaliacao}
+                            {#each paginatedAlunos as aluno}
                                 <tr>
                                     <td class="aluno-cell">
-                                        <img
-                                            src={avaliacao.aluno?.avatar || ""}
-                                            alt=""
-                                            class="avatar"
-                                        />
                                         <span
-                                            >{avaliacao.aluno?.nome ||
+                                            >{aluno.nome_completo ||
                                                 "Nome não disponível"}</span
                                         >
                                     </td>
-                                    <td>{formatNotas(avaliacao.notas)}</td>
-                                    <td class="aluno-cell">
-                                        <img
-                                            src={avaliacao.enviada_para
-                                                ?.avatar || ""}
-                                            alt=""
-                                            class="avatar"
-                                        />
-                                        <span
-                                            >{avaliacao.enviada_para?.nome ||
-                                                "Nome não disponível"}</span
+                                    <td>{formatMedia(aluno.mediaNotas)}</td>
+                                    <td>
+                                        <Button
+                                            variant="secondary"
+                                            on:click={() =>
+                                                verDetalhes(
+                                                    aluno.id.toString(),
+                                                )}
                                         >
+                                            Ver Detalhes
+                                        </Button>
                                     </td>
                                 </tr>
                             {/each}
@@ -132,102 +190,23 @@
                 <div class="pagination">
                     <button
                         class="page-nav"
-                        disabled={currentPageEnviadas === 1}
-                        on:click={() => currentPageEnviadas--}
+                        disabled={currentPage === 1}
+                        on:click={() => currentPage--}
                     >
                         &lt;
                     </button>
-                    <span class="page-number active">{currentPageEnviadas}</span
-                    >
-                    {#if currentPageEnviadas < totalPagesEnviadas}
-                        <span class="page-number"
-                            >{currentPageEnviadas + 1}</span
-                        >
+                    <span class="page-number active">{currentPage}</span>
+                    {#if currentPage < totalPages}
+                        <span class="page-number">{currentPage + 1}</span>
                     {/if}
                     <button
                         class="page-nav"
-                        disabled={currentPageEnviadas === totalPagesEnviadas}
-                        on:click={() => currentPageEnviadas++}
+                        disabled={currentPage === totalPages}
+                        on:click={() => currentPage++}
                     >
                         &gt;
                     </button>
                 </div>
-            </div>
-
-            <div class="avaliacoes-section">
-                <h2>Avaliações Recebidas</h2>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Aluno</th>
-                                <th>Notas (C/H/A)</th>
-                                <th>Enviada para</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {#each paginatedRecebidas as avaliacao}
-                                <tr>
-                                    <td class="aluno-cell">
-                                        <img
-                                            src={avaliacao.aluno?.avatar || ""}
-                                            alt=""
-                                            class="avatar"
-                                        />
-                                        <span
-                                            >{avaliacao.aluno?.nome ||
-                                                "Nome não disponível"}</span
-                                        >
-                                    </td>
-                                    <td>{formatNotas(avaliacao.notas)}</td>
-                                    <td class="aluno-cell">
-                                        <img
-                                            src={avaliacao.enviada_para
-                                                ?.avatar || ""}
-                                            alt=""
-                                            class="avatar"
-                                        />
-                                        <span
-                                            >{avaliacao.enviada_para?.nome ||
-                                                "Nome não disponível"}</span
-                                        >
-                                    </td>
-                                </tr>
-                            {/each}
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="pagination">
-                    <button
-                        class="page-nav"
-                        disabled={currentPageRecebidas === 1}
-                        on:click={() => currentPageRecebidas--}
-                    >
-                        &lt;
-                    </button>
-                    <span class="page-number active"
-                        >{currentPageRecebidas}</span
-                    >
-                    {#if currentPageRecebidas < totalPagesRecebidas}
-                        <span class="page-number"
-                            >{currentPageRecebidas + 1}</span
-                        >
-                    {/if}
-                    <button
-                        class="page-nav"
-                        disabled={currentPageRecebidas === totalPagesRecebidas}
-                        on:click={() => currentPageRecebidas++}
-                    >
-                        &gt;
-                    </button>
-                </div>
-            </div>
-
-            <div class="actions">
-                <Button variant="primary" on:click={handleAvaliarAluno}
-                    >Avaliar Aluno</Button
-                >
             </div>
         </div>
     {/if}
@@ -253,18 +232,11 @@
         margin: 0;
     }
 
-    .avaliacoes-section {
+    .alunos-section {
         background: white;
         border-radius: 12px;
         padding: 1.5rem;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .avaliacoes-section h2 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-bottom: 1.5rem;
-        color: #333;
     }
 
     .table-container {
@@ -335,12 +307,6 @@
         background: #0d6efd;
         color: white;
         border-color: #0d6efd;
-    }
-
-    .actions {
-        display: flex;
-        justify-content: center;
-        margin-top: 2rem;
     }
 
     .loading-container {

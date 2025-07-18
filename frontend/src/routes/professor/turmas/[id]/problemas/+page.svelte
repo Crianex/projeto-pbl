@@ -28,7 +28,7 @@
             error = null;
 
             // Fetch turma details
-            const turmaData = await api.get(`/turmas/get?id=${turmaId}`);
+            const turmaData = await api.get(`/turmas/get?id_turma=${turmaId}`);
             turma = {
                 nome_turma: turmaData.nome_turma,
                 id_professor: turmaData.id_professor,
@@ -59,7 +59,7 @@
         try {
             loading = true;
             await api.delete(
-                `/problemas/delete?id=${problemaToDelete.id_problema}`,
+                `/problemas/delete?id_problema=${problemaToDelete.id_problema}`,
             );
             problemaStore.update((ps) =>
                 ps.filter(

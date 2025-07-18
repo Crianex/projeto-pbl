@@ -29,14 +29,14 @@ export const TurmaController: EndpointController = {
         }),
 
         'get': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            const { id } = req.query;
+            const { id_turma } = req.query;
 
-            if (!id) {
+            if (!id_turma) {
                 logger.error('No ID provided');
                 return res.status(400).json({ error: 'No ID provided' });
             }
 
-            logger.info(`Fetching turma ${id}`);
+            logger.info(`Fetching turma ${id_turma}`);
             const { data, error } = await supabase
                 .from('turmas')
                 .select(`
@@ -44,16 +44,16 @@ export const TurmaController: EndpointController = {
                     professor:professores(*),
                     alunos:alunos_por_turma(alunos(*))
                 `)
-                .eq('id_turma', id)
+                .eq('id_turma', id_turma)
                 .single();
 
             if (error) {
-                logger.error(`Error fetching turma ${id}: ${error.message}`);
+                logger.error(`Error fetching turma ${id_turma}: ${error.message}`);
                 return res.status(500).json({ error: error.message });
             }
 
             if (!data) {
-                logger.error(`Turma ${id} not found`);
+                logger.error(`Turma ${id_turma} not found`);
                 return res.status(404).json({ error: 'Turma not found' });
             }
 
@@ -80,12 +80,12 @@ export const TurmaController: EndpointController = {
         }),
 
         'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
-            const { id } = req.query;
+            const { id_turma } = req.query;
             const { nome_turma, id_professor } = req.body;
             const { data, error } = await supabase
                 .from('turmas')
                 .update({ nome_turma, id_professor })
-                .eq('id_turma', id)
+                .eq('id_turma', id_turma)
                 .select(`
                     *,
                     professor:professores(*)
@@ -93,7 +93,7 @@ export const TurmaController: EndpointController = {
                 .single();
 
             if (error) {
-                logger.error(`Error updating turma ${id}: ${error.message}`);
+                logger.error(`Error updating turma ${id_turma}: ${error.message}`);
                 return res.status(500).json({ error: error.message });
             }
 
@@ -105,14 +105,14 @@ export const TurmaController: EndpointController = {
         }),
 
         'delete': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
-            const { id } = req.query;
+            const { id_turma } = req.query;
             const { error } = await supabase
                 .from('turmas')
                 .delete()
-                .eq('id_turma', id);
+                .eq('id_turma', id_turma);
 
             if (error) {
-                logger.error(`Error deleting turma ${id}: ${error.message}`);
+                logger.error(`Error deleting turma ${id_turma}: ${error.message}`);
                 return res.status(500).json({ error: error.message });
             }
 

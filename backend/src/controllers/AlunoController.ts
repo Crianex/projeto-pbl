@@ -63,20 +63,20 @@ export const AlunoController: EndpointController = {
         }),
 
         'get': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            const { id } = req.params;
+            const { id_aluno } = req.params;
 
-            // check if id is present
-            if (!id) {
-                return res.status(400).json({ error: 'ID is required' });
+            // check if id_aluno is present
+            if (!id_aluno) {
+                return res.status(400).json({ error: 'id_aluno is required' });
             }
 
             const { data, error } = await supabase
                 .from('alunos')
                 .select('*')
-                .eq('id_aluno', id);
+                .eq('id_aluno', id_aluno);
 
             if (error) {
-                logger.error(`Error fetching aluno ${id}: ${error.message}`);
+                logger.error(`Error fetching aluno ${id_aluno}: ${error.message}`);
                 return res.status(500).json({ error: error.message });
             }
 
@@ -157,17 +157,17 @@ export const AlunoController: EndpointController = {
         }),
 
         'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
-            const { id } = req.params;
+            const { id_aluno } = req.params;
             const { nome_completo, email } = req.body;
             const { data, error } = await supabase
                 .from('alunos')
                 .update({ nome_completo, email })
-                .eq('id_aluno', id)
+                .eq('id_aluno', id_aluno)
                 .select()
                 .single();
 
             if (error) {
-                logger.error(`Error updating aluno ${id}: ${error.message}`);
+                logger.error(`Error updating aluno ${id_aluno}: ${error.message}`);
                 return res.status(500).json({ error: error.message });
             }
 
@@ -179,14 +179,14 @@ export const AlunoController: EndpointController = {
         }),
 
         'delete': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
-            const { id } = req.params;
+            const { id_aluno } = req.params;
             const { error } = await supabase
                 .from('alunos')
                 .delete()
-                .eq('id_aluno', id);
+                .eq('id_aluno', id_aluno);
 
             if (error) {
-                logger.error(`Error deleting aluno ${id}: ${error.message}`);
+                logger.error(`Error deleting aluno ${id_aluno}: ${error.message}`);
                 return res.status(500).json({ error: error.message });
             }
 

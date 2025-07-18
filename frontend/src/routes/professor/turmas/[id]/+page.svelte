@@ -38,7 +38,7 @@
         try {
             loading = true;
             error = null;
-            const data = await api.get(`/turmas/get?id=${turmaId}`);
+            const data = await api.get(`/turmas/get?id_turma=${turmaId}`);
             turma = {
                 nome_turma: data.nome_turma,
                 id_professor: data.id_professor,
@@ -82,10 +82,10 @@
             error = null;
 
             // Update turma basic info
-            await api.put(`/turmas/update?id=${turmaId}`, turma);
+            await api.put(`/turmas/update?id_turma=${turmaId}`, turma);
 
             // Get current enrolled students to compare
-            const currentData = await api.get(`/turmas/get?id=${turmaId}`);
+            const currentData = await api.get(`/turmas/get?id_turma=${turmaId}`);
             const currentAlunos =
                 currentData.alunos?.map((item: any) => item.alunos.id_aluno) ||
                 [];
@@ -130,10 +130,10 @@
             alunosMatriculados = [...originalAlunosMatriculados];
 
             // Update turma basic info
-            await api.put(`/turmas/update?id=${turmaId}`, turma);
+            await api.put(`/turmas/update?id_turma=${turmaId}`, turma);
 
             // Get current enrolled students to compare
-            const currentData = await api.get(`/turmas/get?id=${turmaId}`);
+            const currentData = await api.get(`/turmas/get?id_turma=${turmaId}`);
             const currentAlunos =
                 currentData.alunos?.map((item: any) => item.alunos.id_aluno) ||
                 [];
@@ -205,7 +205,7 @@
             saving = true;
             error = null;
             turma.nome_turma = originalTurma.nome_turma;
-            await api.put(`/turmas/update?id=${turmaId}`, turma);
+            await api.put(`/turmas/update?id_turma=${turmaId}`, turma);
 
             const changes = getChangesSummary();
             if (

@@ -52,12 +52,15 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+        timeout: 120s
     restart: unless-stopped
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
-        max-file: "2"
+        max-size: "50m"
+        max-file: "5"
+        mode: "non-blocking"
+        max-buffer-size: "4m"
     networks:
       - projeto-pbl-network
     command: ["nginx", "-g", "daemon off;"]

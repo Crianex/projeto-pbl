@@ -81,7 +81,7 @@
 
         try {
             loading = true;
-            await api.delete(`/turmas/delete?id=${turmaToDelete.id_turma}`);
+            await api.delete(`/turmas/delete?id_turma=${turmaToDelete.id_turma}`);
             await fetchTurmas();
             closeDeleteConfirm();
         } catch (err) {

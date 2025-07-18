@@ -23,14 +23,14 @@ export const ProfessorController: EndpointController = {
         }),
 
         'get': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            const { id } = req.params;
+            const { id_professor } = req.params;
             const { data, error } = await supabase
                 .from('professores')
                 .select('*')
-                .eq('id_professor', id);
+                .eq('id_professor', id_professor);
 
             if (error) {
-                logger.error(`Error fetching professor ${id}: ${error.message}`);
+                logger.error(`Error fetching professor ${id_professor}: ${error.message}`);
                 return res.status(500).json({ error: error.message });
             }
 
@@ -103,16 +103,16 @@ export const ProfessorController: EndpointController = {
         }),
 
         'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
-            const { id } = req.params;
+            const { id_professor } = req.params;
             const { nome_completo, email } = req.body;
             const { data, error } = await supabase
                 .from('professores')
                 .update({ nome_completo, email })
-                .eq('id_professor', id)
+                .eq('id_professor', id_professor)
                 .select();
 
             if (error) {
-                logger.error(`Error updating professor ${id}: ${error.message}`);
+                logger.error(`Error updating professor ${id_professor}: ${error.message}`);
                 return res.status(500).json({ error: error.message });
             }
 
@@ -124,14 +124,14 @@ export const ProfessorController: EndpointController = {
         }),
 
         'delete': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
-            const { id } = req.params;
+            const { id_professor } = req.params;
             const { error } = await supabase
                 .from('professores')
                 .delete()
-                .eq('id_professor', id);
+                .eq('id_professor', id_professor);
 
             if (error) {
-                logger.error(`Error deleting professor ${id}: ${error.message}`);
+                logger.error(`Error deleting professor ${id_professor}: ${error.message}`);
                 return res.status(500).json({ error: error.message });
             }
 

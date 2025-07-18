@@ -33,7 +33,9 @@ export const AvaliacaoController: EndpointController = {
     name: 'avaliacoes',
     routes: {
         'list': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            const { data, error } = await supabase
+            const { id_problema, id_aluno } = req.query;
+
+            var query = supabase
                 .from('avaliacoes')
                 .select(`
                     *,
@@ -41,6 +43,16 @@ export const AvaliacaoController: EndpointController = {
                     avaliador:alunos!avaliacoes_id_aluno_avaliador_fkey(*),
                     avaliado:alunos!avaliacoes_id_aluno_avaliado_fkey(*)
                 `);
+
+            if (id_problema) {
+                query = query.eq('id_problema', id_problema);
+            }
+
+            if (id_aluno) {
+                query = query.eq('id_aluno', id_aluno);
+            }
+
+            const { data, error } = await query;
 
             if (error) {
                 logger.error(`Error fetching avaliacoes: ${error.message}`);
@@ -51,11 +63,11 @@ export const AvaliacaoController: EndpointController = {
         }),
 
         'get': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            const { id } = req.params;
+            const { id_avaliacao } = req.params;
 
-            // check if id is present
-            if (!id) {
-                return res.status(400).json({ error: 'ID is required' });
+            // check if id_avaliacao is present
+            if (!id_avaliacao) {
+                return res.status(400).json({ error: 'id_avaliacao is required' });
             }
 
             const { data, error } = await supabase
@@ -66,11 +78,11 @@ export const AvaliacaoController: EndpointController = {
                     avaliador:alunos!avaliacoes_id_aluno_avaliador_fkey(*),
                     avaliado:alunos!avaliacoes_id_aluno_avaliado_fkey(*)
                 `)
-                .eq('id_avaliacao', id)
+                .eq('id_avaliacao', id_avaliacao)
                 .single();
 
             if (error) {
-                logger.error(`Error fetching avaliacao ${id}: ${error.message}`);
+                logger.error(`Error fetching avaliacao ${id_avaliacao}: ${error.message}`);
                 return res.status(500).json({ error: error.message });
             }
 
@@ -130,19 +142,19 @@ export const AvaliacaoController: EndpointController = {
         }),
 
         'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
-            const { id } = req.params;
+            const { id_avaliacao } = req.params;
 
-            // check if id is present
-            if (!id) {
-                return res.status(400).json({ error: 'ID is required' });
+            // check if id_avaliacao is present
+            if (!id_avaliacao) {
+                return res.status(400).json({ error: 'id_avaliacao is required' });
             }
 
             const { notas } = req.body;
-            
+
             const { data, error } = await supabase
                 .from('avaliacoes')
                 .update({ notas })
-                .eq('id_avaliacao', id)
+                .eq('id_avaliacao', id_avaliacao)
                 .select(`
                     *,
                     problema:problemas(*),
@@ -152,7 +164,7 @@ export const AvaliacaoController: EndpointController = {
                 .single();
 
             if (error) {
-                logger.error(`Error updating avaliacao ${id}: ${error.message}`);
+                logger.error(`Error updating avaliacao ${id_avaliacao}: ${error.message}`);
                 return res.status(500).json({ error: error.message });
             }
 
@@ -180,27 +192,27 @@ export const AvaliacaoController: EndpointController = {
         }),
 
         'delete': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
-            const { id } = req.params;
+            const { id_avaliacao } = req.params;
 
-            // check if id is present
-            if (!id) {
-                return res.status(400).json({ error: 'ID is required' });
+            // check if id_avaliacao is present
+            if (!id_avaliacao) {
+                return res.status(400).json({ error: 'id_avaliacao is required' });
             }
 
             // Get the problema_id before deleting
             const { data: avaliacao } = await supabase
                 .from('avaliacoes')
                 .select('id_problema')
-                .eq('id_avaliacao', id)
+                .eq('id_avaliacao', id_avaliacao)
                 .single();
 
             const { error } = await supabase
                 .from('avaliacoes')
                 .delete()
-                .eq('id_avaliacao', id);
+                .eq('id_avaliacao', id_avaliacao);
 
             if (error) {
-                logger.error(`Error deleting avaliacao ${id}: ${error.message}`);
+                logger.error(`Error deleting avaliacao ${id_avaliacao}: ${error.message}`);
                 return res.status(500).json({ error: error.message });
             }
 
