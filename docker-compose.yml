@@ -30,10 +30,10 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "50m"
-        max-file: "5"
+        max-size: "100m"
+        max-file: "10"
         mode: "non-blocking"
-        max-buffer-size: "4m"
+        max-buffer-size: "8m"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6719/health"]
       interval: 30s
@@ -59,10 +59,10 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "50m"
-        max-file: "5"
+        max-size: "100m"
+        max-file: "10"
         mode: "non-blocking"
-        max-buffer-size: "4m"
+        max-buffer-size: "8m"
     networks:
       - projeto-pbl-network
     command: ["nginx", "-g", "daemon off;"]
