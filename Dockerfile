@@ -21,30 +21,30 @@ RUN apt-get update && apt-get install -y \
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # Copy package files for Node.js dependencies (from backend/servidor directory)
-COPY backend/servidor/package*.json ./backend/servidor/
+COPY backend/package*.json ./backend/
 
 # Install Node.js dependencies
 WORKDIR /app/backend/servidor
 RUN npm install
 
 # Copy Python requirements files
-COPY backend/servidor/requirements.txt ./
+COPY backend/requirements.txt ./
 
 # Install Python dependencies
 RUN pip3 install -r requirements.txt
 
 # Copy TypeScript configuration
-COPY backend/servidor/tsconfig.json ./
-COPY backend/servidor/nodemon.json ./
+COPY backend/tsconfig.json ./
+COPY backend/nodemon.json ./
 
 # Copy source code
-COPY backend/servidor/src/ ./src/
-COPY backend/servidor/start_and_monitor.py ./
+COPY backend/src/ ./src/
+COPY backend/start_and_monitor.py ./
 # Copy docker-entrypoint.sh to /app (parent directory)
 COPY docker-entrypoint.sh /app/
 
 # Copy other necessary files
-COPY backend/servidor/*.json ./
+COPY backend/*.json ./
 
 # Create necessary directories
 RUN mkdir -p /app/dist /app/logs /app/uploads ./logs ./dist
