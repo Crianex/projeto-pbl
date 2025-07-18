@@ -14,7 +14,7 @@ from pathlib import Path
 
 class DockerManager:
     def __init__(self):
-        self.project_containers = ['projeto-backend', 'projeto-nginx']
+        self.project_containers = ['projeto-pbl-backend', 'projeto-pbl-nginx']
         self.compose_file = 'docker-compose.yml'
         self.project_root = Path(__file__).parent.parent
         

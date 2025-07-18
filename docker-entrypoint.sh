@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Docker entrypoint script for Corigge Backend
+# Docker entrypoint script for Projeto PBL Backend
 # Handles git monitoring and auto-updates
 
-echo "🐳 Corigge Backend Docker Container Starting..."
+echo "🐳 Projeto PBL Backend Docker Container Starting..."
 echo "📂 Working directory: $(pwd)"
 echo "🌱 Environment: ${NODE_ENV:-development}"
 echo "🌿 Branch: ${GIT_BRANCH:-main}"
@@ -34,8 +34,8 @@ git config --global --add safe.directory '*'
 export GIT_DISCOVERY_ACROSS_FILESYSTEM=1
 
 # Set basic git configuration if not set
-git config --global user.email "docker@corigge.com" 2>/dev/null || true
-git config --global user.name "Corigge Docker Container" 2>/dev/null || true
+git config --global user.email "docker@projeto-pbl.com" 2>/dev/null || true
+git config --global user.name "Projeto PBL Docker Container" 2>/dev/null || true
 
 # Set git pull configuration to avoid warnings
 git config --global pull.rebase false 2>/dev/null || true
@@ -96,11 +96,9 @@ fi
 # Build the command (working from backend directory)
 COMMAND="cd /app/backend/ && python start_and_monitor.py --branch ${GIT_BRANCH:-main}"
 
-# No fork repository setup - feature removed
-
 # Fix any remaining permission issues before starting
 echo "🔧 Final permission fixes..."
 chmod 666 /app/docker-compose.yml /app/nginx.conf /app/view-logs.sh /app/test-env.sh /app/test-git.sh /app/Dockerfile 2>/dev/null || echo "📝 Some files don't exist yet (normal)"
 
-echo "🚀 Starting Corigge application with command: $COMMAND"
+echo "🚀 Starting Projeto PBL application with command: $COMMAND"
 exec bash -c "$COMMAND" 
