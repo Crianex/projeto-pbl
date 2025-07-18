@@ -18,7 +18,7 @@
             competencia: number;
             habilidade: number;
             atitude: number;
-        };
+        } | null;
     }
 
     let problema: ProblemaModel | null = null;
@@ -61,11 +61,7 @@
                     // If there's an error getting avaliacoes, return aluno with zero grades
                     return {
                         ...aluno,
-                        mediaNotas: {
-                            competencia: 0,
-                            habilidade: 0,
-                            atitude: 0,
-                        },
+                        mediaNotas: null,
                     };
                 }
             });
@@ -79,16 +75,14 @@
     });
 
     function calcularMedia(avaliacoes: any[]) {
-        if (!avaliacoes.length)
-            return { competencia: 0, habilidade: 0, atitude: 0 };
+        if (!avaliacoes.length) return null;
 
         // Separate received and sent evaluations
         const avaliacoesRecebidas = avaliacoes.filter(
             (av) => av.id_aluno_avaliado === av.id_aluno,
         );
 
-        if (!avaliacoesRecebidas.length)
-            return { competencia: 0, habilidade: 0, atitude: 0 };
+        if (!avaliacoesRecebidas.length) return null;
 
         const soma = avaliacoesRecebidas.reduce(
             (acc, av) => {
@@ -120,6 +114,7 @@
     }
 
     function formatMedia(media: AlunoComMedia["mediaNotas"]) {
+        if (!media) return "Não avaliado";
         return `(${media.competencia}, ${media.habilidade}, ${media.atitude})`;
     }
 
@@ -169,7 +164,9 @@
                                                 "Nome não disponível"}</span
                                         >
                                     </td>
-                                    <td>{formatMedia(aluno.mediaNotas)}</td>
+                                    <td class:nao-avaliado={!aluno.mediaNotas}
+                                        >{formatMedia(aluno.mediaNotas)}</td
+                                    >
                                     <td>
                                         <Button
                                             variant="secondary"
@@ -342,5 +339,10 @@
     .error-alert strong {
         font-weight: 700;
         margin-right: 0.5rem;
+    }
+
+    .nao-avaliado {
+        color: #6c757d;
+        font-style: italic;
     }
 </style>

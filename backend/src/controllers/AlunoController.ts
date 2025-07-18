@@ -63,7 +63,7 @@ export const AlunoController: EndpointController = {
         }),
 
         'get': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            const { id_aluno } = req.params;
+            const { id_aluno } = req.query;
 
             // check if id_aluno is present
             if (!id_aluno) {
@@ -157,7 +157,7 @@ export const AlunoController: EndpointController = {
         }),
 
         'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
-            const { id_aluno } = req.params;
+            const { id_aluno } = req.query;
             const { nome_completo, email } = req.body;
             const { data, error } = await supabase
                 .from('alunos')
@@ -179,7 +179,7 @@ export const AlunoController: EndpointController = {
         }),
 
         'delete': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
-            const { id_aluno } = req.params;
+            const { id_aluno } = req.query;
             const { error } = await supabase
                 .from('alunos')
                 .delete()

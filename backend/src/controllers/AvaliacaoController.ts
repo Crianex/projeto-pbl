@@ -49,7 +49,7 @@ export const AvaliacaoController: EndpointController = {
             }
 
             if (id_aluno) {
-                query = query.eq('id_aluno', id_aluno);
+                query = query.eq('id_aluno_avaliador', id_aluno);
             }
 
             const { data, error } = await query;

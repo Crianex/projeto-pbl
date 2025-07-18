@@ -34,11 +34,11 @@ git config --global --add safe.directory '*'
 export GIT_DISCOVERY_ACROSS_FILESYSTEM=1
 
 # Set basic git configuration if not set
-git config --global user.email "docker@projeto-pbl.com 2>/dev/null || true
-git config --global user.name "Projeto PBL Docker Container" 2>/dev/null || true
+git config --global user.email "docker@projeto-pbl.com"
+git config --global user.name "Projeto PBL Docker Container"
 
 # Set git pull configuration to avoid warnings
-git config --global pull.rebase false 2>/dev/null || true
+git config --global pull.rebase false
 
 # Fix .git directory permissions if it exists
 if [ -d "/app/.git" ]; then

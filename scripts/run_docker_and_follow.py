@@ -217,15 +217,17 @@ class DockerManager:
         print("=" * 60)
         
         try:
-            # Use docker-compose logs with follow
-            process = self.run_command("docker-compose logs -f --tail=50", capture_output=False)
+            # Use docker-compose logs with follow and increased tail size
+            process = self.run_command("docker-compose logs -f --tail=10000", capture_output=False)
             if process:
-                print("🔍 Log stream started - showing real-time output:")
+                print("🔍 Log stream started - showing detailed output:")
                 print("-" * 50)
                 
                 # Stream the output in real-time
                 for line in process.stdout:
-                    print(line.rstrip())
+                    # Remove ANSI color codes for cleaner output
+                    clean_line = line.rstrip()
+                    print(clean_line)
                     
                 process.wait()
             else:
