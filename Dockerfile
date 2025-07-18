@@ -70,15 +70,15 @@ RUN npm run build || echo "Build failed, will retry later"
 ENV GIT_DISCOVERY_ACROSS_FILESYSTEM=1
 
 # Expose ports for HTTPS
-EXPOSE 4502
+EXPOSE 6719
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV PORT=4502
+ENV PORT=6719
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:4502/health || exit 1
+    CMD curl -f http://localhost:6719/health || exit 1
 
 # Switch back to /app directory for entrypoint script
 WORKDIR /app
