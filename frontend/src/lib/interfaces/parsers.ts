@@ -1,4 +1,4 @@
-import{ type AlunoModel, type ProfessorModel, type ProblemaModel, type TurmaModel, parseToProfessorModel, parseToAlunoModel } from '$lib/interfaces/interfaces';
+import { type AlunoModel, type ProfessorModel, type ProblemaModel, type TurmaModel, parseToProfessorModel, parseToAlunoModel } from '$lib/interfaces/interfaces';
 
 /**
  * Parses raw Supabase data into strongly typed interfaces
@@ -26,7 +26,8 @@ function parseProblema(data: any): ProblemaModel {
         data_inicio: data.data_inicio ? new Date(data.data_inicio) : null,
         data_fim: data.data_fim ? new Date(data.data_fim) : null,
         nome_problema: data.nome_problema || null,
-        id_turma: data.id_turma || null
+        id_turma: data.id_turma || null,
+        media_geral: data.media_geral || null
     };
 }
 

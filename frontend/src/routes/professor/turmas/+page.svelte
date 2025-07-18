@@ -1,6 +1,7 @@
 <script lang="ts">
     import Button from "$lib/components/Button.svelte";
     import Dialog from "$lib/components/Dialog.svelte";
+    import SearchBar from "$lib/components/SearchBar.svelte";
     import type { TurmaModel } from "$lib/interfaces/interfaces";
     import { api } from "$lib/utils/api";
     import { onMount } from "svelte";
@@ -106,16 +107,13 @@
 <div class="turmas-container">
     <div class="header">
         <h1>Turmas</h1>
-        <div class="search-bar">
-            <input
-                type="text"
-                bind:value={searchQuery}
-                placeholder="Buscar turma..."
-            />
-            <Button variant="primary" on:click={handleCreateTurma}>
-                + Criar turma
-            </Button>
-        </div>
+        <SearchBar
+            bind:value={searchQuery}
+            placeholder="Buscar turma..."
+            buttonText="+ Criar turma"
+            on:search={(e) => (searchQuery = e.detail)}
+            on:buttonClick={handleCreateTurma}
+        />
     </div>
 
     {#if loading}
@@ -268,8 +266,11 @@
 
 <style>
     .turmas-container {
-        max-width: 1200px;
+        width: 100%;
+        height: 100%;
         margin: 0 auto;
+        display: flex;
+        flex-direction: column;
     }
 
     .header {
@@ -289,18 +290,26 @@
     }
 
     .search-bar input {
-        flex: 1;
+        flex: 3;
         padding: 0.75rem;
         border: 1px solid #ddd;
         border-radius: 4px;
         font-size: 1rem;
     }
 
+    .create-turma-button {
+        flex: 1;
+    }
+
     .turmas-list {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
         background: white;
         border: 1px solid #e9ecef;
         border-radius: 8px;
-        overflow: visible; /* Changed from hidden to visible */
+        overflow: visible;
+        margin-bottom: 2rem;
     }
 
     .turma-item {

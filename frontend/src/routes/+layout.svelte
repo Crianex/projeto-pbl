@@ -23,4 +23,18 @@
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
 	}
+
+	.app {
+		height: 100vh;
+		width: 100vw;
+		display: flex;
+	}
+
+	main {
+		flex: 1;
+		margin: 0;
+		padding: 0;
+		height: 100vh;
+		width: 100vw;
+	}
 </style>

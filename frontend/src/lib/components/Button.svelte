@@ -5,7 +5,13 @@
     export let loading = false;
 </script>
 
-<button {type} class="button {variant}" {disabled} class:loading on:click>
+<button
+    {type}
+    class="button {variant} {$$props.class || ''}"
+    {disabled}
+    class:loading
+    on:click
+>
     {#if loading}
         <div class="loading-spinner"></div>
     {/if}
@@ -25,7 +31,6 @@
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
-        width: 100%;
         letter-spacing: 0.025em;
         position: relative;
         overflow: hidden;
@@ -44,14 +49,14 @@
     .primary {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        box-shadow: 
+        box-shadow:
             0 10px 25px rgba(102, 126, 234, 0.3),
             0 4px 12px rgba(102, 126, 234, 0.2);
     }
 
     .primary:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 
+        box-shadow:
             0 15px 35px rgba(102, 126, 234, 0.4),
             0 8px 20px rgba(102, 126, 234, 0.3);
     }
@@ -61,7 +66,7 @@
         color: #667eea;
         border: 2px solid #667eea;
         backdrop-filter: blur(10px);
-        box-shadow: 
+        box-shadow:
             0 8px 20px rgba(102, 126, 234, 0.15),
             0 3px 8px rgba(102, 126, 234, 0.1);
     }
@@ -69,7 +74,7 @@
     .secondary:hover:not(:disabled) {
         background: rgba(255, 255, 255, 1);
         transform: translateY(-2px);
-        box-shadow: 
+        box-shadow:
             0 12px 25px rgba(102, 126, 234, 0.2),
             0 5px 12px rgba(102, 126, 234, 0.15);
     }
@@ -77,14 +82,14 @@
     .danger {
         background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
         color: white;
-        box-shadow: 
+        box-shadow:
             0 10px 25px rgba(238, 90, 82, 0.3),
             0 4px 12px rgba(238, 90, 82, 0.2);
     }
 
     .danger:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 
+        box-shadow:
             0 15px 35px rgba(238, 90, 82, 0.4),
             0 8px 20px rgba(238, 90, 82, 0.3);
     }

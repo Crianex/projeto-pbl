@@ -33,6 +33,8 @@ export const ProblemaController: EndpointController = {
     name: 'problemas',
     routes: {
         'list': new Pair(RequestType.GET, async (req: Request, res: Response) => {
+            logger.info('Fetching all problemas');
+
             const { data, error } = await supabase
                 .from('problemas')
                 .select(`
@@ -45,11 +47,18 @@ export const ProblemaController: EndpointController = {
                 return res.status(500).json({ error: error.message });
             }
 
+            logger.info(`Successfully fetched ${data?.length || 0} problemas`);
             return res.json(data);
         }),
 
         'get': new Pair(RequestType.GET, async (req: Request, res: Response) => {
             const { id } = req.params;
+            if (!id) {
+                logger.error('No id provided');
+                return res.status(400).json({ error: 'No id provided' });
+            }
+            logger.info(`Fetching problema with id: ${id}`);
+
             const { data, error } = await supabase
                 .from('problemas')
                 .select(`
@@ -66,14 +75,22 @@ export const ProblemaController: EndpointController = {
             }
 
             if (!data) {
+                logger.warn(`Problema with id ${id} not found`);
                 return res.status(404).json({ error: 'Problema not found' });
             }
 
+            logger.info(`Successfully fetched problema ${id}`);
             return res.json(data);
         }),
 
         'create': new Pair(RequestType.POST, async (req: Request, res: Response) => {
             const { nome_problema, data_inicio, data_fim, id_turma, criterios } = req.body;
+            if (!nome_problema || !data_inicio || !data_fim || !id_turma || !criterios) {
+                logger.error('Missing required fields');
+                return res.status(400).json({ error: 'Missing required fields' });
+            }
+            logger.info(`Creating new problema: ${nome_problema} for turma ${id_turma}`);
+
             const { data, error } = await supabase
                 .from('problemas')
                 .insert([{
@@ -91,16 +108,23 @@ export const ProblemaController: EndpointController = {
                 .single();
 
             if (error) {
-                logger.error(`Error creating problema: ${error.message}`);
+                logger.error(`Error creating problema: ${error.message}, Request body: ${JSON.stringify(req.body)}`);
                 return res.status(500).json({ error: error.message });
             }
 
+            logger.info(`Successfully created problema with id: ${data?.id_problema}`);
             return res.status(201).json(data);
         }),
 
         'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
             const { id } = req.params;
+            if (!id) {
+                logger.error('No id provided');
+                return res.status(400).json({ error: 'No id provided' });
+            }
             const { nome_problema, data_inicio, data_fim, id_turma, criterios, media_geral } = req.body;
+            logger.info(`Updating problema ${id} with new data: ${JSON.stringify(req.body)}`);
+
             const { data, error } = await supabase
                 .from('problemas')
                 .update({
@@ -119,19 +143,27 @@ export const ProblemaController: EndpointController = {
                 .single();
 
             if (error) {
-                logger.error(`Error updating problema ${id}: ${error.message}`);
+                logger.error(`Error updating problema ${id}: ${error.message}, Request body: ${JSON.stringify(req.body)}`);
                 return res.status(500).json({ error: error.message });
             }
 
             if (!data) {
+                logger.warn(`Attempted to update non-existent problema ${id}`);
                 return res.status(404).json({ error: 'Problema not found' });
             }
 
+            logger.info(`Successfully updated problema ${id}`);
             return res.json(data);
         }),
 
         'delete': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
             const { id } = req.params;
+            if (!id) {
+                logger.error('No id provided');
+                return res.status(400).json({ error: 'No id provided' });
+            }
+            logger.info(`Attempting to delete problema ${id}`);
+
             const { error } = await supabase
                 .from('problemas')
                 .delete()
@@ -142,11 +174,18 @@ export const ProblemaController: EndpointController = {
                 return res.status(500).json({ error: error.message });
             }
 
+            logger.info(`Successfully deleted problema ${id}`);
             return res.status(204).send();
         }),
 
         'add-avaliacao': new Pair(RequestType.POST, async (req: Request, res: Response) => {
             const { id_problema, id_aluno_avaliador, id_aluno_avaliado, notas } = req.body;
+            if (!id_problema || !id_aluno_avaliador || !id_aluno_avaliado || !notas) {
+                logger.error('Missing required fields');
+                return res.status(400).json({ error: 'Missing required fields' });
+            }
+            logger.info(`Adding avaliacao for problema ${id_problema}: avaliador ${id_aluno_avaliador} -> avaliado ${id_aluno_avaliado}`);
+
             const { data, error } = await supabase
                 .from('avaliacoes')
                 .insert([{
@@ -163,9 +202,11 @@ export const ProblemaController: EndpointController = {
                 .single();
 
             if (error) {
-                logger.error(`Error adding avaliacao to problema ${id_problema}: ${error.message}`);
+                logger.error(`Error adding avaliacao to problema ${id_problema}: ${error.message}, Request body: ${JSON.stringify(req.body)}`);
                 return res.status(500).json({ error: error.message });
             }
+
+            logger.info(`Successfully added avaliacao for problema ${id_problema}. Updating media_geral...`);
 
             // Update media_geral
             const { data: avaliacoes, error: avaliacoesError } = await supabase
@@ -173,14 +214,26 @@ export const ProblemaController: EndpointController = {
                 .select('notas')
                 .eq('id_problema', id_problema);
 
+            if (avaliacoesError) {
+                logger.error(`Error fetching avaliacoes for media calculation: ${avaliacoesError.message}`);
+            }
+
             if (!avaliacoesError && avaliacoes) {
                 const notas = avaliacoes.map(a => calculateAverageNota(a.notas));
                 const media = notas.length > 0 ? notas.reduce((a, b) => a + b, 0) / notas.length : 0;
 
-                await supabase
+                logger.info(`Calculated new media_geral for problema ${id_problema}: ${media}`);
+
+                const { error: updateError } = await supabase
                     .from('problemas')
                     .update({ media_geral: media })
                     .eq('id_problema', id_problema);
+
+                if (updateError) {
+                    logger.error(`Error updating media_geral: ${updateError.message}`);
+                } else {
+                    logger.info(`Successfully updated media_geral for problema ${id_problema}`);
+                }
             }
 
             return res.status(201).json(data);
@@ -188,6 +241,12 @@ export const ProblemaController: EndpointController = {
 
         'get-avaliacoes': new Pair(RequestType.GET, async (req: Request, res: Response) => {
             const { id } = req.params;
+            if (!id) {
+                logger.error('No id provided');
+                return res.status(400).json({ error: 'No id provided' });
+            }
+            logger.info(`Fetching avaliacoes for problema ${id}`);
+
             const { data, error } = await supabase
                 .from('avaliacoes')
                 .select(`
@@ -202,6 +261,7 @@ export const ProblemaController: EndpointController = {
                 return res.status(500).json({ error: error.message });
             }
 
+            logger.info(`Successfully fetched ${data?.length || 0} avaliacoes for problema ${id}`);
             return res.json(data);
         })
     }

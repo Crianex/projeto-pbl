@@ -90,7 +90,7 @@
             </button>
         </div>
     </aside>
-    <main>
+    <main class="main-content-padding">
         <slot />
     </main>
 </div>
@@ -98,7 +98,9 @@
 <style>
     .layout {
         display: flex;
-        min-height: 100vh;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
     }
 
     .sidebar {
@@ -109,6 +111,7 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        overflow-y: auto;
     }
 
     nav {
@@ -153,7 +156,8 @@
 
     main {
         flex: 1;
-        padding: 2rem;
         background-color: #fff;
+        overflow-y: auto;
+        height: 100vh;
     }
 </style>
