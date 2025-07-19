@@ -126,6 +126,17 @@ router.get('/', (req: Request, res: Response) => {
     });
 });
 
+// Health check endpoint for Docker
+router.get('/health', (req: Request, res: Response) => {
+    logger.info(`\b[GET][/health] Health check`);
+    res.status(200).json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        memory: process.memoryUsage()
+    });
+});
+
 // Enhanced error handling middleware for route callbacks
 const handleRouteError = (error: any, req: Request, res: Response, routePath: string) => {
     const errorContext = {

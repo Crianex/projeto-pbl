@@ -53,6 +53,8 @@
                 notasInit[tag][criterio.nome_criterio.toLowerCase()] = 0;
             });
         });
+
+        console.log(`Notas init: ${JSON.stringify(notasInit)}`);
         return notasInit;
     }
 
@@ -84,7 +86,12 @@
                 `/problemas/get?id_problema=${id_problema}`,
             );
             problema = Parsers.parseProblema(problemaResponse);
+
+            console.log(`Problema: ${JSON.stringify(problema)}`);
+
             criterios = problema.criterios;
+
+            console.log(`Criterios: ${JSON.stringify(criterios)}`);
 
             // Get the student details
             const aluno = await api.get(`/alunos/get?id_aluno=${id_aluno}`);

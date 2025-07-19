@@ -41,7 +41,7 @@ function parseProfessor(data: any): ProfessorModel {
 }
 
 function parseTurma(data: any): TurmaModel {
-    console.log(`Parsing turma: ${JSON.stringify(data)}`);
+    //console.log(`Parsing turma: ${JSON.stringify(data)}`);
     return {
         id_turma: data.id_turma,
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
@@ -90,8 +90,8 @@ function parseAvaliacao(data: any): AvaliacaoModel {
         id_avaliacao: data.id_avaliacao,
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
         id_problema: data.id_problema || null,
-        id_aluno_avaliador: data.id_aluno_avaliador || null,
-        id_aluno_avaliado: data.id_aluno_avaliado || null,
+        aluno_avaliador: data.aluno_avaliador ? parseAluno(data.aluno_avaliador) : null,
+        aluno_avaliado: data.aluno_avaliado ? parseAluno(data.aluno_avaliado) : null,
         notas: data.notas ? JSON.parse(data.notas) : {}
     };
 }

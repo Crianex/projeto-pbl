@@ -17,16 +17,22 @@
     onMount(() => {
         // Check if we're already logged in
         const unsubscribe = currentUser.subscribe((user) => {
-            if (user) {
-                logger.info("User already logged in, redirecting...");
-                // redirect to aluno home or professor home
-                if (user.tipo === "aluno") {
-                    goto("/aluno");
+            // Only stop checking when we get a definitive answer (user or null)
+            // and the auth system has been initialized
+            if (user !== undefined) {
+                if (user) {
+                    logger.info("User already logged in, redirecting...");
+                    // redirect to aluno home or professor home
+                    if (user.tipo === "aluno") {
+                        goto("/aluno");
+                    } else {
+                        goto("/professor/turmas");
+                    }
                 } else {
-                    goto("/professor/turmas");
+                    logger.info("User not logged in, showing login form");
                 }
+                checkingSession = false;
             }
-            checkingSession = false;
         });
 
         return () => {
@@ -89,10 +95,10 @@
 </svelte:head>
 
 {#if checkingSession}
-    <LoadingSpinner 
-        size="lg" 
-        color="primary" 
-        text="Verificando sessão..." 
+    <LoadingSpinner
+        size="lg"
+        color="primary"
+        text="Verificando sessão..."
         center={true}
     />
 {:else}
@@ -191,8 +197,14 @@
         margin: 0;
         padding: 0;
         min-height: 100vh;
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #e9ecef 100%);
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        background: linear-gradient(
+            135deg,
+            #ffffff 0%,
+            #f8f9fa 50%,
+            #e9ecef 100%
+        );
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+            sans-serif;
     }
 
     :global(main) {
@@ -211,7 +223,7 @@
         backdrop-filter: blur(10px);
         border-radius: 20px;
         padding: 3rem 2.5rem;
-        box-shadow: 
+        box-shadow:
             0 25px 50px rgba(0, 0, 0, 0.15),
             0 15px 35px rgba(0, 0, 0, 0.1),
             0 5px 15px rgba(0, 0, 0, 0.08);
@@ -221,7 +233,7 @@
 
     .login-container:hover {
         transform: translateY(-2px);
-        box-shadow: 
+        box-shadow:
             0 30px 60px rgba(0, 0, 0, 0.2),
             0 20px 40px rgba(0, 0, 0, 0.15),
             0 10px 20px rgba(0, 0, 0, 0.1);
@@ -287,6 +299,4 @@
         display: flex;
         align-items: center;
     }
-
-
 </style>

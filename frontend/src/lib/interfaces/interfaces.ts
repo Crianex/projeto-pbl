@@ -117,7 +117,7 @@ export interface AvaliacaoModel {
 
 // Parser functions to convert API responses to our models
 export function parseToAlunoModel(data: any): AlunoModel {
-    console.log(`Parsing aluno model: ${JSON.stringify(data)}`);
+    //console.log(`Parsing aluno model: ${JSON.stringify(data)}`);
     return {
         tipo: 'aluno',
         id: data.id_aluno,

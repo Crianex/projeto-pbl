@@ -6,7 +6,7 @@ import { logger } from './logger';
 import { parseToAlunoModel, parseToProfessorModel, type AlunoModel, type BaseUser, type ProfessorModel } from '$lib/interfaces/interfaces';
 import { redirect } from '@sveltejs/kit';
 
-export const currentUser = writable<BaseUser | null>(null);
+export const currentUser = writable<BaseUser | null | undefined>(undefined);
 let isInitializing = false;
 
 export function isAluno(user: BaseUser | null): user is AlunoModel {
@@ -105,6 +105,8 @@ export async function initializeAuth() {
         if (session) {
             const user = await createOrGetUser(session);
             currentUser.set(user);
+        } else {
+            currentUser.set(null);
         }
     } catch (error) {
         logger.error('Error initializing auth:', error);
@@ -151,5 +153,18 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         }
     } else if (event === 'SIGNED_OUT') {
         currentUser.set(null);
+    } else if (event === 'INITIAL_SESSION') {
+        // Handle initial session check
+        if (session) {
+            try {
+                const user = await createOrGetUser(session);
+                currentUser.set(user);
+            } catch (error) {
+                logger.error('Error handling initial session:', error);
+                currentUser.set(null);
+            }
+        } else {
+            currentUser.set(null);
+        }
     }
 }); 
