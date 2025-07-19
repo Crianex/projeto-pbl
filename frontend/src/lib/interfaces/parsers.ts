@@ -1,4 +1,4 @@
-import { type AlunoModel, type ProfessorModel, type ProblemaModel, type TurmaModel, parseToProfessorModel, parseToAlunoModel } from '$lib/interfaces/interfaces';
+import { type AlunoModel, type ProfessorModel, type ProblemaModel, type TurmaModel, parseToProfessorModel, parseToAlunoModel, type CriteriosGroup, type Criterio, type AvaliacaoModel } from '$lib/interfaces/interfaces';
 
 /**
  * Parses raw Supabase data into strongly typed interfaces
@@ -12,7 +12,10 @@ export const Parsers = {
     parseAlunos,
     parseProblemas,
     parseProfessores,
-    parseTurmas
+    parseTurmas,
+    parseCriterios,
+    parseAvaliacao,
+    parseAvaliacoes,
 }
 
 function parseAluno(data: any): AlunoModel {
@@ -28,7 +31,8 @@ function parseProblema(data: any): ProblemaModel {
         nome_problema: data.nome_problema || null,
         id_turma: data.id_turma || null,
         media_geral: data.media_geral || null,
-        turma: data.turma ? parseTurma(data.turma) : null
+        turma: data.turma ? parseTurma(data.turma) : null,
+        criterios: data.criterios ? parseCriterios(data.criterios) : {}
     };
 }
 
@@ -37,14 +41,14 @@ function parseProfessor(data: any): ProfessorModel {
 }
 
 function parseTurma(data: any): TurmaModel {
-
+    console.log(`Parsing turma: ${JSON.stringify(data)}`);
     return {
         id_turma: data.id_turma,
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
         id_professor: data.id_professor || null,
         nome_turma: data.nome_turma || null,
         professor: data.professores ? parseProfessor(data.professores) : null,
-        alunos: data.alunos ? data.alunos.map((aluno: any) => parseAluno(aluno.alunos)) : null
+        alunos: data.alunos ? data.alunos.map((aluno: any) => parseAluno(aluno)) : null
     };
 }
 
@@ -64,4 +68,34 @@ function parseProfessores(data: any[]): ProfessorModel[] {
 
 function parseTurmas(data: any[]): TurmaModel[] {
     return data.map(item => parseTurma(item));
-} 
+}
+
+function parseCriterios(criteriosString: string): CriteriosGroup {
+    var criterios = JSON.parse(criteriosString);
+    var object: {
+        [key: string]: Criterio[]
+    } = {};
+    Object.keys(criterios).forEach((key: string) => {
+        object[key] = criterios[key].map((criterio: any) => ({
+            nome_criterio: criterio.nome_criterio,
+            descricao_criterio: criterio.descricao_criterio,
+            nota_maxima: criterio.nota_maxima
+        } as Criterio));
+    });
+    return object;
+}
+
+function parseAvaliacao(data: any): AvaliacaoModel {
+    return {
+        id_avaliacao: data.id_avaliacao,
+        created_at: data.created_at ? new Date(data.created_at) : new Date(),
+        id_problema: data.id_problema || null,
+        id_aluno_avaliador: data.id_aluno_avaliador || null,
+        id_aluno_avaliado: data.id_aluno_avaliado || null,
+        notas: data.notas ? JSON.parse(data.notas) : {}
+    };
+}
+
+function parseAvaliacoes(data: any[]): AvaliacaoModel[] {
+    return data.map(item => parseAvaliacao(item));
+}

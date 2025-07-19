@@ -16,37 +16,22 @@ export const AlunoController: EndpointController = {
                 return res.status(400).json({ error: 'Search query is required' });
             }
 
+            var queryStatement = supabase.from('alunos').select('*');
+
+            queryStatement = queryStatement.is('id_turma', null);
+
+            queryStatement = queryStatement.ilike('nome_completo', `%${query}%`);
             // First get all alunos that match the search query
-            const { data: matchingAlunos, error: searchError } = await supabase
-                .from('alunos')
-                .select('*')
-                .ilike('nome_completo', `%${query}%`)
-                .order('nome_completo', { ascending: true });
+            const { data: matchingAlunos, error: searchError } = await queryStatement;
+
 
             if (searchError) {
                 logger.error(`Error searching alunos: ${searchError.message}`);
                 return res.status(500).json({ error: searchError.message });
             }
 
-            // Then get all alunos that are already in any turma
-            const { data: alunosInTurmas, error: turmaError } = await supabase
-                .from('alunos_por_turma')
-                .select('id_aluno')
-                .neq('id_turma', exclude_turma_id || ''); // Exclude the current turma if provided
-
-            if (turmaError) {
-                logger.error(`Error fetching alunos in turmas: ${turmaError.message}`);
-                return res.status(500).json({ error: turmaError.message });
-            }
-
-            // Create a set of aluno IDs that are already in turmas
-            const alunosInTurmasSet = new Set(alunosInTurmas?.map(at => at.id_aluno));
-
-            // Filter out alunos that are already in turmas
-            const availableAlunos = matchingAlunos?.filter(aluno => !alunosInTurmasSet.has(aluno.id_aluno));
-
             // Return only the first 10 results
-            return res.json(availableAlunos?.slice(0, 10));
+            return res.json(matchingAlunos?.slice(0, 10));
         }),
 
         'list': new Pair(RequestType.GET, async (req: Request, res: Response) => {

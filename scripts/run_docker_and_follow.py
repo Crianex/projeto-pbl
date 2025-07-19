@@ -149,7 +149,7 @@ class DockerManager:
             # Show last few lines of output for debugging
             if output:
                 print("Last few lines of output:")
-                for line in output[-5:]:
+                for line in output[-30:]:
                     print(f"  {line}")
             return False
 
@@ -165,7 +165,7 @@ class DockerManager:
             # Show last few lines of output for debugging
             if output:
                 print("Last few lines of output:")
-                for line in output[-5:]:
+                for line in output[-30:]:
                     print(f"  {line}")
             return False
 

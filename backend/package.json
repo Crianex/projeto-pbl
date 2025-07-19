@@ -7,7 +7,9 @@
         "start": "node dist/index.js",
         "dev": "nodemon src/index.ts",
         "build": "tsc",
-        "clean": "rm -rf dist"
+        "clean": "rm -rf dist",
+        "start-and-monitor": "python3 start_and_monitor.py",
+        "build-and-start": "npm run build && npm run start"
     },
     "keywords": [],
     "author": "",

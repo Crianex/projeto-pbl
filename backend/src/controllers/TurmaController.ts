@@ -15,7 +15,7 @@ export const TurmaController: EndpointController = {
                 .select(`
                     *,
                     professor:professores(*),
-                    alunos:alunos_por_turma(alunos:alunos(*))
+                    alunos(*)
                 `);
 
             if (error) {
@@ -42,7 +42,7 @@ export const TurmaController: EndpointController = {
                 .select(`
                     *,
                     professor:professores(*),
-                    alunos:alunos_por_turma(alunos(*))
+                    alunos:alunos(*)
                 `)
                 .eq('id_turma', id_turma)
                 .single();
@@ -122,11 +122,11 @@ export const TurmaController: EndpointController = {
         'add-aluno': new Pair(RequestType.POST, async (req: Request, res: Response) => {
             const { id_turma, id_aluno } = req.body;
             const { data, error } = await supabase
-                .from('alunos_por_turma')
-                .insert([{ id_turma, id_aluno }])
+                .from('alunos')
+                .update({ id_turma })
+                .eq('id_aluno', id_aluno)
                 .select(`
-                    *,
-                    aluno:alunos(*)
+                    *
                 `)
                 .single();
 
@@ -141,9 +141,8 @@ export const TurmaController: EndpointController = {
         'remove-aluno': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
             const { id_turma, id_aluno } = req.query;
             const { error } = await supabase
-                .from('alunos_por_turma')
-                .delete()
-                .eq('id_turma', id_turma)
+                .from('alunos')
+                .update({ id_turma: null })
                 .eq('id_aluno', id_aluno);
 
             if (error) {

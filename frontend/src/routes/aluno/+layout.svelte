@@ -10,8 +10,8 @@
 
     onMount(() => {
         checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
+        window.addEventListener("resize", checkMobile);
+        return () => window.removeEventListener("resize", checkMobile);
     });
 
     function checkMobile() {
@@ -25,8 +25,8 @@
         try {
             await logout();
         } catch (error) {
-            logger.error('Erro durante logout:', error);
-            console.error('Erro durante logout:', error);
+            logger.error("Erro durante logout:", error);
+            console.error("Erro durante logout:", error);
         }
     }
 
@@ -43,8 +43,8 @@
 
 <div class="layout">
     <!-- Mobile menu button -->
-    <button 
-        class="mobile-menu-btn" 
+    <button
+        class="mobile-menu-btn"
         class:visible={isMobile}
         on:click={toggleSidebar}
         transition:fade
@@ -66,15 +66,15 @@
 
     <!-- Sidebar overlay for mobile -->
     {#if sidebarOpen && isMobile}
-        <div 
-            class="sidebar-overlay" 
+        <div
+            class="sidebar-overlay"
             on:click={closeSidebar}
             transition:fade={{ duration: 200 }}
         ></div>
     {/if}
 
-    <aside 
-        class="sidebar" 
+    <aside
+        class="sidebar"
         class:open={sidebarOpen}
         class:mobile={isMobile}
         transition:fly={{ x: -300, duration: 300 }}
@@ -101,30 +101,6 @@
                         <polyline points="13 2 13 9 20 9"></polyline>
                     </svg>
                     <span class="nav-text">Problemas</span>
-                </a>
-                <a
-                    href="/aluno/avaliacoes"
-                    class:active={$page.url.pathname === "/aluno/avaliacoes"}
-                    on:click={closeSidebar}
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                    >
-                        <path
-                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-                        ></path>
-                        <path d="M14 2v6h6"></path>
-                        <path d="M16 13H8"></path>
-                        <path d="M16 17H8"></path>
-                        <path d="M10 9H8"></path>
-                    </svg>
-                    <span class="nav-text">Avaliações</span>
                 </a>
                 <a
                     href="/aluno/notas"
@@ -202,6 +178,7 @@
         width: 100%;
         position: relative;
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        overflow: hidden; /* Prevent body scroll */
     }
 
     .mobile-menu-btn {
@@ -254,13 +231,15 @@
         justify-content: space-between;
         box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
         z-index: 1000;
-        height: 100vh;
-        position: sticky;
+        height: 100vh; /* Use viewport height */
+        position: fixed;
         top: 0;
+        left: 0;
+        overflow: hidden; /* Prevent sidebar scroll */
+        box-sizing: border-box; /* Include padding in width */
     }
 
     .sidebar.mobile {
-        position: fixed;
         transform: translateX(-100%);
     }
 
@@ -273,12 +252,15 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        overflow: hidden; /* Ensure no scroll */
     }
 
     nav {
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
+        overflow-y: auto; /* Allow nav items to scroll if they overflow */
+        padding-right: 0.5rem; /* Space for scrollbar */
     }
 
     nav a,
@@ -299,7 +281,7 @@
 
     nav a::before,
     .logout button::before {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         left: 0;
@@ -334,14 +316,22 @@
 
     .active:hover {
         transform: translateX(4px) !important;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        background: linear-gradient(
+            135deg,
+            #667eea 0%,
+            #764ba2 100%
+        ) !important;
         border-color: transparent !important;
     }
 
     .main-content {
         flex: 1;
-        padding: 2rem;
-        overflow-x: hidden;
+        padding: 1rem 2rem 2rem 2rem;
+        overflow-y: auto; /* Enable vertical scroll */
+        margin-left: 280px; /* Add margin equal to sidebar width */
+        height: 100vh; /* Full viewport height */
+        position: relative;
+        box-sizing: border-box;
     }
 
     .content-wrapper {
@@ -351,8 +341,7 @@
         backdrop-filter: blur(10px);
         border-radius: 16px;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-        padding: 2rem;
-        min-height: calc(100vh - 4rem);
+        padding: 1.5rem;
     }
 
     .logout {
@@ -376,6 +365,7 @@
         .main-content {
             padding: 1rem;
             padding-top: 4rem;
+            margin-left: 0; /* Remove margin on mobile */
         }
 
         .content-wrapper {

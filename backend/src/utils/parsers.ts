@@ -20,7 +20,8 @@ function parseAluno(data: any): Aluno {
         id_aluno: data.id_aluno,
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
         nome_completo: data.nome_completo || null,
-        email: data.email || null
+        email: data.email || null,
+        id_turma: data.id_turma || null
     };
 }
 

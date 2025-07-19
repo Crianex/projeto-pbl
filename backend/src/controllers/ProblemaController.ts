@@ -33,12 +33,7 @@ export const ProblemaController: EndpointController = {
     name: 'problemas',
     routes: {
         'list': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            const { id_aluno } = req.query;
-            if (!id_aluno) {
-                logger.error('No id_aluno provided');
-                return res.status(400).json({ error: 'No id_aluno provided' });
-            }
-            logger.info(`Fetching all problemas for aluno ${id_aluno}`);
+            logger.info(`Fetching all problemas`);
 
             const { data, error } = await supabase
                 .from('problemas')
@@ -93,7 +88,7 @@ export const ProblemaController: EndpointController = {
                 .from('problemas')
                 .select(`
                     *,
-                    turma:turmas(*,alunos:alunos_por_turma(alunos:alunos(*))),
+                    turma:turmas(*,alunos:alunos(*)),
                     avaliacoes:avaliacoes(*)
                 `)
                 .eq('id_problema', id_problema)

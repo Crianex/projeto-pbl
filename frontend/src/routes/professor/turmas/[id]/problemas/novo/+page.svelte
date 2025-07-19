@@ -5,18 +5,9 @@
     import { api } from "$lib/utils/api";
     import { problemaStore } from "$lib/utils/stores";
     import { Parsers } from "$lib/interfaces/parsers";
+    import type { CriteriosGroup } from "$lib/interfaces/interfaces";
 
     const turmaId = $page.params.id;
-
-    interface Criterio {
-        nome_criterio: string;
-        descricao_criterio: string;
-        nota_maxima: number;
-    }
-
-    interface CriteriosGroup {
-        [tag: string]: Criterio[];
-    }
 
     let loading = false;
     let error: string | null = null;

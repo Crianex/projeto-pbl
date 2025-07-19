@@ -8,9 +8,10 @@
     import type { Column } from "$lib/interfaces/column";
     import { api } from "$lib/utils/api";
     import { Utils } from "$lib/utils/utils";
-    import type { ProblemaModel } from "$lib/interfaces/interfaces";
+    import type { AlunoModel, ProblemaModel } from "$lib/interfaces/interfaces";
     import { currentUser } from "$lib/utils/auth";
     import { Parsers } from "$lib/interfaces/parsers";
+    import { get } from "svelte/store";
 
     let problems: ProblemaModel[] = [];
     let loading = true;
@@ -52,7 +53,7 @@
                 props: {
                     href: `/aluno/problemas/${row.id_problema}`,
                     class: "btn-action",
-                    textContent: "Ver Detalhes",
+                    textContent: "Ver Problema",
                 },
             }),
         },
@@ -62,8 +63,15 @@
         try {
             loading = true;
             error = null;
+
+            if (!($currentUser as AlunoModel).id_turma) {
+                loading = false;
+                return;
+            }
+
             problems = await api.get(
-                "/problemas/list?id_aluno=" + $currentUser?.id,
+                "/problemas/list-by-turma?id_turma=" +
+                    ($currentUser as AlunoModel).id_turma,
             );
 
             problems = Parsers.parseProblemas(problems);
@@ -82,6 +90,8 @@
             loading = false;
         }
     }
+
+    $: user = get(currentUser) as AlunoModel;
 
     onMount(fetchProblems);
 </script>
@@ -107,6 +117,21 @@
                         text="Carregando problemas..."
                         center={true}
                     />
+                </div>
+            {:else if !user.id_turma}
+                <div class="empty-section">
+                    <div class="empty-content">
+                        <div class="empty-icon">🎓</div>
+                        <h3>Você ainda não está em uma turma</h3>
+                        <p>
+                            Para visualizar problemas, você precisa estar
+                            matriculado em uma turma. Entre em contato com seu
+                            professor para ser adicionado.
+                        </p>
+                        <Button variant="secondary" on:click={fetchProblems}>
+                            Atualizar
+                        </Button>
+                    </div>
                 </div>
             {:else if error}
                 <div class="error-section">

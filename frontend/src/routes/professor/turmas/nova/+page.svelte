@@ -77,80 +77,99 @@
         <h1>Nova Turma</h1>
     </div>
 
-    <form on:submit|preventDefault={handleSubmit} class="form">
-        <div class="form-group">
-            <label for="nome_turma">Nome da turma</label>
-            <input
-                type="text"
-                id="nome_turma"
-                bind:value={nomeTurma}
-                required
-                placeholder="Digite o nome da turma"
-            />
+    {#if error}
+        <div class="error">
+            <p>{error}</p>
+            <Button variant="secondary" on:click={() => (error = null)}
+                >Tentar novamente</Button
+            >
         </div>
-
-        <div class="alunos-section">
-            <h2>Alunos matriculados</h2>
-
-            {#if alunosMatriculados.length > 0}
-                <div class="alunos-list">
-                    {#each alunosMatriculados as aluno}
-                        <div class="aluno-item">
-                            <div class="aluno-info">
-                                <img
-                                    src="https://via.placeholder.com/32"
-                                    alt="Avatar"
-                                    class="avatar"
-                                />
-                                <div class="aluno-details">
-                                    <span class="nome"
-                                        >{aluno.nome_completo}</span
-                                    >
-                                    <span class="email">{aluno.email}</span>
-                                </div>
-                            </div>
-                            <button
-                                type="button"
-                                class="more-options"
-                                on:click={() =>
-                                    handleRemoveAluno(aluno.id_aluno)}
-                                title="Remover aluno"
-                            >
-                                <svg
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <path
-                                        d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
-                    {/each}
-                </div>
-            {/if}
-
-            <Button variant="secondary" type="button" on:click={handleAddAluno}>
-                + Adicionar aluno
-            </Button>
-        </div>
-
-        {#if error}
-            <div class="error-message">
-                {error}
+    {:else}
+        <form on:submit|preventDefault={handleSubmit} class="form">
+            <div class="form-group">
+                <label for="nome_turma">Nome da Turma</label>
+                <input
+                    type="text"
+                    id="nome_turma"
+                    bind:value={nomeTurma}
+                    required
+                    placeholder="Digite o nome da turma"
+                />
             </div>
-        {/if}
 
-        <div class="actions">
-            <Button variant="primary" disabled={saving}>
-                {saving ? "Salvando..." : "Salvar turma"}
-            </Button>
-        </div>
-    </form>
+            <div class="alunos-section">
+                <h2>Alunos matriculados</h2>
+
+                {#if alunosMatriculados.length > 0}
+                    <div class="alunos-list">
+                        {#each alunosMatriculados as aluno}
+                            <div class="aluno-item">
+                                <div class="aluno-info">
+                                    <img
+                                        src="https://via.placeholder.com/32"
+                                        alt="Avatar"
+                                        class="avatar"
+                                    />
+                                    <div class="aluno-details">
+                                        <span class="nome"
+                                            >{aluno.nome_completo}</span
+                                        >
+                                        <span class="email">{aluno.email}</span>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="more-options"
+                                    on:click={() =>
+                                        handleRemoveAluno(aluno.id_aluno)}
+                                    title="Remover aluno"
+                                >
+                                    <svg
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+                                            fill="currentColor"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+                        {/each}
+                    </div>
+                {/if}
+
+                <Button
+                    variant="secondary"
+                    type="button"
+                    on:click={handleAddAluno}
+                >
+                    + Adicionar aluno
+                </Button>
+            </div>
+
+            <div class="actions">
+                <Button
+                    variant="secondary"
+                    on:click={() => goto("/professor/turmas")}
+                    disabled={saving}
+                >
+                    Cancelar
+                </Button>
+                <Button
+                    variant="primary"
+                    type="submit"
+                    loading={saving}
+                    disabled={saving}
+                >
+                    {saving ? "Salvando..." : "Salvar"}
+                </Button>
+            </div>
+        </form>
+    {/if}
 </div>
 
 <SearchAlunoDialog
@@ -162,7 +181,8 @@
 
 <style>
     .container {
-        max-width: 800px;
+        height: 100%;
+        width: 100%;
         margin: 0 auto;
         padding: 2rem;
     }
@@ -275,18 +295,27 @@
         background-color: #f8f9fa;
     }
 
-    .error-message {
-        color: #dc3545;
-        margin-bottom: 1rem;
-        padding: 0.75rem;
-        background-color: #f8d7da;
-        border: 1px solid #f5c2c7;
-        border-radius: 4px;
-    }
-
     .actions {
         display: flex;
+        gap: 1rem;
         justify-content: flex-end;
         margin-top: 2rem;
+    }
+
+    .loading,
+    .error {
+        text-align: center;
+        padding: 2rem;
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+    }
+
+    .error {
+        color: #dc3545;
+    }
+
+    .error button {
+        margin-top: 1rem;
     }
 </style>

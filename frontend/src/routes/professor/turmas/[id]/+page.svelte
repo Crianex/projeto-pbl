@@ -45,8 +45,7 @@
             };
             originalTurma = { ...turma };
             // Extract alunos from the nested structure
-            alunosMatriculados =
-                data.alunos?.map((item: any) => item.alunos) || [];
+            alunosMatriculados = data.alunos?.map((item: any) => item) || [];
             originalAlunosMatriculados = [...alunosMatriculados];
         } catch (err) {
             error =
@@ -85,7 +84,9 @@
             await api.put(`/turmas/update?id_turma=${turmaId}`, turma);
 
             // Get current enrolled students to compare
-            const currentData = await api.get(`/turmas/get?id_turma=${turmaId}`);
+            const currentData = await api.get(
+                `/turmas/get?id_turma=${turmaId}`,
+            );
             const currentAlunos =
                 currentData.alunos?.map((item: any) => item.alunos.id_aluno) ||
                 [];
@@ -133,7 +134,9 @@
             await api.put(`/turmas/update?id_turma=${turmaId}`, turma);
 
             // Get current enrolled students to compare
-            const currentData = await api.get(`/turmas/get?id_turma=${turmaId}`);
+            const currentData = await api.get(
+                `/turmas/get?id_turma=${turmaId}`,
+            );
             const currentAlunos =
                 currentData.alunos?.map((item: any) => item.alunos.id_aluno) ||
                 [];

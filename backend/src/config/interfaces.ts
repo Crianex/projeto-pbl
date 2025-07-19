@@ -20,6 +20,7 @@ export interface Aluno {
     created_at: Date;
     nome_completo: string | null;
     email: string | null;
+    id_turma: number | null;
 }
 
 export interface AlunoPorTurma {
@@ -47,13 +48,6 @@ export interface Problema {
     id_turma: number | null;
     media_geral: number | null;
     criterios: string;
-}
-
-export interface ProblemaPorTurma {
-    id_problema_por_turma: number;
-    created_at: Date;
-    id_turma: number | null;
-    id_problema: number | null;
 }
 
 export interface Professor {

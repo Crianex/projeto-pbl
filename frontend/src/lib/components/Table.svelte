@@ -139,6 +139,15 @@
                                 </div>
                             {:else if col.key === "badge"}
                                 <span class="badge">{row.badge}</span>
+                            {:else if col.key === "actions" && col.render}
+                                {#if col.render(row).component === "a"}
+                                    <a
+                                        href={col.render(row).props.href}
+                                        class={col.render(row).props.class}
+                                    >
+                                        {col.render(row).props.textContent}
+                                    </a>
+                                {/if}
                             {:else if col.key === "actions"}
                                 <span class="ellipsis" title="Actions"
                                     >&#x22EE;</span
@@ -198,10 +207,9 @@
     }
     th.actions,
     td.actions {
-        width: 40px;
-        text-align: center;
-        padding-left: 8px;
-        padding-right: 8px;
+        width: auto;
+        text-align: right;
+        padding: 8px 16px;
     }
     .user-cell {
         display: flex;
