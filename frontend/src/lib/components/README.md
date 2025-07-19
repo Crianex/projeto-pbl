@@ -197,7 +197,119 @@ Sistema de notificações moderno com auto-dismiss.
 <Toast type="error" title="Erro!" message="Algo deu errado." />
 <Toast type="warning" title="Atenção!" message="Verifique os dados." />
 <Toast type="info" title="Info" message="Nova atualização disponível." />
+```
 
+### Avatar.svelte
+Componente de avatar com suporte a upload e edição.
+
+```svelte
+<script>
+    import Avatar from "$lib/components/Avatar.svelte";
+    
+    let userAvatar = "/avatars/user.jpg";
+    
+    function handleAvatarUpload(file) {
+        // Processar upload do arquivo
+        console.log('Arquivo selecionado:', file);
+    }
+    
+    function handleAvatarRemove() {
+        userAvatar = "/avatars/default.png";
+    }
+</script>
+
+<!-- Avatar básico -->
+<Avatar src={userAvatar} alt="Avatar do usuário" size="lg" />
+
+<!-- Avatar editável -->
+<Avatar 
+    src={userAvatar} 
+    alt="Avatar do usuário" 
+    size="lg" 
+    editable={true}
+    onUpload={handleAvatarUpload}
+    onRemove={handleAvatarRemove}
+/>
+
+<!-- Diferentes tamanhos -->
+<Avatar src={userAvatar} alt="Avatar" size="sm" />
+<Avatar src={userAvatar} alt="Avatar" size="md" />
+<Avatar src={userAvatar} alt="Avatar" size="lg" />
+<Avatar src={userAvatar} alt="Avatar" size="xl" />
+```
+
+### ProfileView.svelte
+Componente para exibir informações do perfil do usuário.
+
+```svelte
+<script>
+    import ProfileView from "$lib/components/ProfileView.svelte";
+    
+    let profile = {
+        nome: "João Silva",
+        email: "joao@email.com",
+        avatar: "/avatars/joao.jpg"
+    };
+    
+    function handleEdit() {
+        // Lógica para entrar no modo de edição
+        console.log('Editar perfil');
+    }
+</script>
+
+<ProfileView 
+    {profile}
+    onEdit={handleEdit}
+/>
+```
+
+### ProfileForm.svelte
+Formulário completo para edição de perfil com validação.
+
+```svelte
+<script>
+    import ProfileForm from "$lib/components/ProfileForm.svelte";
+    
+    let profile = {
+        nome: "João Silva",
+        email: "joao@email.com",
+        avatar: "/avatars/joao.jpg"
+    };
+    
+    let avatarPreview = profile.avatar;
+    let loading = false;
+    
+    function handleSave() {
+        loading = true;
+        // Lógica de salvamento
+        setTimeout(() => {
+            loading = false;
+        }, 2000);
+    }
+    
+    function handleCancel() {
+        // Voltar para visualização
+    }
+    
+    function handleAvatarUpload(file) {
+        // Processar upload
+    }
+    
+    function handleAvatarRemove() {
+        avatarPreview = "/avatars/default.png";
+    }
+</script>
+
+<ProfileForm
+    {profile}
+    {avatarPreview}
+    {loading}
+    onSave={handleSave}
+    onCancel={handleCancel}
+    onAvatarUpload={handleAvatarUpload}
+    onAvatarRemove={handleAvatarRemove}
+/>
+```
 <!-- Toast persistente -->
 <Toast 
     type="success"
