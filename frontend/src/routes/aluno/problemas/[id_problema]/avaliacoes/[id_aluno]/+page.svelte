@@ -7,6 +7,7 @@
     import Toast from "$lib/components/Toast.svelte";
     import Dialog from "$lib/components/Dialog.svelte";
     import Container from "$lib/components/Container.svelte";
+    import BackButton from "$lib/components/BackButton.svelte";
     import type {
         CriteriosGroup,
         ProblemaModel,
@@ -206,20 +207,7 @@
 
 <div class="container" transition:fade={{ duration: 300 }}>
     <div class="header">
-        <button class="close-btn" on:click={() => history.back()}>
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-            >
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
+        <BackButton on:click={() => history.back()} />
         <h1>Avaliação Individual</h1>
     </div>
 
@@ -238,59 +226,62 @@
     </div>
 
     <form on:submit|preventDefault={handleSubmit}>
-        {#each Object.entries(criterios) as [tag, criteriosList]}
-            <div class="evaluation-section">
-                <h2>{tag}</h2>
+        <div class="evaluation-grid">
+            {#each Object.entries(criterios) as [tag, criteriosList]}
+                <div class="evaluation-section">
+                    <h2>{tag}</h2>
 
-                <div class="criteria-group">
-                    {#each criteriosList as criterio}
-                        {@const criterioKey =
-                            criterio.nome_criterio.toLowerCase()}
-                        <label>
-                            <span class="criteria-header">
-                                <span>{criterio.nome_criterio}</span>
-                                <span class="range"
-                                    >0,0 a {criterio.nota_maxima}</span
-                                >
-                            </span>
-                            <div class="input-wrapper">
-                                <div class="slider-container">
-                                    <input
-                                        type="range"
-                                        step="0.1"
-                                        min="0"
-                                        max={criterio.nota_maxima}
-                                        value={currentValues[tag]?.[
-                                            criterioKey
-                                        ] || 0}
-                                        on:input={(e) =>
-                                            handleValueChange(
-                                                tag,
-                                                criterioKey,
-                                                e,
+                    <div class="criteria-group">
+                        {#each criteriosList as criterio}
+                            {@const criterioKey =
+                                criterio.nome_criterio.toLowerCase()}
+                            <label>
+                                <span class="criteria-header">
+                                    <span>{criterio.nome_criterio}</span>
+                                    <span class="range"
+                                        >0,0 a {criterio.nota_maxima}</span
+                                    >
+                                </span>
+                                <div class="input-wrapper">
+                                    <div class="slider-container">
+                                        <input
+                                            type="range"
+                                            step="0.1"
+                                            min="0"
+                                            max={criterio.nota_maxima}
+                                            value={currentValues[tag]?.[
+                                                criterioKey
+                                            ] || 0}
+                                            on:input={(e) =>
+                                                handleValueChange(
+                                                    tag,
+                                                    criterioKey,
+                                                    e,
+                                                )}
+                                            class="slider"
+                                        />
+                                        <div class="value-display">
+                                            {formatValue(
+                                                currentValues[tag]?.[
+                                                    criterioKey
+                                                ] || 0,
                                             )}
-                                        class="slider"
-                                    />
-                                    <div class="value-display">
-                                        {formatValue(
-                                            currentValues[tag]?.[criterioKey] ||
-                                                0,
-                                        )}
+                                        </div>
                                     </div>
+                                    <button
+                                        type="button"
+                                        class="criteria-btn"
+                                        on:click={() => showCriterios(tag)}
+                                    >
+                                        Critérios
+                                    </button>
                                 </div>
-                                <button
-                                    type="button"
-                                    class="criteria-btn"
-                                    on:click={() => showCriterios(tag)}
-                                >
-                                    Critérios
-                                </button>
-                            </div>
-                        </label>
-                    {/each}
+                            </label>
+                        {/each}
+                    </div>
                 </div>
-            </div>
-        {/each}
+            {/each}
+        </div>
 
         <button type="submit" class="submit-btn">Salvar</button>
     </form>
@@ -327,36 +318,18 @@
 
 <style>
     .container {
-        padding: 2rem;
         max-width: 800px;
         margin: 0 auto;
         position: relative;
+        min-height: 100%;
+        height: fit-content;
     }
 
     .header {
         display: flex;
         align-items: center;
         gap: 1rem;
-        margin-bottom: 2rem;
-    }
-
-    .close-btn {
-        background: none;
-        border: none;
-        color: #666;
-        cursor: pointer;
-        padding: 0.5rem;
-        border-radius: 50%;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .close-btn:hover {
-        background: rgba(0, 0, 0, 0.05);
-        color: #333;
-        transform: scale(1.1);
+        margin: 0 0 2rem 0;
     }
 
     h1 {
@@ -411,6 +384,13 @@
         font-weight: 600;
     }
 
+    .evaluation-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
     .evaluation-section {
         background: linear-gradient(
             135deg,
@@ -419,7 +399,6 @@
         );
         border-radius: 16px;
         padding: 1.5rem;
-        margin-bottom: 1.5rem;
         box-shadow:
             0 4px 20px rgba(0, 0, 0, 0.08),
             0 2px 10px rgba(0, 0, 0, 0.04),
@@ -658,6 +637,7 @@
     @media (max-width: 768px) {
         .container {
             padding: 1rem;
+            padding-top: 2rem;
         }
 
         .student-info {
@@ -669,6 +649,11 @@
         .avatar {
             width: 64px;
             height: 64px;
+        }
+
+        .evaluation-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
         }
 
         .evaluation-section {
