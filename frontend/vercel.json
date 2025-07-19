@@ -1,0 +1,11 @@
+{
+    "functions": {
+        "fn/index.js": {
+            "runtime": "nodejs20.x"
+        }
+    },
+    "buildCommand": "npm run build",
+    "outputDirectory": ".svelte-kit/vercel",
+    "installCommand": "npm install",
+    "framework": "sveltekit"
+}
