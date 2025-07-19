@@ -145,8 +145,8 @@ router.get('/', (req: Request, res: Response) => {
 
 // Health check endpoint for Docker
 router.get('/health', (req: Request, res: Response) => {
-    console.log('🏥 GET /health - Health check called');
-    logger.info(`\b[GET][/health] Health check`);
+    //console.log('🏥 GET /health - Health check called');
+    //logger.info(`\b[GET][/health] Health check`);
     res.status(200).json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
