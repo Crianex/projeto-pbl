@@ -14,17 +14,29 @@
     let errorMessage = "";
 
     onMount(() => {
-        logger.info("Auth callback page loaded, waiting for session...");
+        logger.info("Auth callback page loaded", {
+            url: window.location.href,
+            searchParams: window.location.search,
+            hash: window.location.hash,
+        });
+
         loadingText = "Verificando autenticação...";
+        logger.info("Starting authentication verification process");
 
         // Set a timeout to handle cases where auth doesn't complete
         const timeout = setTimeout(() => {
             if (loading) {
-                logger.error("Auth callback timeout - redirecting to login");
-                errorMessage = "Tempo limite de autenticação excedido. Redirecionando...";
+                logger.error("Auth callback timeout - redirecting to login", {
+                    timeoutDuration: 15000,
+                    currentTime: new Date().toISOString(),
+                    url: window.location.href,
+                });
+                errorMessage =
+                    "Tempo limite de autenticação excedido. Redirecionando...";
                 showError = true;
-                
+
                 setTimeout(() => {
+                    logger.info("Redirecting to login due to timeout");
                     goto("/login");
                 }, 2000);
             }
@@ -32,53 +44,120 @@
 
         // Handle the OAuth callback - only handle redirects, auth state is managed globally
         const unsubscribe = currentUser.subscribe((user) => {
+            logger.info("Current user subscription triggered", {
+                hasUser: !!user,
+                userId: user?.id,
+                userType: user?.tipo,
+                userEmail: user?.email,
+            });
+
             if (user) {
                 logger.info(
                     "User signed in and created/retrieved successfully",
                     {
                         userId: user.id,
                         userType: user.tipo,
+                        userEmail: user.email,
+                        timestamp: new Date().toISOString(),
                     },
                 );
 
                 loadingText = "Login realizado com sucesso! Redirecionando...";
-                
+                logger.info("Login successful, preparing redirect", {
+                    userType: user.tipo,
+                    targetPath:
+                        user.tipo === "professor"
+                            ? "/professor/turmas"
+                            : "/aluno",
+                });
+
                 // Clear timeout since we succeeded
                 clearTimeout(timeout);
-                
+                logger.info("Cleared authentication timeout");
+
                 // Add a small delay to show success message
                 setTimeout(() => {
                     loading = false;
-                    
+                    logger.info("Setting loading to false, redirecting user", {
+                        userType: user.tipo,
+                        targetPath:
+                            user.tipo === "professor"
+                                ? "/professor/turmas"
+                                : "/aluno",
+                    });
+
                     // Redirect based on user type
                     if (user.tipo === "professor") {
+                        logger.info(
+                            "Redirecting professor to /professor/turmas",
+                        );
                         goto("/professor/turmas");
                     } else {
+                        logger.info("Redirecting student to /aluno");
                         goto("/aluno");
                     }
                 }, 1500);
+            } else {
+                logger.info("No user found in currentUser subscription");
             }
         });
 
         // Handle auth errors
         supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_IN') {
+            logger.info("Supabase auth state change", {
+                event: event,
+                hasSession: !!session,
+                sessionUserId: session?.user?.id,
+                timestamp: new Date().toISOString(),
+            });
+
+            if (event === "SIGNED_IN") {
+                logger.info("User signed in event received");
                 loadingText = "Configurando conta...";
-            } else if (event === 'SIGNED_OUT') {
+            } else if (event === "SIGNED_OUT") {
+                logger.warn("User signed out event received", {
+                    wasLoading: loading,
+                    timestamp: new Date().toISOString(),
+                });
+
                 if (loading) {
-                    logger.error("Auth callback failed - user signed out");
+                    logger.error("Auth callback failed - user signed out", {
+                        event: event,
+                        hasSession: !!session,
+                        timestamp: new Date().toISOString(),
+                    });
                     errorMessage = "Falha na autenticação. Redirecionando...";
                     showError = true;
                     loading = false;
-                    
+
                     setTimeout(() => {
+                        logger.info("Redirecting to login due to sign out");
                         goto("/login");
                     }, 2000);
                 }
+            } else {
+                logger.info("Other auth state change", {
+                    event: event,
+                    hasSession: !!session,
+                });
+            }
+        });
+
+        // Log initial auth state
+        supabase.auth.getSession().then(({ data, error }) => {
+            if (error) {
+                logger.error("Error getting initial session", { error });
+            } else {
+                logger.info("Initial session check", {
+                    hasSession: !!data.session,
+                    sessionUserId: data.session?.user?.id,
+                    sessionEmail: data.session?.user?.email,
+                });
             }
         });
 
         return () => {
+            logger.info("Cleaning up auth callback page");
             unsubscribe();
             clearTimeout(timeout);
         };
@@ -88,23 +167,29 @@
 {#if loading}
     <Container maxWidth="md" glass={true} shadow={true}>
         <div class="callback-container">
-            <LoadingSpinner 
-                size="lg" 
-                color="primary" 
+            <LoadingSpinner
+                size="lg"
+                color="primary"
                 text={loadingText}
                 center={true}
             />
-            
+
             <div class="progress-steps">
                 <div class="step active">
                     <div class="step-icon">1</div>
                     <span>Verificando dados</span>
                 </div>
-                <div class="step" class:active={loadingText.includes('Configurando')}>
+                <div
+                    class="step"
+                    class:active={loadingText.includes("Configurando")}
+                >
                     <div class="step-icon">2</div>
                     <span>Configurando conta</span>
                 </div>
-                <div class="step" class:active={loadingText.includes('sucesso')}>
+                <div
+                    class="step"
+                    class:active={loadingText.includes("sucesso")}
+                >
                     <div class="step-icon">3</div>
                     <span>Redirecionando</span>
                 </div>
@@ -122,7 +207,7 @@
 {/if}
 
 {#if showError}
-    <Toast 
+    <Toast
         type="error"
         title="Erro de Autenticação"
         message={errorMessage}
@@ -135,8 +220,14 @@
         margin: 0;
         padding: 0;
         min-height: 100vh;
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #e9ecef 100%);
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        background: linear-gradient(
+            135deg,
+            #ffffff 0%,
+            #f8f9fa 50%,
+            #e9ecef 100%
+        );
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+            sans-serif;
     }
 
     :global(main) {
@@ -194,7 +285,7 @@
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border-color: rgba(102, 126, 234, 0.3);
-        box-shadow: 
+        box-shadow:
             0 8px 20px rgba(102, 126, 234, 0.3),
             0 4px 12px rgba(102, 126, 234, 0.2);
     }
@@ -229,7 +320,7 @@
         font-size: 2.5rem;
         font-weight: bold;
         margin: 0 auto 2rem auto;
-        box-shadow: 
+        box-shadow:
             0 15px 35px rgba(72, 187, 120, 0.3),
             0 8px 20px rgba(72, 187, 120, 0.2);
         animation: successBounce 0.6s ease-out;
