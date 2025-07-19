@@ -296,7 +296,7 @@ def main():
     # Determine repository directory - should be the mounted volume root  
     # Since we're running from /app/no_fluxo_backend but .git is at /app
     REPO_DIR = "/app" if os.path.exists('/app/.git') else "../"
-    START_COMMAND = "npm run build-and-start"
+    START_COMMAND = "npm run start-prod"
     CHECK_INTERVAL = 10  # Interval in seconds to check for updates
     BRANCH = args.branch
     

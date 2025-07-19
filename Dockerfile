@@ -27,6 +27,9 @@ COPY backend/package*.json ./backend/
 WORKDIR /app/backend/servidor
 RUN npm install
 
+# Install ts-node globally for production use
+RUN npm install -g ts-node typescript
+
 # Copy Python requirements files
 COPY backend/requirements.txt ./
 
@@ -63,8 +66,8 @@ RUN chmod +x /app/docker-entrypoint.sh
 # Set permissions on directories
 RUN chmod -R 755 /app
 
-# Build TypeScript code
-RUN npm run build || echo "Build failed, will retry later"
+# Build TypeScript code (optional now since we're using ts-node)
+RUN npm run build || echo "Build failed, will use ts-node instead"
 
 # Set git environment variables for runtime
 ENV GIT_DISCOVERY_ACROSS_FILESYSTEM=1
