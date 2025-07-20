@@ -289,7 +289,7 @@ app.use(bodyParser.urlencoded({ extended: true, limit: 500 * 1024 * 1024 }));
 console.log('🔗 Mounting router...');
 app.use(router);
 
-const port = process.env.PORT ?? 3000;
+const port = 5919;
 console.log(`🎯 Server will listen on port: ${port}`);
 
 console.log('🚀 Starting server...');

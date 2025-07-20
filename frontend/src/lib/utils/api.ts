@@ -1,7 +1,7 @@
 import { logger } from './logger';
 
 const API_URL = import.meta.env.DEV
-    ? 'http://localhost:6719'
+    ? 'http://localhost:5919'
     : import.meta.env.VITE_API_URL; // Make sure to set this in your production environment
 
 if (!API_URL) {
