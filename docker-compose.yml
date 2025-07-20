@@ -47,7 +47,7 @@ services:
     image: nginx:alpine
     container_name: projeto-pbl-nginx
     ports:
-      - "6719:6719"   # Backend HTTP (main port)
+      - "443:6719"   # Backend HTTP (main port) - temporarily using 443
       - "4503:4503"   # Additional port if needed
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
