@@ -14,6 +14,7 @@
         AvaliacaoNota,
     } from "$lib/interfaces/interfaces";
     import { Parsers } from "$lib/interfaces/parsers";
+    import { logger } from "$lib/utils/logger";
 
     interface AvaliacaoData {
         aluno: {
@@ -47,6 +48,7 @@
     let currentValues: { [tag: string]: { [criterio: string]: number } } = {};
 
     function initializeNotas() {
+        logger.info("Initializing notas structure");
         const notasInit: { [tag: string]: { [criterio: string]: number } } = {};
         Object.entries(criterios).forEach(([tag, criteriosList]) => {
             notasInit[tag] = {};
@@ -55,7 +57,7 @@
             });
         });
 
-        console.log(`Notas init: ${JSON.stringify(notasInit)}`);
+        logger.info("Notas structure initialized", { notasInit });
         return notasInit;
     }
 
@@ -63,62 +65,100 @@
         const input = event.target as HTMLInputElement;
         const value = parseFloat(input.value);
 
+        logger.info("Value change detected", {
+            tag,
+            criterioKey,
+            rawValue: input.value,
+            parsedValue: value,
+        });
+
         if (!currentValues[tag]) {
             currentValues[tag] = {};
+            logger.info("Created new tag entry in currentValues", { tag });
         }
 
         if (!isNaN(value)) {
             currentValues[tag][criterioKey] = value;
+            logger.info("Value updated in currentValues", {
+                tag,
+                criterioKey,
+                value,
+                currentValues,
+            });
+        } else {
+            logger.warn("Invalid value parsed", {
+                tag,
+                criterioKey,
+                rawValue: input.value,
+            });
         }
 
         // Update the main data structure
         avaliacaoData.notas = { ...currentValues };
+        logger.info("AvaliacaoData notas updated", { avaliacaoData });
     }
 
     async function fetchData() {
         try {
+            logger.info("Starting fetchData for evaluation page");
             loading = true;
             error = null;
             const id_problema = $page.params.id_problema;
             const id_aluno = $page.params.id_aluno;
 
+            logger.info(
+                `Fetching data for problema: ${id_problema}, aluno: ${id_aluno}`,
+            );
+
             // Get the problem details
+            logger.info("Fetching problem details from API");
             const problemaResponse = await api.get(
                 `/problemas/get?id_problema=${id_problema}`,
             );
-            problema = Parsers.parseProblema(problemaResponse);
+            logger.info("Problem response received", { problemaResponse });
 
-            console.log(`Problema: ${JSON.stringify(problema)}`);
+            problema = Parsers.parseProblema(problemaResponse);
+            logger.info("Problem parsed successfully", { problema });
 
             criterios = problema.criterios;
-
-            console.log(`Criterios: ${JSON.stringify(criterios)}`);
+            logger.info("Criteria extracted from problem", { criterios });
 
             // Get the student details
+            logger.info("Fetching student details from API");
             const aluno = await api.get(`/alunos/get?id_aluno=${id_aluno}`);
+            logger.info("Student details received", { aluno });
 
             // Initialize the current values
             currentValues = initializeNotas();
+            logger.info("Current values initialized", { currentValues });
 
             // Initialize avaliacaoData
             avaliacaoData = {
                 aluno: {
-                    nome: aluno[0].nome_completo,
+                    nome: aluno.nome_completo,
                     avatar: "/avatars/default.png",
                 },
                 notas: { ...currentValues },
             };
+            logger.info("AvaliacaoData initialized", { avaliacaoData });
 
             // Get existing evaluation if any
+            logger.info("Fetching existing evaluations");
             const avaliacoes = await api.get(
                 `/avaliacoes/list?id_problema=${id_problema}&id_aluno=${$currentUser?.id}`,
             );
+            logger.info("Existing evaluations received", { avaliacoes });
+
             const existingAvaliacao = avaliacoes.find(
                 (av: any) => av.id_aluno_avaliado === parseInt(id_aluno),
             );
+            logger.info("Existing evaluation found", { existingAvaliacao });
 
             if (existingAvaliacao) {
+                logger.info("Loading existing evaluation data");
                 const existingNotas = JSON.parse(existingAvaliacao.notas);
+                logger.info("Existing notas parsed", { existingNotas });
+
                 // Update current values with existing data
                 Object.entries(currentValues).forEach(([tag, criterios]) => {
                     if (existingNotas[tag]) {
@@ -128,54 +168,93 @@
                         };
                     }
                 });
+                logger.info("Current values updated with existing data", {
+                    currentValues,
+                });
+
                 // Update avaliacaoData
                 avaliacaoData.notas = { ...currentValues };
+                logger.info("AvaliacaoData updated with existing data", {
+                    avaliacaoData,
+                });
+            } else {
+                logger.info(
+                    "No existing evaluation found, using default values",
+                );
             }
+
+            logger.info("fetchData completed successfully");
         } catch (e: any) {
+            logger.error("Error in fetchData", {
+                error: e,
+                message: e.message,
+                stack: e.stack,
+            });
             error = e.message || "Erro ao carregar dados";
             toastType = "error";
             showToast = true;
         } finally {
             loading = false;
+            logger.info("fetchData finished, loading set to false");
         }
     }
 
     function showCriterios(tag: string) {
+        logger.info("Showing criteria dialog", { tag });
         criterioAtual = tag;
         showDialog = true;
     }
 
     function hideCriterios() {
+        logger.info("Hiding criteria dialog");
         criterioAtual = null;
         showDialog = false;
     }
 
     async function handleSubmit() {
         try {
+            logger.info("Starting evaluation submission");
             const id_problema = $page.params.id_problema;
             const id_aluno = $page.params.id_aluno;
 
+            logger.info("Calculating media for evaluation");
             const media = calculateMedia();
+            logger.info("Media calculated", { media });
+
             const notas = {
                 ...currentValues,
                 media,
             };
+            logger.info("Final notas object prepared", { notas });
 
-            await api.post("/problemas/add-avaliacao", {
+            const payload = {
                 id_problema: parseInt(id_problema),
                 id_aluno_avaliador: $currentUser?.id,
                 id_aluno_avaliado: parseInt(id_aluno),
                 notas: JSON.stringify(notas),
-            });
+            };
+            logger.info("Submitting evaluation payload", { payload });
+
+            await api.post("/problemas/add-avaliacao", payload);
+            logger.info("Evaluation submitted successfully");
 
             toastType = "success";
             toastMessage = "Avaliação salva com sucesso!";
             showToast = true;
+            logger.info("Success toast triggered");
 
             setTimeout(() => {
+                logger.info("Navigating back after successful submission");
                 history.back();
             }, 2000);
         } catch (e: any) {
+            logger.error("Error submitting evaluation", {
+                error: e,
+                message: e.message,
+                stack: e.stack,
+                currentValues,
+                avaliacaoData,
+            });
             error = e.message || "Erro ao salvar avaliação";
             toastType = "error";
             showToast = true;
@@ -183,26 +262,46 @@
     }
 
     function calculateMedia(): number {
+        logger.info("Calculating media from current values", { currentValues });
         let total = 0;
         let count = 0;
 
-        Object.entries(currentValues).forEach(([_, criterios]) => {
-            Object.values(criterios).forEach((nota) => {
+        Object.entries(currentValues).forEach(([tag, criterios]) => {
+            logger.info("Processing tag for media calculation", {
+                tag,
+                criterios,
+            });
+            Object.entries(criterios).forEach(([criterioKey, nota]) => {
                 if (!isNaN(nota)) {
                     total += nota;
                     count++;
+                    logger.info("Added nota to total", {
+                        criterioKey,
+                        nota,
+                        runningTotal: total,
+                        count,
+                    });
+                } else {
+                    logger.warn("Skipping invalid nota", { criterioKey, nota });
                 }
             });
         });
 
-        return count > 0 ? total / count : 0;
+        const media = count > 0 ? total / count : 0;
+        logger.info("Media calculation completed", { total, count, media });
+        return media;
     }
 
     function formatValue(value: number): string {
-        return value.toFixed(1);
+        const formatted = value.toFixed(1);
+        logger.debug("Formatting value", { value, formatted });
+        return formatted;
     }
 
-    onMount(fetchData);
+    onMount(() => {
+        logger.info("Component mounted, starting fetchData");
+        fetchData();
+    });
 </script>
 
 <div class="container" transition:fade={{ duration: 300 }}>
