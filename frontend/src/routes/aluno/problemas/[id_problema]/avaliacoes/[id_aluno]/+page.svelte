@@ -41,7 +41,7 @@
     let showToast = false;
     let toastMessage: string = "";
     let toastType: "success" | "error" | "info" = "error";
-    let criterioAtual: string | null = null;
+    let criterioAtual: { tag: string; criterio: any } | null = null;
     let showDialog = false;
 
     // Keep track of current values separately to avoid binding issues
@@ -199,9 +199,9 @@
         }
     }
 
-    function showCriterios(tag: string) {
-        logger.info("Showing criteria dialog", { tag });
-        criterioAtual = tag;
+    function showCriterios(tag: string, criterio: any) {
+        logger.info("Showing criteria dialog", { tag, criterio });
+        criterioAtual = { tag, criterio };
         showDialog = true;
     }
 
@@ -243,10 +243,8 @@
             showToast = true;
             logger.info("Success toast triggered");
 
-            setTimeout(() => {
-                logger.info("Navigating back after successful submission");
-                history.back();
-            }, 2000);
+            logger.info("Navigating back after successful submission");
+            history.back();
         } catch (e: any) {
             logger.error("Error submitting evaluation", {
                 error: e,
@@ -372,7 +370,8 @@
                                     <button
                                         type="button"
                                         class="criteria-btn"
-                                        on:click={() => showCriterios(tag)}
+                                        on:click={() =>
+                                            showCriterios(tag, criterio)}
                                     >
                                         Critérios
                                     </button>
@@ -393,17 +392,20 @@
             closeOnClickOutside={true}
             on:close={hideCriterios}
         >
-            <h3 slot="header">Critérios de {criterioAtual}</h3>
+            <h3 slot="header">
+                Critérios de {criterioAtual.tag} - {criterioAtual.criterio
+                    .nome_criterio}
+            </h3>
             <div class="dialog-content">
                 <p class="criteria-subtitle">
-                    Para avaliar o desempenho sobre essa categoria siga os
-                    seguintes critérios:
+                    Para avaliar o desempenho sobre esse critério siga a
+                    seguinte descrição:
                 </p>
-                <ul>
-                    {#each criterios[criterioAtual] as criterio}
-                        <li>{criterio.descricao_criterio}</li>
+                <div class="criteria-description">
+                    {#each criterioAtual.criterio.descricao_criterio.split("\n") as line}
+                        <p>{line}</p>
                     {/each}
-                </ul>
+                </div>
             </div>
         </Dialog>
     {/if}
@@ -737,6 +739,24 @@
 
     .dialog-content li:last-child {
         border-bottom: none;
+    }
+
+    .criteria-description {
+        background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.95) 0%,
+            rgba(248, 249, 250, 0.95) 100%
+        );
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid rgba(206, 212, 218, 0.4);
+        margin-top: 1rem;
+    }
+
+    .criteria-description p {
+        margin: 0;
+        color: #495057;
+        line-height: 1.6;
     }
 
     @media (max-width: 768px) {

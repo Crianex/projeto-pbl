@@ -6,6 +6,8 @@
     import { goto } from "$app/navigation";
     import Dialog from "$lib/components/Dialog.svelte";
     import { problemaStore } from "$lib/utils/stores";
+    import { TurmasService } from "$lib/services/turmas_service";
+    import { ProblemasService } from "$lib/services/problemas_service";
     import { Parsers } from "$lib/interfaces/parsers";
     import type { ProblemaModel } from "$lib/interfaces/interfaces";
     import { Utils } from "$lib/utils/utils";
@@ -27,18 +29,15 @@
             loading = true;
             error = null;
 
-            // Fetch turma details
-            const turmaData = await api.get(`/turmas/get?id_turma=${turmaId}`);
+            // Fetch turma details using cache service
+            const turmaData = await TurmasService.getById(turmaId);
             turma = {
-                nome_turma: turmaData.nome_turma,
-                id_professor: turmaData.id_professor,
+                nome_turma: turmaData.nome_turma || "",
+                id_professor: turmaData.id_professor?.toString() || "",
             };
 
-            // Fetch problemas for this turma using the new endpoint
-            const problemasData = await api.get(
-                `/problemas/list-by-turma?id_turma=${turmaId}`,
-            );
-            const parsedProblemas = Parsers.parseProblemas(problemasData);
+            // Fetch problemas for this turma using cache service
+            const parsedProblemas = await ProblemasService.getByTurma(turmaId);
             problemas = parsedProblemas;
             problemaStore.set(parsedProblemas);
         } catch (err) {
@@ -60,6 +59,11 @@
             loading = true;
             await api.delete(
                 `/problemas/delete?id_problema=${problemaToDelete.id_problema}`,
+            );
+            // Invalidate cache after deletion
+            ProblemasService.invalidateCache(
+                problemaToDelete.id_problema.toString(),
+                turmaId,
             );
             problemaStore.update((ps) =>
                 ps.filter(

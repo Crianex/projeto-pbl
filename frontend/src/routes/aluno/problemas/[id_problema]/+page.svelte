@@ -14,6 +14,7 @@
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
     import Table from "$lib/components/Table.svelte";
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
+    import { ProblemasService } from "$lib/services/problemas_service";
 
     interface Avaliacao {
         id_avaliacao: number;
@@ -112,12 +113,9 @@
             const id_problema = parseInt($page.params.id_problema);
             console.log("id_problema:", id_problema);
 
-            // Get the problem details first
-            const problemaData = await api.get(
-                `/problemas/get?id_problema=${id_problema}`,
-            );
+            // Get the problem details first using cache service
             console.log("problemaData received");
-            problema = Parsers.parseProblema(problemaData);
+            problema = await ProblemasService.getById(id_problema.toString());
 
             // Get all evaluations using the service
             console.log("calling AvaliacoesService.getAvaliacoes");
@@ -126,8 +124,14 @@
 
             console.log(`avaliacoesData: ${JSON.stringify(avaliacoesData)}`);
 
+            // Filter evaluations where current user is the evaluator (aluno_avaliador)
+            const currentUserId = $currentUser?.id;
+            const filteredAvaliacoesData = avaliacoesData.filter(
+                (avaliacao) => avaliacao.aluno_avaliador?.id === currentUserId,
+            );
+
             // Transform the data to match our interface
-            avaliacoes = avaliacoesData.map((avaliacao) => {
+            avaliacoes = filteredAvaliacoesData.map((avaliacao) => {
                 const media = avaliacao.notas
                     ? Object.values(avaliacao.notas)
                           .map((criterios) =>
@@ -140,39 +144,47 @@
                       Object.keys(avaliacao.notas).length
                     : undefined;
 
+                const isSelfEvaluation =
+                    avaliacao.aluno_avaliado?.id === currentUserId;
                 return {
                     id_avaliacao: avaliacao.id_avaliacao,
                     problema: problema.nome_problema || "",
                     aluno: {
                         id: avaliacao.aluno_avaliado?.id || 0,
-                        nome: avaliacao.aluno_avaliado?.nome_completo || "",
+                        nome: isSelfEvaluation
+                            ? `${avaliacao.aluno_avaliado?.nome_completo || ""} (auto avaliação)`
+                            : avaliacao.aluno_avaliado?.nome_completo || "",
                         avatar: "/avatars/default.png",
                     },
                     nota: media,
                     enviada: true,
-                    isCurrentUser:
-                        avaliacao.aluno_avaliado?.id === $currentUser?.id,
+                    isCurrentUser: isSelfEvaluation,
                 };
             });
 
-            // Add students without evaluations
+            // Add students without evaluations (only for current user's evaluations)
             if (problema.turma?.alunos) {
                 const avaliacoesMap = new Map(
                     avaliacoes.map((av) => [av.aluno.id, av]),
                 );
 
+                // Only add students that the current user hasn't evaluated yet
+                // Include the current user so they can self-evaluate
                 problema.turma.alunos.forEach((aluno) => {
                     if (!avaliacoesMap.has(aluno.id)) {
+                        const isCurrentUser = aluno.id === currentUserId;
                         avaliacoes.push({
                             id_avaliacao: 0,
                             problema: problema.nome_problema || "",
                             aluno: {
                                 id: aluno.id,
-                                nome: aluno.nome_completo || "",
+                                nome: isCurrentUser
+                                    ? `${aluno.nome_completo || ""} (auto avaliação)`
+                                    : aluno.nome_completo || "",
                                 avatar: "/avatars/default.png",
                             },
                             enviada: false,
-                            isCurrentUser: aluno.id === $currentUser?.id,
+                            isCurrentUser: isCurrentUser,
                         });
                     }
                 });

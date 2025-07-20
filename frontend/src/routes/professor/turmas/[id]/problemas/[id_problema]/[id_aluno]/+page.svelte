@@ -14,6 +14,10 @@
     import Container from "$lib/components/Container.svelte";
     import Table from "$lib/components/Table.svelte";
     import BackButton from "$lib/components/BackButton.svelte";
+    import { ProblemasService } from "$lib/services/problemas_service";
+    import { AlunosService } from "$lib/services/alunos_service";
+    import { TurmasService } from "$lib/services/turmas_service";
+    import { AvaliacoesService } from "$lib/services/avaliacoes_service";
 
     let problema: ProblemaModel | null = null;
     let aluno: AlunoModel | null = null;
@@ -60,16 +64,16 @@
                 `Loading aluno details for id_aluno: ${id_aluno}, problema: ${id_problema}, turma: ${id}`,
             );
 
-            // Get problema, aluno, turma and all avaliações data for the problema
+            // Get problema, aluno, turma and all avaliações data for the problema using cache services
             logger.info(
                 "Fetching problema, aluno, turma, and all avaliações data...",
             );
             const [problemaData, alunoData, turmaData, avaliacoesData] =
                 await Promise.all([
-                    api.get(`/problemas/get?id_problema=${id_problema}`),
-                    api.get(`/alunos/get?id_aluno=${id_aluno}`),
-                    api.get(`/turmas/get?id_turma=${id}`),
-                    api.get(`/avaliacoes/list?id_problema=${id_problema}`),
+                    ProblemasService.getById(id_problema),
+                    AlunosService.getById(id_aluno),
+                    TurmasService.getById(id),
+                    AvaliacoesService.getByProblema(id_problema),
                 ]);
 
             logger.info("Data fetched successfully", {
@@ -81,9 +85,9 @@
 
             console.log(`alunoData`, JSON.stringify(alunoData, null, 2));
 
-            problema = Parsers.parseProblema(problemaData);
-            aluno = Parsers.parseAluno(alunoData);
-            turma = Parsers.parseTurma(turmaData);
+            problema = problemaData;
+            aluno = alunoData;
+            turma = turmaData;
 
             logger.info("Data parsed successfully", {
                 problema: problema?.nome_problema,
@@ -91,8 +95,14 @@
                 turma: turma?.nome_turma,
             });
 
+            // Filter evaluations where the specified aluno is the evaluator (avaliador)
+            const currentAlunoId = Number($page.params.id_aluno);
+            const filteredAvaliacoesData = avaliacoesData.filter(
+                (av: any) => av.id_aluno_avaliador === currentAlunoId,
+            );
+
             // Create a map of avaliacoes by aluno_avaliado (including self-evaluations)
-            avaliacoesData.forEach((av: any) => {
+            filteredAvaliacoesData.forEach((av: any) => {
                 avaliacoesMap.set(av.id_aluno_avaliado, av);
             });
 
@@ -155,9 +165,18 @@
         console.log("Avaliar aluno clicked", id_aluno_avaliado);
     }
 
+    // Show all students in the turma, with evaluation status
     $: alunosDaTurma = turma?.alunos || [];
-    $: totalPages = Math.ceil(alunosDaTurma.length / itemsPerPage);
-    $: paginatedAlunos = alunosDaTurma.slice(
+    $: currentAlunoId = Number($page.params.id_aluno);
+
+    // Get all students that the current aluno has evaluated
+    $: evaluatedStudentIds = Array.from(avaliacoesMap.keys());
+
+    // Show all students in the turma
+    $: filteredAlunos = alunosDaTurma;
+
+    $: totalPages = Math.ceil(filteredAlunos.length / itemsPerPage);
+    $: paginatedAlunos = filteredAlunos.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage,
     );

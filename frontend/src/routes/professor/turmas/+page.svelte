@@ -7,6 +7,8 @@
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { currentUser, isProfessor } from "$lib/utils/auth";
+    import { TurmasService } from "$lib/services/turmas_service";
+    import { cacheInvalidation } from "$lib/utils/stores";
 
     let turmas: TurmaModel[] = [];
     let loading = true;
@@ -23,12 +25,14 @@
         try {
             loading = true;
             error = null;
-            const data = await api.get("/turmas/list");
+
+            // Use the caching service instead of direct API call
+            const allTurmas = await TurmasService.getAll();
 
             // Filter turmas to only show those belonging to the current professor
             const user = $currentUser;
             if (user && isProfessor(user)) {
-                turmas = data.filter(
+                turmas = allTurmas.filter(
                     (turma: TurmaModel) => turma.id_professor === user.id,
                 );
             } else {
@@ -107,6 +111,8 @@
             await api.delete(
                 `/turmas/delete?id_turma=${turmaToDelete.id_turma}`,
             );
+            // Invalidate cache after deletion
+            TurmasService.invalidateCache(turmaToDelete.id_turma.toString());
             await fetchTurmas();
             closeDeleteConfirm();
         } catch (err) {

@@ -15,6 +15,9 @@
     import Container from "$lib/components/Container.svelte";
     import Table from "$lib/components/Table.svelte";
     import BackButton from "$lib/components/BackButton.svelte";
+    import { ProblemasService } from "$lib/services/problemas_service";
+    import { TurmasService } from "$lib/services/turmas_service";
+    import { AvaliacoesService } from "$lib/services/avaliacoes_service";
 
     interface AlunoComMedia extends AlunoModel {
         mediaNotas: {
@@ -68,13 +71,13 @@
                 `Loading problema details for id_problema: ${id_problema}, turma: ${id}`,
             );
 
-            // Get both problema and turma data
+            // Get both problema and turma data using cache services
             logger.info("Fetching problema, turma, and avaliações data...");
             const [problemaData, turmaData, avaliacoesData] = await Promise.all(
                 [
-                    api.get(`/problemas/get?id_problema=${id_problema}`),
-                    api.get(`/turmas/get?id_turma=${id}`),
-                    api.get(`/avaliacoes/list?id_problema=${id_problema}`),
+                    ProblemasService.getById(id_problema),
+                    TurmasService.getById(id),
+                    AvaliacoesService.getByProblema(id_problema),
                 ],
             );
 
@@ -84,8 +87,8 @@
                 avaliacoesCount: avaliacoesData?.length || 0,
             });
 
-            problema = Parsers.parseProblema(problemaData);
-            turma = Parsers.parseTurma(turmaData);
+            problema = problemaData;
+            turma = turmaData;
 
             logger.info("Data parsed successfully", {
                 problema: problema?.nome_problema,

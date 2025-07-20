@@ -1,6 +1,20 @@
 import { writable } from 'svelte/store';
 import type { ProblemaModel } from '$lib/interfaces/interfaces';
 
+// Re-export cache utilities for convenience
+export {
+    turmasCache,
+    turmaCache,
+    problemasCache,
+    problemaCache,
+    alunosCache,
+    alunoCache,
+    avaliacoesCache,
+    cacheInvalidation,
+    isAnyLoading
+} from '$lib/utils/cache';
+
+// Legacy compatibility - keep the old problemaStore for existing code
 export const problemaStore = writable<ProblemaModel[]>([]);
 
 export const addProblema = (problema: ProblemaModel) => {

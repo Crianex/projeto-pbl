@@ -6,6 +6,7 @@
     import { goto } from "$app/navigation";
     import SearchAlunoDialog from "../SearchAlunoDialog.svelte";
     import Dialog from "$lib/components/Dialog.svelte";
+    import { TurmasService } from "$lib/services/turmas_service";
 
     const turmaId = $page.params.id;
 
@@ -38,10 +39,11 @@
         try {
             loading = true;
             error = null;
-            const data = await api.get(`/turmas/get?id_turma=${turmaId}`);
+            // Use the caching service instead of direct API call
+            const data = await TurmasService.getById(turmaId);
             turma = {
-                nome_turma: data.nome_turma,
-                id_professor: data.id_professor,
+                nome_turma: data.nome_turma || "",
+                id_professor: data.id_professor?.toString() || "",
             };
             originalTurma = { ...turma };
             // Extract alunos from the nested structure
@@ -83,13 +85,13 @@
             // Update turma basic info
             await api.put(`/turmas/update?id_turma=${turmaId}`, turma);
 
+            // Invalidate cache after update
+            TurmasService.invalidateCache(turmaId);
+
             // Get current enrolled students to compare
-            const currentData = await api.get(
-                `/turmas/get?id_turma=${turmaId}`,
-            );
+            const currentData = await TurmasService.getById(turmaId, true); // Force refresh
             const currentAlunos =
-                currentData.alunos?.map((item: any) => item.alunos.id_aluno) ||
-                [];
+                currentData.alunos?.map((item: any) => item.id_aluno) || [];
 
             // Remove students that are no longer in the list
             for (const alunoId of currentAlunos) {
