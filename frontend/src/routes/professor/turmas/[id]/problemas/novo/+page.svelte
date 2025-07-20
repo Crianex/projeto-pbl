@@ -6,6 +6,7 @@
     import { problemaStore } from "$lib/utils/stores";
     import { Parsers } from "$lib/interfaces/parsers";
     import type { CriteriosGroup } from "$lib/interfaces/interfaces";
+    import { currentUser } from "$lib/utils/auth";
 
     const turmaId = $page.params.id;
 

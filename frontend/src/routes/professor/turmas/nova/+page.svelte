@@ -3,6 +3,7 @@
     import { goto } from "$app/navigation";
     import Button from "$lib/components/Button.svelte";
     import SearchAlunoDialog from "../SearchAlunoDialog.svelte";
+    import { currentUser } from "$lib/utils/auth";
 
     let nomeTurma = "";
     let alunosMatriculados: Array<{
@@ -27,7 +28,7 @@
             // First create the turma
             const turmaResponse = await api.post("/turmas/create", {
                 nome_turma: nomeTurma,
-                id_professor: 1, // TODO: Get this from the logged in user
+                id_professor: $currentUser?.id,
             });
 
             // Then add all students

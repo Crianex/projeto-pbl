@@ -69,7 +69,7 @@ export const AlunoController: EndpointController = {
                 return res.status(404).json({ error: 'Aluno not found' });
             }
 
-            return res.json(data);
+            return res.json(data[0]);
         }),
 
         'getByEmail': new Pair(RequestType.GET, async (req: Request, res: Response) => {

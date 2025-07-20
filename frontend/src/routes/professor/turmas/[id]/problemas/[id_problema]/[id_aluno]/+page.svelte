@@ -2,15 +2,18 @@
     import { onMount } from "svelte";
     import { page } from "$app/stores";
     import { api } from "$lib/utils/api";
+    import { logger } from "$lib/utils/logger";
     import type {
         ProblemaModel,
         AlunoModel,
         TurmaModel,
     } from "$lib/interfaces/interfaces";
+    import type { Column } from "$lib/interfaces/column";
     import { Parsers } from "$lib/interfaces/parsers";
     import Button from "$lib/components/Button.svelte";
     import Container from "$lib/components/Container.svelte";
     import Table from "$lib/components/Table.svelte";
+    import BackButton from "$lib/components/BackButton.svelte";
 
     let problema: ProblemaModel | null = null;
     let aluno: AlunoModel | null = null;
@@ -21,48 +24,129 @@
     let currentPage = 1;
     let itemsPerPage = 10;
 
+    // Table configuration
+    let columns: Column[] = [
+        {
+            key: "aluno",
+            label: "Aluno Avaliado",
+            width: "50%",
+        },
+        {
+            key: "notas",
+            label: "Notas (C/H/A)",
+            width: "25%",
+        },
+        {
+            key: "actions",
+            label: "Ações",
+            width: "25%",
+            render: (row: any) => ({
+                component: "button",
+                props: {
+                    variant: row.isEvaluated ? "secondary" : "primary",
+                    text: row.isEvaluated ? "Editar Avaliação" : "Avaliar",
+                    onClick: () => handleAvaliarAluno(row.id),
+                },
+            }),
+        },
+    ];
+
+    let tableRows: any[] = [];
+
     onMount(async () => {
         try {
             const { id_problema, id_aluno, id } = $page.params;
+            logger.info(
+                `Loading aluno details for id_aluno: ${id_aluno}, problema: ${id_problema}, turma: ${id}`,
+            );
 
-            // Get problema, aluno, turma and avaliações data
+            // Get problema, aluno, turma and all avaliações data for the problema
+            logger.info(
+                "Fetching problema, aluno, turma, and all avaliações data...",
+            );
             const [problemaData, alunoData, turmaData, avaliacoesData] =
                 await Promise.all([
                     api.get(`/problemas/get?id_problema=${id_problema}`),
                     api.get(`/alunos/get?id_aluno=${id_aluno}`),
                     api.get(`/turmas/get?id_turma=${id}`),
-                    api.get(
-                        `/avaliacoes/list?id_problema=${id_problema}&id_aluno=${id_aluno}`,
-                    ),
+                    api.get(`/avaliacoes/list?id_problema=${id_problema}`),
                 ]);
+
+            logger.info("Data fetched successfully", {
+                problemaData: !!problemaData,
+                alunoData: !!alunoData,
+                turmaData: !!turmaData,
+                avaliacoesCount: avaliacoesData?.length || 0,
+            });
+
+            console.log(`alunoData`, JSON.stringify(alunoData, null, 2));
 
             problema = Parsers.parseProblema(problemaData);
             aluno = Parsers.parseAluno(alunoData);
             turma = Parsers.parseTurma(turmaData);
 
-            // Create a map of avaliacoes by aluno_avaliado
-            avaliacoesData.forEach((av: any) => {
-                if (av.id_aluno_avaliador === id_aluno) {
-                    avaliacoesMap.set(av.id_aluno_avaliado, av);
-                }
+            logger.info("Data parsed successfully", {
+                problema: problema?.nome_problema,
+                aluno: aluno?.nome_completo,
+                turma: turma?.nome_turma,
             });
+
+            // Create a map of avaliacoes by aluno_avaliado (including self-evaluations)
+            avaliacoesData.forEach((av: any) => {
+                avaliacoesMap.set(av.id_aluno_avaliado, av);
+            });
+
+            logger.info(
+                `Processed ${avaliacoesMap.size} avaliações for display`,
+            );
 
             // Force Svelte to recognize the map update
             avaliacoesMap = new Map(avaliacoesMap);
         } catch (e: any) {
+            logger.error("Error loading aluno details:", e);
             error = e.message || "Erro ao carregar os dados";
         } finally {
             loading = false;
+            logger.info("Loading completed");
         }
     });
 
     function formatNotas(notas: string | null) {
         if (!notas) return "Não avaliado";
         try {
-            const { competencia, habilidade, atitude } = JSON.parse(notas);
-            return `(${competencia}/1, ${habilidade}/1, ${atitude}/1)`;
-        } catch {
-            return "Não avaliado";
+            const notasObj = JSON.parse(notas);
+            logger.debug(`Parsing notas:`, notasObj);
+
+            // Handle nested structure with categories
+            let competencia = 0;
+            let habilidade = 0;
+            let atitude = 0;
+            let count = 0;
+
+            // Iterate through all categories in the notas
+            Object.values(notasObj).forEach((categoria: any) => {
+                if (typeof categoria === "object" && categoria !== null) {
+                    // Sum up the values from each category
+                    competencia += categoria.conhecimento || 0;
+                    habilidade += categoria.habilidades || 0;
+                    atitude += categoria.atitudes || 0;
+                    count++;
+                }
+            });
+
+            // If we found valid categories, use the averages
+            if (count > 0) {
+                competencia = competencia / count;
+                habilidade = habilidade / count;
+                atitude = atitude / count;
+            }
+
+            const formattedNotas = `(${competencia.toFixed(2)}, ${habilidade.toFixed(2)}, ${atitude.toFixed(2)})`;
+            logger.debug(`Formatted notas: ${formattedNotas}`);
+            return formattedNotas;
+        } catch (error) {
+            logger.warn(`Failed to parse notas:`, notas, error);
+            return "Erro ao processar notas";
         }
     }
 
@@ -71,14 +155,36 @@
         console.log("Avaliar aluno clicked", id_aluno_avaliado);
     }
 
-    $: alunosDaTurma =
-        turma?.alunos?.filter((a) => a.id !== Number($page.params.id_aluno)) ||
-        [];
+    $: alunosDaTurma = turma?.alunos || [];
     $: totalPages = Math.ceil(alunosDaTurma.length / itemsPerPage);
     $: paginatedAlunos = alunosDaTurma.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage,
     );
+
+    // Transform data for Table component
+    $: tableRows = paginatedAlunos.map((alunoAvaliado) => {
+        const isSelfEvaluation =
+            alunoAvaliado.id === Number($page.params.id_aluno);
+        const isEvaluated = avaliacoesMap.has(alunoAvaliado.id);
+        const notas = formatNotas(
+            avaliacoesMap.get(alunoAvaliado.id)?.notas || null,
+        );
+
+        return {
+            id: alunoAvaliado.id,
+            aluno: isSelfEvaluation
+                ? `${alunoAvaliado.nome_completo || "Nome não disponível"} (Auto-avaliação)`
+                : alunoAvaliado.nome_completo || "Nome não disponível",
+            notas: notas,
+            notasClass: !isEvaluated ? "nao-avaliado" : "",
+            isEvaluated: isEvaluated,
+            isSelfEvaluation: isSelfEvaluation,
+            rowClass: isSelfEvaluation ? "self-evaluation" : "",
+            // For actions column - will be handled by custom rendering
+            actions: "",
+        };
+    });
 </script>
 
 <Container>
@@ -93,6 +199,7 @@
         </div>
     {:else}
         <div class="content-wrapper">
+            <BackButton text="Voltar" on:click={() => history.back()} />
             <div class="header">
                 <h1>Avaliações de {aluno?.nome_completo || ""}</h1>
                 <div class="problema-info">
@@ -103,56 +210,10 @@
             </div>
 
             <div class="avaliacoes-section">
-                <h2>Avaliações Enviadas aos Colegas</h2>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Aluno</th>
-                                <th>Notas (C/H/A)</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {#each paginatedAlunos as alunoAvaliado}
-                                <tr>
-                                    <td class="aluno-cell">
-                                        <span
-                                            >{alunoAvaliado.nome_completo ||
-                                                "Nome não disponível"}</span
-                                        >
-                                    </td>
-                                    <td
-                                        class:nao-avaliado={!avaliacoesMap.has(
-                                            alunoAvaliado.id,
-                                        )}
-                                    >
-                                        {formatNotas(
-                                            avaliacoesMap.get(alunoAvaliado.id)
-                                                ?.notas || null,
-                                        )}
-                                    </td>
-                                    <td>
-                                        <Button
-                                            variant={avaliacoesMap.has(
-                                                alunoAvaliado.id,
-                                            )
-                                                ? "secondary"
-                                                : "primary"}
-                                            on:click={() =>
-                                                handleAvaliarAluno(
-                                                    alunoAvaliado.id,
-                                                )}
-                                        >
-                                            {avaliacoesMap.has(alunoAvaliado.id)
-                                                ? "Editar Avaliação"
-                                                : "Avaliar"}
-                                        </Button>
-                                    </td>
-                                </tr>
-                            {/each}
-                        </tbody>
-                    </table>
+                <h2>Avaliações do Aluno</h2>
+
+                <div class="table-wrapper">
+                    <Table {columns} rows={tableRows} enableSelection={false} />
                 </div>
 
                 <div class="pagination">
@@ -226,38 +287,8 @@
         color: #333;
     }
 
-    .table-container {
-        width: 100%;
-        overflow-x: auto;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    th {
-        text-align: left;
-        padding: 1rem;
-        background: #f8f9fa;
-        font-weight: 600;
-        color: #495057;
-    }
-
-    td {
-        padding: 1rem;
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .aluno-cell {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .nao-avaliado {
-        color: #6c757d;
-        font-style: italic;
+    .table-wrapper {
+        margin-bottom: 1rem;
     }
 
     .pagination {

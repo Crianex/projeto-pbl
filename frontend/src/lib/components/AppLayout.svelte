@@ -231,6 +231,7 @@
         position: fixed;
         top: 0;
         left: 0;
+        box-sizing: border-box;
     }
 
     .sidebar-content {
@@ -238,6 +239,7 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        min-height: 0;
     }
 
     .sidebar.mobile {
@@ -252,6 +254,9 @@
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
+        flex: 1;
+        overflow-y: auto;
+        margin-bottom: 1rem;
     }
 
     nav a,
@@ -266,6 +271,7 @@
         transition:
             background-color 0.2s,
             color 0.2s;
+        white-space: nowrap;
     }
 
     nav a:hover,
@@ -278,6 +284,11 @@
         background-color: #e9ecef;
         color: #212529;
         font-weight: 500;
+    }
+
+    .logout {
+        flex-shrink: 0;
+        margin-top: auto;
     }
 
     .logout button {

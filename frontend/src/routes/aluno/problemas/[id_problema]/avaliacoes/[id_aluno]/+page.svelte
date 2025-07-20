@@ -206,8 +206,10 @@
 </script>
 
 <div class="container" transition:fade={{ duration: 300 }}>
+    <div class="back-section">
+        <BackButton text="Voltar" on:click={() => history.back()} />
+    </div>
     <div class="header">
-        <BackButton on:click={() => history.back()} />
         <h1>Avaliação Individual</h1>
     </div>
 
@@ -323,6 +325,10 @@
         position: relative;
         min-height: 100%;
         height: fit-content;
+    }
+
+    .back-section {
+        margin-bottom: 1.5rem;
     }
 
     .header {

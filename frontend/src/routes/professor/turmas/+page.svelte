@@ -6,6 +6,7 @@
     import { api } from "$lib/utils/api";
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
+    import { currentUser, isProfessor } from "$lib/utils/auth";
 
     let turmas: TurmaModel[] = [];
     let loading = true;
@@ -23,7 +24,20 @@
             loading = true;
             error = null;
             const data = await api.get("/turmas/list");
-            turmas = data;
+
+            // Filter turmas to only show those belonging to the current professor
+            const user = $currentUser;
+            if (user && isProfessor(user)) {
+                turmas = data.filter(
+                    (turma: TurmaModel) => turma.id_professor === user.id,
+                );
+            } else {
+                turmas = [];
+                error =
+                    user === undefined
+                        ? "Loading user information..."
+                        : "Access denied: You must be a professor to view turmas";
+            }
         } catch (err) {
             error =
                 err instanceof Error ? err.message : "Failed to fetch turmas";
@@ -34,11 +48,20 @@
     }
 
     onMount(() => {
-        fetchTurmas();
+        // Wait for user to be loaded before fetching turmas
+        let hasLoaded = false;
+        const unsubscribe = currentUser.subscribe((user) => {
+            if (user !== undefined && !hasLoaded) {
+                hasLoaded = true;
+                fetchTurmas();
+            }
+        });
+
         // Add click outside listener
         document.addEventListener("click", handleClickOutside);
         return () => {
             document.removeEventListener("click", handleClickOutside);
+            unsubscribe();
         };
     });
 
@@ -81,7 +104,9 @@
 
         try {
             loading = true;
-            await api.delete(`/turmas/delete?id_turma=${turmaToDelete.id_turma}`);
+            await api.delete(
+                `/turmas/delete?id_turma=${turmaToDelete.id_turma}`,
+            );
             await fetchTurmas();
             closeDeleteConfirm();
         } catch (err) {

@@ -9,8 +9,10 @@
         AvaliacaoModel,
         ProblemaModel,
     } from "$lib/interfaces/interfaces";
+    import type { Column } from "$lib/interfaces/column";
     import { Parsers } from "$lib/interfaces/parsers";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
+    import Table from "$lib/components/Table.svelte";
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
 
     interface Avaliacao {
@@ -30,6 +32,7 @@
     let problema: ProblemaModel;
     let loading = true;
     let error: string | null = null;
+    let tableRows: any[] = [];
 
     let currentPage = 1;
     const itemsPerPage = 10;
@@ -40,31 +43,101 @@
         currentPage * itemsPerPage,
     );
 
+    // Transform data for Table component
+    $: tableRows = paginatedAvaliacoes.map((avaliacao) => {
+        return {
+            id: avaliacao.id_avaliacao,
+            user: {
+                name: avaliacao.aluno.nome,
+                role: "", // No role for students in this context
+                avatar: avaliacao.aluno.avatar,
+            },
+            enviada: avaliacao.enviada,
+            nota: avaliacao.nota,
+            isCurrentUser: avaliacao.isCurrentUser,
+            alunoId: avaliacao.aluno.id,
+            // For actions column - handled by render function
+            actions: "",
+        };
+    });
+
+    // Table configuration
+    let columns: Column[] = [
+        {
+            key: "user",
+            label: "Aluno",
+            width: "60%",
+        },
+        {
+            key: "actions",
+            label: "Avaliação enviada",
+            width: "40%",
+            render: (row: any) => {
+                if (row.enviada) {
+                    return {
+                        component: "span",
+                        props: {
+                            text: row.nota?.toFixed(2) || "0.00",
+                            class: "grade",
+                        },
+                    };
+                } else if (row.isCurrentUser) {
+                    return {
+                        component: "button",
+                        props: {
+                            variant: "primary",
+                            text: "Avaliar",
+                            onClick: () => handleSelfEvaluation(),
+                        },
+                    };
+                } else {
+                    return {
+                        component: "button",
+                        props: {
+                            variant: "primary",
+                            text: "Avaliar",
+                            onClick: () => handleEvaluation(row.alunoId),
+                        },
+                    };
+                }
+            },
+        },
+    ];
+
     async function fetchAvaliacoes() {
         try {
+            console.log("fetchAvaliacoes started");
             loading = true;
             error = null;
             const id_problema = parseInt($page.params.id_problema);
+            console.log("id_problema:", id_problema);
 
             // Get the problem details first
             const problemaData = await api.get(
                 `/problemas/get?id_problema=${id_problema}`,
             );
+            console.log("problemaData received");
             problema = Parsers.parseProblema(problemaData);
 
             // Get all evaluations using the service
+            console.log("calling AvaliacoesService.getAvaliacoes");
             const avaliacoesData =
                 await AvaliacoesService.getAvaliacoes(id_problema);
+
+            console.log(`avaliacoesData: ${JSON.stringify(avaliacoesData)}`);
 
             // Transform the data to match our interface
             avaliacoes = avaliacoesData.map((avaliacao) => {
                 const media = avaliacao.notas
                     ? Object.values(avaliacao.notas)
-                          .flatMap((criterios) => Object.values(criterios))
-                          .reduce((sum, nota) => sum + nota, 0) /
-                      Object.values(avaliacao.notas).flatMap((criterios) =>
-                          Object.values(criterios),
-                      ).length
+                          .map((criterios) =>
+                              Object.values(criterios).reduce(
+                                  (sum, nota) => sum + nota,
+                                  0,
+                              ),
+                          )
+                          .reduce((sum, tagSum) => sum + tagSum, 0) /
+                      Object.keys(avaliacao.notas).length
                     : undefined;
 
                 return {
@@ -105,6 +178,7 @@
                 });
             }
         } catch (e: any) {
+            console.error("Error in fetchAvaliacoes:", e);
             error = e.message || "Erro ao carregar avaliações";
         } finally {
             loading = false;
@@ -175,82 +249,8 @@
             </button>
         </div>
 
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Aluno</th>
-                        <th class="text-right">Avaliação enviada</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each paginatedAvaliacoes as avaliacao (avaliacao.aluno.id)}
-                        <tr class="evaluation-row">
-                            <td>
-                                <div class="student-info">
-                                    <div class="avatar">
-                                        <img
-                                            src={avaliacao.aluno.avatar}
-                                            alt={avaliacao.aluno.nome}
-                                        />
-                                    </div>
-                                    <span>{avaliacao.aluno.nome}</span>
-                                </div>
-                            </td>
-                            <td class="text-right">
-                                {#if avaliacao.enviada}
-                                    <div class="grade">
-                                        {avaliacao.nota?.toFixed(2) || "0.00"}
-                                    </div>
-                                {:else if avaliacao.isCurrentUser}
-                                    <button
-                                        class="evaluate-btn"
-                                        on:click={handleSelfEvaluation}
-                                    >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            width="16"
-                                            height="16"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                        >
-                                            <path
-                                                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                                            />
-                                        </svg>
-                                        Avaliar
-                                    </button>
-                                {:else}
-                                    <button
-                                        class="evaluate-btn"
-                                        on:click={() =>
-                                            handleEvaluation(
-                                                avaliacao.aluno.id,
-                                            )}
-                                    >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            width="16"
-                                            height="16"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                        >
-                                            <path
-                                                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                                            />
-                                        </svg>
-                                        Avaliar
-                                    </button>
-                                {/if}
-                            </td>
-                        </tr>
-                    {/each}
-                </tbody>
-            </table>
+        <div class="table-wrapper">
+            <Table {columns} rows={tableRows} enableSelection={false} />
         </div>
 
         {#if totalPages > 1}
@@ -381,156 +381,8 @@
         transform: scale(1.1);
     }
 
-    .table-container {
-        background: linear-gradient(
-            135deg,
-            rgba(255, 255, 255, 0.95) 0%,
-            rgba(248, 249, 250, 0.95) 100%
-        );
-        border-radius: 16px;
-        box-shadow:
-            0 4px 20px rgba(0, 0, 0, 0.08),
-            0 2px 10px rgba(0, 0, 0, 0.04),
-            inset 0 1px 0 rgba(255, 255, 255, 0.8);
-        overflow: hidden;
-        border: 1px solid rgba(206, 212, 218, 0.4);
-        backdrop-filter: blur(10px);
-        width: 100%;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        table-layout: fixed;
-    }
-
-    th {
-        background: linear-gradient(
-            135deg,
-            rgba(248, 249, 250, 0.95) 0%,
-            rgba(241, 243, 245, 0.95) 100%
-        );
-        color: #495057;
-        font-weight: 600;
-        padding: 1.25rem 1.5rem;
-        text-align: left;
-        font-size: 0.875rem;
-        letter-spacing: 0.025em;
-        border-bottom: 1px solid rgba(206, 212, 218, 0.4);
-    }
-
-    th:first-child {
-        width: 70%;
-    }
-
-    th:last-child {
-        width: 30%;
-    }
-
-    td {
-        padding: 1rem 1.5rem;
-        color: #495057;
-        font-size: 0.9375rem;
-        border-bottom: 1px solid rgba(206, 212, 218, 0.2);
-        word-wrap: break-word;
-    }
-
-    .evaluation-row {
-        transition: all 0.2s ease;
-    }
-
-    .evaluation-row:hover {
-        background: linear-gradient(
-            135deg,
-            rgba(255, 255, 255, 0.8) 0%,
-            rgba(248, 249, 250, 0.8) 100%
-        );
-    }
-
-    .student-info {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        min-width: 0;
-    }
-
-    .student-info span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        flex: 1;
-    }
-
-    .avatar {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        overflow: hidden;
-        background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
-        border: 2px solid rgba(255, 255, 255, 0.8);
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        flex-shrink: 0;
-    }
-
-    .avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .text-right {
-        text-align: right;
-    }
-
-    .grade {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 3rem;
-        height: 2rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        font-weight: 600;
-        padding: 0 0.75rem;
-        border-radius: 8px;
-        box-shadow:
-            0 4px 12px rgba(102, 126, 234, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    }
-
-    .evaluate-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 0.875rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow:
-            0 4px 12px rgba(40, 167, 69, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    }
-
-    .evaluate-btn:hover {
-        background: linear-gradient(135deg, #218838 0%, #1abc9c 100%);
-        transform: translateY(-1px);
-        box-shadow:
-            0 6px 16px rgba(40, 167, 69, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    }
-
-    .evaluate-btn:active {
-        transform: translateY(0);
-        box-shadow:
-            0 2px 8px rgba(40, 167, 69, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    .table-wrapper {
+        margin-bottom: 1rem;
     }
 
     .checkbox-wrapper {

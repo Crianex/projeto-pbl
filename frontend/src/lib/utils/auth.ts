@@ -9,6 +9,17 @@ import { redirect } from '@sveltejs/kit';
 export const currentUser = writable<BaseUser | null | undefined>(undefined);
 let isInitializing = false;
 
+// Helper function to check if there's an active Supabase session
+export async function hasActiveSession(): Promise<boolean> {
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        return session !== null;
+    } catch (error) {
+        logger.error('Error checking session:', error);
+        return false;
+    }
+}
+
 export function isAluno(user: BaseUser | null): user is AlunoModel {
     console.log('isAluno', user);
     return user?.tipo === 'aluno';
@@ -120,16 +131,31 @@ export async function initializeAuth() {
 export async function logout() {
     try {
         logger.info('Logging out user');
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-            logger.error('Error during logout:', error);
-            throw error;
+
+        // Check if there's an active session before trying to sign out
+        const hasSession = await hasActiveSession();
+
+        if (hasSession) {
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) {
+                    logger.error('Error during Supabase logout (continuing anyway):', error);
+                }
+            } catch (error) {
+                logger.error('Error during Supabase logout (continuing anyway):', error);
+            }
+        } else {
+            logger.info('No active session found, skipping Supabase logout');
         }
+
+        // Always clear local user state and redirect, regardless of Supabase logout result
         currentUser.set(null);
         await goto('/login');
         logger.info('User logged out successfully');
     } catch (error) {
         logger.error('Failed to logout:', error);
+        // Even if goto fails, still clear the user state
+        currentUser.set(null);
         throw error;
     }
 }
