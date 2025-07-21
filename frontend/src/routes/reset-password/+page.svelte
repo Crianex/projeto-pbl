@@ -223,11 +223,21 @@
     .button-group {
         margin-top: 2rem;
         margin-bottom: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    .button-group :global(button) {
+        width: 100%;
+        max-width: 300px;
     }
 
     .back-to-login {
         text-align: center;
         margin-top: 1.5rem;
+        width: 100%;
     }
 
     .back-to-login a {
@@ -239,6 +249,7 @@
         padding: 0.5rem;
         border-radius: 6px;
         display: inline-block;
+        text-align: center;
     }
 
     .back-to-login a:hover {
@@ -345,13 +356,95 @@
     }
 
     /* Responsive Design */
+    @media (max-width: 768px) {
+        :global(main) {
+            padding: 0;
+            align-items: stretch;
+            min-height: 100vh;
+        }
+
+        :global(.container) {
+            max-width: 100% !important;
+            width: 100%;
+            height: 100vh;
+            border-radius: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .header h1 {
+            font-size: 1.875rem;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+        }
+
+        .success-container h1 {
+            font-size: 1.875rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.375rem;
+        }
+
+        .button-group {
+            margin-top: 1.75rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .button-group :global(button) {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .back-to-login {
+            margin-top: 1.25rem;
+        }
+
+        .back-to-login a {
+            font-size: 0.95rem;
+            padding: 0.75rem;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .password-strength {
+            padding: 0.375rem;
+            margin-top: 0.375rem;
+        }
+
+        .strength-text {
+            font-size: 0.8rem;
+        }
+    }
+
     @media (max-width: 640px) {
         :global(main) {
-            padding: 1rem;
+            padding: 0;
+        }
+
+        :global(.container) {
+            padding: 2rem 1.5rem;
+        }
+
+        .header {
+            margin-bottom: 2rem;
         }
 
         .header h1 {
             font-size: 1.75rem;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
         }
 
         .success-container h1 {
@@ -362,10 +455,226 @@
             width: 60px;
             height: 60px;
             font-size: 2rem;
+            margin-bottom: 1.5rem;
         }
 
         .actions {
             gap: 0.75rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .button-group {
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .button-group :global(button) {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .back-to-login {
+            margin-top: 1rem;
+        }
+
+        .back-to-login a {
+            font-size: 0.95rem;
+            padding: 0.75rem;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .password-strength {
+            padding: 0.375rem;
+            margin-top: 0.375rem;
+        }
+
+        .strength-text {
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        :global(main) {
+            padding: 0;
+        }
+
+        :global(.container) {
+            padding: 1.5rem 1rem;
+        }
+
+        .header {
+            margin-bottom: 1.5rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+        }
+
+        .subtitle {
+            font-size: 0.875rem;
+        }
+
+        .success-container h1 {
+            font-size: 1.5rem;
+        }
+
+        .success-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 1.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .success-message {
+            font-size: 1rem;
+        }
+
+        .instructions {
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .button-group {
+            margin-top: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .button-group :global(button) {
+            max-width: 100%;
+        }
+
+        .back-to-login {
+            margin-top: 0.75rem;
+        }
+
+        .back-to-login a {
+            font-size: 0.9rem;
+            max-width: 100%;
+        }
+    }
+
+    @media (max-width: 360px) {
+        :global(main) {
+            padding: 0;
+        }
+
+        :global(.container) {
+            padding: 1rem 0.75rem;
+        }
+
+        .header h1 {
+            font-size: 1.375rem;
+        }
+
+        .success-container h1 {
+            font-size: 1.375rem;
+        }
+
+        .form-group {
+            margin-bottom: 0.875rem;
+        }
+
+        .button-group {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .back-to-login {
+            margin-top: 0.5rem;
+        }
+    }
+
+    /* Landscape phones */
+    @media (max-height: 640px) and (orientation: landscape) {
+        :global(main) {
+            align-items: stretch;
+            padding: 0;
+        }
+
+        :global(.container) {
+            height: 100vh;
+            border-radius: 0;
+            justify-content: center;
+        }
+
+        .header {
+            margin-bottom: 1.5rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .button-group {
+            margin-top: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .back-to-login {
+            margin-top: 0.75rem;
+        }
+
+        .success-container {
+            padding: 0.5rem;
+        }
+
+        .success-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .instructions {
+            margin-bottom: 1.5rem;
+        }
+    }
+
+    /* Very small screens / older phones */
+    @media (max-width: 320px) {
+        :global(.container) {
+            padding: 0.75rem 0.5rem;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+        }
+
+        .success-container h1 {
+            font-size: 1.25rem;
+        }
+
+        .subtitle, .success-message, .instructions {
+            font-size: 0.825rem;
+        }
+
+        .back-to-login a {
+            font-size: 0.85rem;
+        }
+
+        .password-strength {
+            padding: 0.25rem;
+        }
+
+        .strength-text {
+            font-size: 0.75rem;
         }
     }
 </style>
