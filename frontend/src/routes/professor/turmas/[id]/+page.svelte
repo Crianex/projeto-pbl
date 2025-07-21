@@ -20,12 +20,12 @@
         id_professor: "",
     };
     let alunosMatriculados: Array<{
-        id_aluno: number;
+        id: number;
         nome_completo: string;
         email: string;
     }> = [];
     let originalAlunosMatriculados: Array<{
-        id_aluno: number;
+        id: number;
         nome_completo: string;
         email: string;
     }> = [];
@@ -49,6 +49,9 @@
             originalTurma = { ...turma };
             // Extract alunos from the nested structure
             alunosMatriculados = data.alunos?.map((item: any) => item) || [];
+            console.log(
+                `Alunos matriculados: ${JSON.stringify(alunosMatriculados)}`,
+            );
             originalAlunosMatriculados = [...alunosMatriculados];
         } catch (err) {
             error =
@@ -65,13 +68,13 @@
             removedAlunos: originalAlunosMatriculados.filter(
                 (original) =>
                     !alunosMatriculados.some(
-                        (current) => current.id_aluno === original.id_aluno,
+                        (current) => current.id === original.id,
                     ),
             ),
             addedAlunos: alunosMatriculados.filter(
                 (current) =>
                     !originalAlunosMatriculados.some(
-                        (original) => original.id_aluno === current.id_aluno,
+                        (original) => original.id === current.id,
                     ),
             ),
         };
@@ -92,11 +95,11 @@
             // Get current enrolled students to compare
             const currentData = await TurmasService.getById(turmaId, true); // Force refresh
             const currentAlunos =
-                currentData.alunos?.map((item: any) => item.id_aluno) || [];
+                currentData.alunos?.map((item: any) => item.id) || [];
 
             // Remove students that are no longer in the list
             for (const alunoId of currentAlunos) {
-                if (!alunosMatriculados.some((a) => a.id_aluno === alunoId)) {
+                if (!alunosMatriculados.some((a) => a.id === alunoId)) {
                     await api.delete(
                         `/turmas/remove-aluno?id_turma=${turmaId}&id_aluno=${alunoId}`,
                     );
@@ -105,10 +108,10 @@
 
             // Add new students
             for (const aluno of alunosMatriculados) {
-                if (!currentAlunos.includes(aluno.id_aluno)) {
+                if (!currentAlunos.includes(aluno.id)) {
                     await api.post("/turmas/add-aluno", {
                         id_turma: turmaId,
-                        id_aluno: aluno.id_aluno,
+                        id_aluno: aluno.id,
                     });
                 }
             }
@@ -146,7 +149,7 @@
 
             // Remove students that are no longer in the list
             for (const alunoId of currentAlunos) {
-                if (!alunosMatriculados.some((a) => a.id_aluno === alunoId)) {
+                if (!alunosMatriculados.some((a) => a.id === alunoId)) {
                     await api.delete(
                         `/turmas/remove-aluno?id_turma=${turmaId}&id_aluno=${alunoId}`,
                     );
@@ -155,10 +158,10 @@
 
             // Add new students
             for (const aluno of alunosMatriculados) {
-                if (!currentAlunos.includes(aluno.id_aluno)) {
+                if (!currentAlunos.includes(aluno.id)) {
                     await api.post("/turmas/add-aluno", {
                         id_turma: turmaId,
-                        id_aluno: aluno.id_aluno,
+                        id_aluno: aluno.id,
                     });
                 }
             }
@@ -186,17 +189,21 @@
         }>,
     ) {
         const aluno = event.detail;
+        // Map id_aluno to id for interface consistency
+        const alunoFormatted = {
+            id: aluno.id_aluno,
+            nome_completo: aluno.nome_completo,
+            email: aluno.email,
+        };
         // Check if student is already added
-        if (!alunosMatriculados.some((a) => a.id_aluno === aluno.id_aluno)) {
-            alunosMatriculados = [...alunosMatriculados, aluno];
+        if (!alunosMatriculados.some((a) => a.id === alunoFormatted.id)) {
+            alunosMatriculados = [...alunosMatriculados, alunoFormatted];
             hasUnsavedChanges = true;
         }
     }
 
     function handleRemoveAluno(alunoId: number) {
-        alunosMatriculados = alunosMatriculados.filter(
-            (a) => a.id_aluno !== alunoId,
-        );
+        alunosMatriculados = alunosMatriculados.filter((a) => a.id !== alunoId);
         hasUnsavedChanges = true;
     }
 
@@ -242,7 +249,7 @@
 
             await api.post("/turmas/add-aluno", {
                 id_turma: turmaId,
-                id_aluno: aluno.id_aluno,
+                id_aluno: aluno.id,
             });
 
             alunosMatriculados = [...alunosMatriculados, aluno];
@@ -273,11 +280,11 @@
             error = null;
 
             await api.delete(
-                `/turmas/remove-aluno?id_turma=${turmaId}&id_aluno=${aluno.id_aluno}`,
+                `/turmas/remove-aluno?id_turma=${turmaId}&id_aluno=${aluno.id}`,
             );
 
             alunosMatriculados = alunosMatriculados.filter(
-                (a) => a.id_aluno !== aluno.id_aluno,
+                (a) => a.id !== aluno.id,
             );
 
             const changes = getChangesSummary();
@@ -354,8 +361,7 @@
                                     variant="danger"
                                     size="icon"
                                     type="button"
-                                    on:click={() =>
-                                        handleRemoveAluno(aluno.id_aluno)}
+                                    on:click={() => handleRemoveAluno(aluno.id)}
                                     title="Remover aluno"
                                 >
                                     <svg
@@ -415,7 +421,11 @@
     exclude_turma_id={turmaId}
 />
 
-<Dialog open={changesSummaryOpen} on:close={() => goto("/professor/turmas")}>
+<Dialog
+    open={changesSummaryOpen}
+    closeOnClickOutside={false}
+    on:close={() => goto("/professor/turmas")}
+>
     <svelte:fragment slot="header">
         <h2>Alterações realizadas</h2>
     </svelte:fragment>
@@ -505,6 +515,255 @@
 </Dialog>
 
 <style>
-    /* Remover estilos de responsividade duplicados já cobertos pelo global */
-    /* Manter apenas estilos específicos que não estão no global */
+    .container {
+        height: 100%;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .header {
+        margin-bottom: 2rem;
+    }
+
+    .header h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .form {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+
+    .form-group {
+        margin-bottom: 2rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #212529;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+    }
+
+    .alunos-section {
+        margin-bottom: 2rem;
+    }
+
+    .alunos-section h2 {
+        font-size: 1rem;
+        font-weight: 500;
+        margin-bottom: 1rem;
+    }
+
+    .alunos-list {
+        margin-bottom: 1rem;
+    }
+
+    .aluno-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .aluno-item:last-child {
+        border-bottom: none;
+    }
+
+    .aluno-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .aluno-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .aluno-details .nome {
+        font-weight: 500;
+    }
+
+    .aluno-details .email {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
+    .avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+    }
+
+    .more-options {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.5rem;
+        color: #dc3545;
+        border-radius: 4px;
+    }
+
+    .more-options:hover {
+        background-color: #f8f9fa;
+    }
+
+    .actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 2rem;
+    }
+
+    .loading,
+    .error {
+        text-align: center;
+        padding: 2rem;
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+    }
+
+    .error {
+        color: #dc3545;
+    }
+
+    .error button {
+        margin-top: 1rem;
+    }
+
+    .delete-confirm-content {
+        padding: 1rem;
+    }
+
+    .delete-confirm-content p {
+        margin-bottom: 1rem;
+    }
+
+    .delete-confirm-content .warning {
+        color: #dc3545;
+        font-size: 0.875rem;
+    }
+
+    .dialog-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .changes-summary-content {
+        padding: 1.5rem;
+    }
+
+    .change-item {
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #f1f3f4;
+    }
+
+    .change-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+
+    .change-title {
+        font-weight: 500;
+        color: #1a1a1a;
+        display: block;
+        margin-bottom: 0.75rem;
+        font-size: 1rem;
+    }
+
+    .change-detail {
+        color: #4a5568;
+        font-size: 0.875rem;
+        margin: 0.5rem 0;
+        line-height: 1.4;
+    }
+
+    .change-list {
+        list-style: none;
+        padding: 0;
+        margin: 0.75rem 0 0 0;
+    }
+
+    .change-list li {
+        color: #4a5568;
+        font-size: 0.875rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .change-list li:last-child {
+        margin-bottom: 0;
+    }
+
+    .dialog-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f1f3f4;
+    }
+
+    .change-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .change-list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        margin-bottom: 0.75rem;
+    }
+
+    .change-list-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .error-message {
+        background-color: #fee2e2;
+        border: 1px solid #ef4444;
+        color: #dc2626;
+        padding: 1rem;
+        border-radius: 6px;
+        margin-bottom: 1.5rem;
+        font-size: 0.875rem;
+        line-height: 1.4;
+    }
+
+    :global(.change-list-item .button),
+    :global(.change-header .button) {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+    }
 </style>

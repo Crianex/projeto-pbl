@@ -94,21 +94,27 @@ export const AvaliacaoController: EndpointController = {
         }),
 
         'create': new Pair(RequestType.POST, async (req: Request, res: Response) => {
-            const { id_problema, id_aluno_avaliador, id_aluno_avaliado, notas } = req.body;
+            const { id_problema, id_aluno_avaliador, id_aluno_avaliado, notas, id_professor } = req.body;
 
-            // check if data is present
-            if (!id_problema || !id_aluno_avaliador || !id_aluno_avaliado || !notas) {
-                return res.status(400).json({ error: 'ID do problema, ID do avaliador, ID do avaliado e notas são obrigatórios' });
+            // Must provide either id_aluno_avaliador or id_professor, but not both
+            if (!id_problema || !id_aluno_avaliado || !notas) {
+                return res.status(400).json({ error: 'ID do problema, ID do avaliado e notas são obrigatórios' });
             }
+            if ((id_aluno_avaliador && id_professor) || (!id_aluno_avaliador && !id_professor)) {
+                return res.status(400).json({ error: 'Envie apenas um: id_aluno_avaliador OU id_professor' });
+            }
+
+            const insertObj: any = {
+                id_problema,
+                id_aluno_avaliado,
+                notas: notas || '{}',
+            };
+            if (id_aluno_avaliador) insertObj.id_aluno_avaliador = id_aluno_avaliador;
+            if (id_professor) insertObj.id_professor = id_professor;
 
             const { data, error } = await supabase
                 .from('avaliacoes')
-                .insert([{
-                    id_problema,
-                    id_aluno_avaliador,
-                    id_aluno_avaliado,
-                    notas: notas || '{}'
-                }])
+                .insert([insertObj])
                 .select(`
                     *,
                     problema:problemas(*),
@@ -149,11 +155,20 @@ export const AvaliacaoController: EndpointController = {
                 return res.status(400).json({ error: 'id_avaliacao is required' });
             }
 
-            const { notas } = req.body;
+            const { notas, id_aluno_avaliador, id_professor } = req.body;
+
+            // Must provide either id_aluno_avaliador or id_professor, but not both
+            if ((id_aluno_avaliador && id_professor) || (!id_aluno_avaliador && !id_professor)) {
+                return res.status(400).json({ error: 'Envie apenas um: id_aluno_avaliador OU id_professor' });
+            }
+
+            const updateObj: any = { notas };
+            if (id_aluno_avaliador) updateObj.id_aluno_avaliador = id_aluno_avaliador;
+            if (id_professor) updateObj.id_professor = id_professor;
 
             const { data, error } = await supabase
                 .from('avaliacoes')
-                .update({ notas })
+                .update(updateObj)
                 .eq('id_avaliacao', id_avaliacao)
                 .select(`
                     *,

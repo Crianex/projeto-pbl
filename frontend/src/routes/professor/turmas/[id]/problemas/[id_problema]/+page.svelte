@@ -19,14 +19,8 @@
     import { TurmasService } from "$lib/services/turmas_service";
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
     import Pagination from "$lib/components/Pagination.svelte";
-
-    interface AlunoComMedia extends AlunoModel {
-        mediaNotas: {
-            competencia: number;
-            habilidade: number;
-            atitude: number;
-        } | null;
-    }
+    import { currentUser } from "$lib/utils/auth";
+    import { MediaCalculator } from "$lib/utils/utils";
 
     let problema: ProblemaModel | null = null;
     let turma: TurmaModel | null = null;
@@ -34,19 +28,18 @@
     let error: string | null = null;
     let currentPage = 1;
     let itemsPerPage = 10;
-    let alunos: AlunoComMedia[] = [];
+    let alunos: Array<AlunoModel & { medias: Record<string, number> | null }> =
+        [];
+    let criteriosList: { nome_criterio: string; descricao_criterio: string }[] =
+        [];
+    let avaliacoesData: any[] = [];
 
     // Table configuration
     let columns: Column[] = [
         {
             key: "aluno",
             label: "Aluno",
-            width: "50%",
-        },
-        {
-            key: "media",
-            label: "Média (C/H/A)",
-            width: "30%",
+            width: "40%",
         },
         {
             key: "actions",
@@ -65,62 +58,121 @@
 
     let tableRows: any[] = [];
 
+    $: if (problema && problema.criterios) {
+        // Flatten all criterios from all groups and deduplicate by nome_criterio
+        const criteriosMap = new Map<string, string>();
+        Object.values(problema.criterios).forEach((criteriosArr) => {
+            criteriosArr.forEach((criterio) => {
+                if (!criteriosMap.has(criterio.nome_criterio)) {
+                    criteriosMap.set(
+                        criterio.nome_criterio,
+                        criterio.descricao_criterio,
+                    );
+                }
+            });
+        });
+        criteriosList = Array.from(criteriosMap.entries()).map(
+            ([nome_criterio, descricao_criterio]) => ({
+                nome_criterio,
+                descricao_criterio,
+            }),
+        );
+    }
+
+    // Table configuration
+    $: columns =
+        criteriosList.length > 0
+            ? [
+                  {
+                      key: "aluno",
+                      label: "Aluno",
+                      width: "20%",
+                  },
+                  ...criteriosList.map((criterio) => ({
+                      key: criterio.nome_criterio.toLowerCase(),
+                      label: criterio.nome_criterio.charAt(0),
+                      tooltip: `${criterio.nome_criterio}\n\n${criterio.descricao_criterio}`,
+                      width: `${criteriosList.length > 0 ? 30 / criteriosList.length : 30}%`,
+                  })),
+                  {
+                      key: "media",
+                      label: "Média",
+                      width: "10%",
+                  },
+                  {
+                      key: "avaliar",
+                      label: "Já avaliou?",
+                      width: "15%",
+                      render: (row: any) => ({
+                          component: "span",
+                          props: {
+                              text: row.hasEvaluation ? "✓" : "-",
+                              style: row.hasEvaluation
+                                  ? "color: #22c55e; font-size: 1.2rem; font-weight: bold;"
+                                  : "color: #6b7280;",
+                          },
+                      }),
+                  },
+                  {
+                      key: "actions",
+                      label: "",
+                      width: "15%",
+                      render: (row: any) => ({
+                          component: "button",
+                          props: {
+                              variant: "secondary",
+                              text: "Ver Detalhes",
+                              onClick: () => verDetalhes(row.id.toString()),
+                          },
+                      }),
+                  },
+              ]
+            : [
+                  {
+                      key: "aluno",
+                      label: "Aluno",
+                      width: "60%",
+                  },
+                  {
+                      key: "loading",
+                      label: "Carregando critérios...",
+                      width: "40%",
+                  },
+              ];
+
     onMount(async () => {
         try {
             const { id_problema, id } = $page.params;
             logger.info(
                 `Loading problema details for id_problema: ${id_problema}, turma: ${id}`,
             );
-
             // Get both problema and turma data using cache services
             logger.info("Fetching problema, turma, and avaliações data...");
-            const [problemaData, turmaData, avaliacoesData] = await Promise.all(
-                [
+            const [problemaData, turmaData, fetchedAvaliacoesData] =
+                await Promise.all([
                     ProblemasService.getById(id_problema),
                     TurmasService.getById(id),
                     AvaliacoesService.getByProblema(id_problema),
-                ],
-            );
-
+                ]);
             logger.info("Data fetched successfully", {
                 problemaData: !!problemaData,
                 turmaData: !!turmaData,
-                avaliacoesCount: avaliacoesData?.length || 0,
+                avaliacoesCount: fetchedAvaliacoesData?.length || 0,
             });
-
             problema = problemaData;
             turma = turmaData;
-
+            avaliacoesData = fetchedAvaliacoesData;
             logger.info("Data parsed successfully", {
                 problema: problema?.nome_problema,
                 turma: turma?.nome_turma,
                 alunosCount: turma?.alunos?.length || 0,
             });
-
             if (!turma?.alunos) {
                 throw new Error("Não há alunos nesta turma");
             }
-
-            // Process all avaliações to calculate media for each aluno
             logger.info(
-                `Processing ${turma.alunos.length} alunos with ${avaliacoesData?.length || 0} avaliações`,
+                `Successfully loaded data, waiting for criterios processing`,
             );
-            alunos = turma.alunos.map((aluno) => {
-                const mediaNotas = calcularMediaFromAvaliacoes(
-                    avaliacoesData,
-                    aluno.id,
-                );
-                logger.debug(
-                    `Calculated media for aluno ${aluno.nome_completo} (ID: ${aluno.id}):`,
-                    mediaNotas,
-                );
-                return {
-                    ...aluno,
-                    mediaNotas,
-                };
-            });
-
-            logger.info(`Successfully processed ${alunos.length} alunos`);
         } catch (e: any) {
             logger.error("Error loading problema details:", e);
             error = e.message || "Erro ao carregar os dados";
@@ -130,101 +182,44 @@
         }
     });
 
-    function calcularMediaFromAvaliacoes(avaliacoes: any[], alunoId: number) {
-        logger.debug(
-            `Calculating media for aluno ID: ${alunoId} from ${avaliacoes?.length || 0} avaliações`,
+    // Process alunos only after criteriosList is ready
+    $: if (
+        turma?.alunos &&
+        criteriosList.length > 0 &&
+        avaliacoesData.length > 0
+    ) {
+        console.log(
+            "🔍 DEBUG - Processing alunos with criteriosList:",
+            criteriosList,
         );
-
-        // Filter avaliações where this aluno was evaluated (received evaluations)
-        const avaliacoesRecebidas = avaliacoes.filter(
-            (av) => av.id_aluno_avaliado === alunoId,
-        );
-
-        logger.debug(
-            `Found ${avaliacoesRecebidas.length} avaliações recebidas for aluno ${alunoId}`,
-        );
-
-        if (!avaliacoesRecebidas.length) {
-            logger.debug(
-                `No avaliações found for aluno ${alunoId}, returning null`,
+        alunos = turma.alunos.map((aluno) => {
+            const medias = MediaCalculator.calcularMediaPorCriterio(
+                avaliacoesData,
+                aluno.id,
+                criteriosList,
             );
-            return null;
-        }
-
-        const soma = avaliacoesRecebidas.reduce(
-            (acc, av) => {
-                try {
-                    const notas = JSON.parse(av.notas);
-                    logger.debug(`Parsed notas for avaliação:`, notas);
-
-                    // Handle nested structure with categories
-                    let competencia = 0;
-                    let habilidade = 0;
-                    let atitude = 0;
-                    let count = 0;
-
-                    // Iterate through all categories in the notas
-                    Object.values(notas).forEach((categoria: any) => {
-                        if (
-                            typeof categoria === "object" &&
-                            categoria !== null
-                        ) {
-                            // Sum up the values from each category
-                            competencia += categoria.conhecimento || 0;
-                            habilidade += categoria.habilidades || 0;
-                            atitude += categoria.atitudes || 0;
-                            count++;
-                        }
-                    });
-
-                    // If we found valid categories, use the averages
-                    if (count > 0) {
-                        competencia = competencia / count;
-                        habilidade = habilidade / count;
-                        atitude = atitude / count;
-                    }
-
-                    return {
-                        competencia: acc.competencia + competencia,
-                        habilidade: acc.habilidade + habilidade,
-                        atitude: acc.atitude + atitude,
-                    };
-                } catch (error) {
-                    logger.warn(
-                        `Failed to parse notas for avaliação:`,
-                        av.notas,
-                        error,
-                    );
-                    return acc;
-                }
-            },
-            { competencia: 0, habilidade: 0, atitude: 0 },
+            return {
+                ...aluno,
+                medias,
+            };
+        });
+        logger.info(
+            `Successfully processed ${alunos.length} alunos with ${criteriosList.length} criterios`,
         );
-
-        const media = {
-            competencia: Number(
-                (soma.competencia / avaliacoesRecebidas.length).toFixed(2),
-            ),
-            habilidade: Number(
-                (soma.habilidade / avaliacoesRecebidas.length).toFixed(2),
-            ),
-            atitude: Number(
-                (soma.atitude / avaliacoesRecebidas.length).toFixed(2),
-            ),
-        };
-
-        logger.debug(`Calculated media for aluno ${alunoId}:`, media);
-        return media;
-    }
-
-    function formatMedia(media: AlunoComMedia["mediaNotas"]) {
-        if (!media) return "Não avaliado";
-        return `(${media.competencia}, ${media.habilidade}, ${media.atitude})`;
     }
 
     function verDetalhes(id_aluno: string) {
         logger.info(`Navigating to aluno details: ${id_aluno}`);
         goto(`${$page.url.pathname}/${id_aluno}`);
+    }
+
+    function avaliarAluno(id_aluno: number) {
+        const id_problema = $page.params.id_problema;
+        logger.info(`Navigating to evaluate aluno: ${id_aluno}`);
+        // Navigate to the unified evaluation page for professor evaluation
+        goto(
+            `/avaliacao?id_problema=${id_problema}&id_aluno_avaliado=${id_aluno}&id_professor=${$currentUser?.id}`,
+        );
     }
 
     function handleBack() {
@@ -239,16 +234,34 @@
 
     // Transform data for Table component
     $: tableRows = paginatedAlunos.map((aluno) => {
-        const hasNotas = !!aluno.mediaNotas;
+        // Check if this professor has already evaluated this student
+        const professorEvaluation = avaliacoesData.find(
+            (av) =>
+                av.id_aluno_avaliado === aluno.id &&
+                av.id_professor === $currentUser?.id,
+        );
 
-        return {
+        const row: any = {
             id: aluno.id,
             aluno: aluno.nome_completo || "Nome não disponível",
-            media: formatMedia(aluno.mediaNotas),
-            mediaClass: !hasNotas ? "nao-avaliado" : "",
-            // For actions column - handled by render function
+            hasEvaluation: !!professorEvaluation,
+            avaliar: "",
             actions: "",
         };
+
+        // Add individual criteria scores
+        criteriosList.forEach((criterio) => {
+            const key = criterio.nome_criterio.toLowerCase();
+            row[key] =
+                aluno.medias && key in aluno.medias
+                    ? aluno.medias[key]
+                    : "Não avaliado";
+        });
+
+        // Calculate overall media from individual criteria
+        row.media = MediaCalculator.calculateOverallMedia(aluno.medias);
+
+        return row;
     });
 </script>
 

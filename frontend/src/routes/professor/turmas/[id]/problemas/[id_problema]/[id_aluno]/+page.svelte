@@ -3,17 +3,17 @@
     import { page } from "$app/stores";
     import { api } from "$lib/utils/api";
     import { logger } from "$lib/utils/logger";
+    import { goto } from "$app/navigation";
+    import { currentUser } from "$lib/utils/auth";
     import type {
         ProblemaModel,
         AlunoModel,
         TurmaModel,
     } from "$lib/interfaces/interfaces";
-    import type { Column } from "$lib/interfaces/column";
-    import { Parsers } from "$lib/interfaces/parsers";
-    import Button from "$lib/components/Button.svelte";
     import Container from "$lib/components/Container.svelte";
     import Table from "$lib/components/Table.svelte";
     import BackButton from "$lib/components/BackButton.svelte";
+    import Button from "$lib/components/Button.svelte";
     import { ProblemasService } from "$lib/services/problemas_service";
     import { AlunosService } from "$lib/services/alunos_service";
     import { TurmasService } from "$lib/services/turmas_service";
@@ -23,40 +23,77 @@
     let problema: ProblemaModel | null = null;
     let aluno: AlunoModel | null = null;
     let turma: TurmaModel | null = null;
-    let avaliacoesMap: Map<number, any> = new Map();
+    let avaliacoesEnviadas: any[] = [];
+    let avaliacoesRecebidas: any[] = [];
     let loading = true;
     let error: string | null = null;
-    let currentPage = 1;
+    
+    // Paginação para avaliações enviadas
+    let currentPageEnviadas = 1;
     let itemsPerPage = 10;
+    
+    // Paginação para avaliações recebidas
+    let currentPageRecebidas = 1;
 
-    // Table configuration
-    let columns: Column[] = [
+    let criteriosList: { nome_criterio: string; descricao_criterio: string }[] = [];
+
+    $: if (problema && problema.criterios) {
+        const criteriosMap = new Map<string, string>();
+        Object.values(problema.criterios).forEach((criteriosArr) => {
+            criteriosArr.forEach((criterio) => {
+                if (!criteriosMap.has(criterio.nome_criterio)) {
+                    criteriosMap.set(
+                        criterio.nome_criterio,
+                        criterio.descricao_criterio,
+                    );
+                }
+            });
+        });
+        criteriosList = Array.from(criteriosMap.entries()).map(
+            ([nome_criterio, descricao_criterio]) => ({
+                nome_criterio,
+                descricao_criterio,
+            }),
+        );
+    }
+
+    // Configuração da tabela para avaliações enviadas
+    $: columnsEnviadas = [
         {
             key: "aluno",
-            label: "Aluno Avaliado",
-            width: "50%",
+            label: "Aluno",
+            width: "30%",
         },
         {
             key: "notas",
             label: "Notas (C/H/A)",
-            width: "25%",
+            width: "50%",
         },
         {
-            key: "actions",
-            label: "Ações",
-            width: "25%",
-            render: (row: any) => ({
-                component: "button",
-                props: {
-                    variant: row.isEvaluated ? "secondary" : "primary",
-                    text: row.isEvaluated ? "Editar Avaliação" : "Avaliar",
-                    onClick: () => handleAvaliarAluno(row.id),
-                },
-            }),
+            key: "enviada_para",
+            label: "Enviada para",
+            width: "20%",
         },
     ];
 
-    let tableRows: any[] = [];
+    // Configuração da tabela para avaliações recebidas
+    $: columnsRecebidas = [
+        {
+            key: "aluno",
+            label: "Aluno",
+            width: "30%",
+        },
+        {
+            key: "notas",
+            label: "Notas (C/H/A)",
+            width: "50%",
+        },
+        {
+            key: "enviada_para",
+            label: "Enviada para",
+            width: "20%",
+        },
+    ];
 
     onMount(async () => {
         try {
@@ -65,10 +102,6 @@
                 `Loading aluno details for id_aluno: ${id_aluno}, problema: ${id_problema}, turma: ${id}`,
             );
 
-            // Get problema, aluno, turma and all avaliações data for the problema using cache services
-            logger.info(
-                "Fetching problema, aluno, turma, and all avaliações data...",
-            );
             const [problemaData, alunoData, turmaData, avaliacoesData] =
                 await Promise.all([
                     ProblemasService.getById(id_problema),
@@ -77,48 +110,62 @@
                     AvaliacoesService.getByProblema(id_problema),
                 ]);
 
-            logger.info("Data fetched successfully", {
-                problemaData: !!problemaData,
-                alunoData: !!alunoData,
-                turmaData: !!turmaData,
-                avaliacoesCount: avaliacoesData?.length || 0,
-            });
-
-            console.log(`alunoData`, JSON.stringify(alunoData, null, 2));
-
             problema = problemaData;
             aluno = alunoData;
             turma = turmaData;
 
-            logger.info("Data parsed successfully", {
-                problema: problema?.nome_problema,
-                aluno: aluno?.nome_completo,
-                turma: turma?.nome_turma,
-            });
-
-            // Filter evaluations where the specified aluno is the evaluator (avaliador)
+            // Processar avaliações enviadas pelo aluno
             const currentAlunoId = Number($page.params.id_aluno);
-            const filteredAvaliacoesData = avaliacoesData.filter(
-                (av: any) => av.id_aluno_avaliador === currentAlunoId,
-            );
+            avaliacoesEnviadas = avaliacoesData
+                .filter((av: any) => av.id_aluno_avaliador === currentAlunoId)
+                .map((av: any) => {
+                    const alunoAvaliado = turma?.alunos?.find(
+                        (a: any) => a.id === av.id_aluno_avaliado
+                    );
+                    return {
+                        id: av.id,
+                        aluno: {
+                            name: aluno?.nome_completo || "Aluno",
+                            role: "Avaliador",
+                            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(aluno?.nome_completo || "Aluno")}&background=random`,
+                        },
+                        notas: formatNotas(av.notas),
+                        enviada_para: {
+                            name: alunoAvaliado?.nome_completo || "Aluno não encontrado",
+                            role: "Avaliado",
+                            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(alunoAvaliado?.nome_completo || "Aluno")}&background=random`,
+                        },
+                    };
+                });
 
-            // Create a map of avaliacoes by aluno_avaliado (including self-evaluations)
-            filteredAvaliacoesData.forEach((av: any) => {
-                avaliacoesMap.set(av.id_aluno_avaliado, av);
-            });
+            // Processar avaliações recebidas pelo aluno
+            avaliacoesRecebidas = avaliacoesData
+                .filter((av: any) => av.id_aluno_avaliado === currentAlunoId)
+                .map((av: any) => {
+                    const alunoAvaliador = turma?.alunos?.find(
+                        (a: any) => a.id === av.id_aluno_avaliador
+                    );
+                    return {
+                        id: av.id,
+                        aluno: {
+                            name: alunoAvaliador?.nome_completo || "Aluno",
+                            role: "Avaliador",
+                            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(alunoAvaliador?.nome_completo || "Aluno")}&background=random`,
+                        },
+                        notas: formatNotas(av.notas),
+                        enviada_para: {
+                            name: aluno?.nome_completo || "Aluno",
+                            role: "Avaliado",
+                            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(aluno?.nome_completo || "Aluno")}&background=random`,
+                        },
+                    };
+                });
 
-            logger.info(
-                `Processed ${avaliacoesMap.size} avaliações for display`,
-            );
-
-            // Force Svelte to recognize the map update
-            avaliacoesMap = new Map(avaliacoesMap);
         } catch (e: any) {
             logger.error("Error loading aluno details:", e);
             error = e.message || "Erro ao carregar os dados";
         } finally {
             loading = false;
-            logger.info("Loading completed");
         }
     });
 
@@ -126,18 +173,13 @@
         if (!notas) return "Não avaliado";
         try {
             const notasObj = JSON.parse(notas);
-            logger.debug(`Parsing notas:`, notasObj);
-
-            // Handle nested structure with categories
             let competencia = 0;
             let habilidade = 0;
             let atitude = 0;
             let count = 0;
 
-            // Iterate through all categories in the notas
             Object.values(notasObj).forEach((categoria: any) => {
                 if (typeof categoria === "object" && categoria !== null) {
-                    // Sum up the values from each category
                     competencia += categoria.conhecimento || 0;
                     habilidade += categoria.habilidades || 0;
                     atitude += categoria.atitudes || 0;
@@ -145,69 +187,39 @@
                 }
             });
 
-            // If we found valid categories, use the averages
             if (count > 0) {
                 competencia = competencia / count;
                 habilidade = habilidade / count;
                 atitude = atitude / count;
             }
 
-            const formattedNotas = `(${competencia.toFixed(2)}, ${habilidade.toFixed(2)}, ${atitude.toFixed(2)})`;
-            logger.debug(`Formatted notas: ${formattedNotas}`);
-            return formattedNotas;
+            return `(${competencia.toFixed(2)}, ${habilidade.toFixed(2)}, ${atitude.toFixed(2)})`;
         } catch (error) {
-            logger.warn(`Failed to parse notas:`, notas, error);
             return "Erro ao processar notas";
         }
     }
 
-    async function handleAvaliarAluno(id_aluno_avaliado: number) {
-        // This will be implemented in another task
-        console.log("Avaliar aluno clicked", id_aluno_avaliado);
+    function handleAvaliarAluno() {
+        const { id_problema, id_aluno, id } = $page.params;
+        goto(`/professor/turmas/${id}/problemas/${id_problema}/avaliar/${id_aluno}`);
     }
 
-    // Show all students in the turma, with evaluation status
-    $: alunosDaTurma = turma?.alunos || [];
-    $: currentAlunoId = Number($page.params.id_aluno);
-
-    // Get all students that the current aluno has evaluated
-    $: evaluatedStudentIds = Array.from(avaliacoesMap.keys());
-
-    // Show all students in the turma
-    $: filteredAlunos = alunosDaTurma;
-
-    $: totalPages = Math.ceil(filteredAlunos.length / itemsPerPage);
-    $: paginatedAlunos = filteredAlunos.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage,
+    // Paginação para avaliações enviadas
+    $: totalPagesEnviadas = Math.ceil(avaliacoesEnviadas.length / itemsPerPage);
+    $: paginatedAvaliacoesEnviadas = avaliacoesEnviadas.slice(
+        (currentPageEnviadas - 1) * itemsPerPage,
+        currentPageEnviadas * itemsPerPage,
     );
 
-    // Transform data for Table component
-    $: tableRows = paginatedAlunos.map((alunoAvaliado) => {
-        const isSelfEvaluation =
-            alunoAvaliado.id === Number($page.params.id_aluno);
-        const isEvaluated = avaliacoesMap.has(alunoAvaliado.id);
-        const notas = formatNotas(
-            avaliacoesMap.get(alunoAvaliado.id)?.notas || null,
-        );
-
-        return {
-            id: alunoAvaliado.id,
-            aluno: isSelfEvaluation
-                ? `${alunoAvaliado.nome_completo || "Nome não disponível"} (Auto-avaliação)`
-                : alunoAvaliado.nome_completo || "Nome não disponível",
-            notas: notas,
-            notasClass: !isEvaluated ? "nao-avaliado" : "",
-            isEvaluated: isEvaluated,
-            isSelfEvaluation: isSelfEvaluation,
-            rowClass: isSelfEvaluation ? "self-evaluation" : "",
-            // For actions column - will be handled by custom rendering
-            actions: "",
-        };
-    });
+    // Paginação para avaliações recebidas
+    $: totalPagesRecebidas = Math.ceil(avaliacoesRecebidas.length / itemsPerPage);
+    $: paginatedAvaliacoesRecebidas = avaliacoesRecebidas.slice(
+        (currentPageRecebidas - 1) * itemsPerPage,
+        currentPageRecebidas * itemsPerPage,
+    );
 </script>
 
-<Container>
+<Container maxWidth="xl" glass={true} shadow={true}>
     {#if loading}
         <div class="loading-container">
             <div class="loading-spinner" />
@@ -219,28 +231,92 @@
         </div>
     {:else}
         <div class="content-wrapper">
-            <BackButton text="Voltar" on:click={() => history.back()} />
+            <div class="back-button-container">
+                <BackButton text="Voltar" on:click={() => history.back()} />
+            </div>
+            
+            <div class="page-title">
+                <h1>Avaliações do Aluno</h1>
+            </div>
+            
             <div class="header">
-                <h1>Avaliações de {aluno?.nome_completo || ""}</h1>
                 <div class="problema-info">
-                    <span class="problema-title"
-                        >{problema?.nome_problema || ""}</span
-                    >
+                    <span class="problema-title">{problema?.nome_problema || ""}</span>
+                    <span class="aluno-name">{aluno?.nome_completo || ""}</span>
                 </div>
             </div>
 
+            <!-- Seção de Avaliações Enviadas -->
             <div class="avaliacoes-section">
-                <h2>Avaliações do Aluno</h2>
+                <h2>Avaliações Enviadas</h2>
+                
+                {#if paginatedAvaliacoesEnviadas.length === 0}
+                    <div class="empty-state">
+                        <div class="empty-icon">📤</div>
+                        <h3>Nenhuma avaliação enviada</h3>
+                        <p>Este aluno ainda não enviou nenhuma avaliação.</p>
+                    </div>
+                {:else}
+                    <div class="table-wrapper">
+                        <Table 
+                            columns={columnsEnviadas} 
+                            rows={paginatedAvaliacoesEnviadas} 
+                            enableSelection={false} 
+                        />
+                    </div>
 
-                <div class="table-wrapper">
-                    <Table {columns} rows={tableRows} enableSelection={false} />
-                </div>
+                    {#if totalPagesEnviadas > 1}
+                        <div class="pagination-wrapper">
+                            <Pagination
+                                currentPage={currentPageEnviadas}
+                                totalPages={totalPagesEnviadas}
+                                on:pageChange={(e) => (currentPageEnviadas = e.detail.page)}
+                            />
+                        </div>
+                    {/if}
+                {/if}
+            </div>
 
-                <Pagination
-                    {currentPage}
-                    {totalPages}
-                    on:pageChange={(e) => (currentPage = e.detail.page)}
-                />
+            <!-- Seção de Avaliações Recebidas -->
+            <div class="avaliacoes-section">
+                <h2>Avaliações Recebidas</h2>
+                
+                {#if paginatedAvaliacoesRecebidas.length === 0}
+                    <div class="empty-state">
+                        <div class="empty-icon">📥</div>
+                        <h3>Nenhuma avaliação recebida</h3>
+                        <p>Este aluno ainda não recebeu nenhuma avaliação.</p>
+                    </div>
+                {:else}
+                    <div class="table-wrapper">
+                        <Table 
+                            columns={columnsRecebidas} 
+                            rows={paginatedAvaliacoesRecebidas} 
+                            enableSelection={false} 
+                        />
+                    </div>
+
+                    {#if totalPagesRecebidas > 1}
+                        <div class="pagination-wrapper">
+                            <Pagination
+                                currentPage={currentPageRecebidas}
+                                totalPages={totalPagesRecebidas}
+                                on:pageChange={(e) => (currentPageRecebidas = e.detail.page)}
+                            />
+                        </div>
+                    {/if}
+                {/if}
+            </div>
+
+            <!-- Botão de Avaliar Aluno -->
+            <div class="actions-section">
+                <Button 
+                    variant="primary" 
+                    on:click={handleAvaliarAluno}
+                    class="avaliar-button"
+                >
+                    Avaliar Aluno
+                </Button>
             </div>
         </div>
     {/if}
@@ -253,29 +329,57 @@
         gap: 2rem;
     }
 
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+    .back-button-container {
+        padding: 0.5rem 0;
+        padding-top: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .back-button-container :global(.back-btn) {
+        padding-top: 2.5rem;
+        padding-bottom: 2.5rem;
+    }
+
+
+
+    .page-title {
+        text-align: center;
         margin-bottom: 1.5rem;
     }
 
-    .header h1 {
-        font-size: 1.5rem;
+    .page-title h1 {
+        font-size: 2rem;
         font-weight: 700;
         margin: 0;
+        color: #2d3748;
+        letter-spacing: -0.025em;
+    }
+
+    .header {
+        display: flex;
+        justify-content: flex-start;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
     }
 
     .problema-info {
         display: flex;
         flex-direction: column;
-        align-items: flex-end;
-        gap: 0.5rem;
+        align-items: flex-start;
+        gap: 0.25rem;
+        text-align: left;
     }
 
     .problema-title {
         font-size: 1rem;
         color: #6c757d;
+        font-weight: 500;
+    }
+
+    .aluno-name {
+        font-size: 1.125rem;
+        color: #4a5568;
+        font-weight: 600;
     }
 
     .avaliacoes-section {
@@ -283,51 +387,63 @@
         border-radius: 12px;
         padding: 1.5rem;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
     }
 
     .avaliacoes-section h2 {
         font-size: 1.25rem;
         font-weight: 600;
         margin-bottom: 1.5rem;
-        color: #333;
+        color: #2d3748;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 0.5rem;
     }
 
     .table-wrapper {
         margin-bottom: 1rem;
     }
 
-    .pagination {
+    .pagination-wrapper {
         display: flex;
         justify-content: center;
-        align-items: center;
-        gap: 0.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #6c757d;
+    }
+
+    .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin: 0 0 0.5rem 0;
+        color: #4a5568;
+    }
+
+    .empty-state p {
+        margin: 0;
+        font-size: 0.875rem;
+    }
+
+    .actions-section {
+        display: flex;
+        justify-content: center;
         margin-top: 1rem;
     }
 
-    .page-nav {
-        padding: 0.5rem 1rem;
-        border: 1px solid #dee2e6;
-        background: white;
-        cursor: pointer;
-        border-radius: 4px;
-    }
-
-    .page-nav:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .page-number {
-        padding: 0.5rem 1rem;
-        border: 1px solid #dee2e6;
-        background: white;
-        border-radius: 4px;
-    }
-
-    .page-number.active {
-        background: #0d6efd;
-        color: white;
-        border-color: #0d6efd;
+    .avaliar-button {
+        min-width: 200px;
+        height: 48px;
+        font-size: 1rem;
+        font-weight: 600;
     }
 
     .loading-container {
@@ -358,10 +474,58 @@
         color: #b91c1c;
         padding: 0.75rem 1rem;
         border-radius: 0.375rem;
+        margin-bottom: 1rem;
     }
 
     .error-alert strong {
         font-weight: 700;
         margin-right: 0.5rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .back-button-container {
+            padding: 0.75rem 0;
+            margin-bottom: 0.75rem;
+        }
+
+        .page-title h1 {
+            font-size: 1.75rem;
+        }
+
+        .avaliacoes-section {
+            padding: 1rem;
+        }
+
+        .avaliacoes-section h2 {
+            font-size: 1.125rem;
+        }
+
+        .empty-state {
+            padding: 2rem 1rem;
+        }
+
+        .avaliar-button {
+            min-width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .back-button-container {
+            padding: 0.5rem 0;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-title h1 {
+            font-size: 1.5rem;
+        }
+
+        .avaliacoes-section {
+            padding: 0.75rem;
+        }
+
+        .empty-state {
+            padding: 1.5rem 0.5rem;
+        }
     }
 </style>

@@ -216,6 +216,7 @@
         min-height: 100vh;
         padding: 2rem;
         box-sizing: border-box;
+        width: 100%;
     }
 
     .login-container {
@@ -259,14 +260,22 @@
         flex-direction: column;
         gap: 1rem;
         margin-top: 2rem;
+        align-items: center;
+        width: 100%;
+    }
+
+    .button-group :global(button) {
+        width: 100%;
+        max-width: 300px;
     }
 
     .links {
         margin-top: 2rem;
         text-align: center;
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
         gap: 1rem;
+        flex-wrap: wrap;
     }
 
     .links a {
@@ -277,6 +286,7 @@
         transition: all 0.2s ease;
         padding: 0.5rem;
         border-radius: 6px;
+        text-align: center;
     }
 
     .links a:hover {
@@ -295,10 +305,151 @@
         border: 1px solid #fc8181;
         font-weight: 500;
         box-shadow: 0 4px 12px rgba(197, 48, 48, 0.1);
+        text-align: center;
     }
 
     .google-icon {
         display: flex;
         align-items: center;
+    }
+
+    /* Mobile Responsivity */
+    @media (max-width: 640px) {
+        :global(main) {
+            padding: 0;
+            align-items: center;
+            min-height: 100vh;
+            justify-content: center;
+        }
+
+        .login-container {
+            max-width: 100%;
+            width: 100%;
+            height: 100vh;
+            padding: 2rem 1.5rem;
+            border-radius: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .login-container:hover {
+            transform: none;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .button-group {
+            margin-top: 1.5rem;
+            gap: 0.875rem;
+            width: 100%;
+        }
+
+        .button-group :global(button) {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .links {
+            margin-top: 1.5rem;
+            flex-direction: column;
+            gap: 0.75rem;
+            text-align: center;
+            width: 100%;
+        }
+
+        .links a {
+            font-size: 0.95rem;
+            padding: 0.75rem;
+            display: block;
+            text-align: center;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .error-message {
+            padding: 0.875rem;
+            font-size: 0.9rem;
+            margin-bottom: 1.25rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        :global(main) {
+            padding: 0;
+        }
+
+        .login-container {
+            padding: 1.5rem 1rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .button-group {
+            margin-top: 1.25rem;
+            gap: 0.75rem;
+        }
+
+        .button-group :global(button) {
+            max-width: 100%;
+        }
+
+        .links {
+            margin-top: 1.25rem;
+        }
+
+        .links a {
+            max-width: 100%;
+        }
+    }
+
+    /* Landscape phones */
+    @media (max-height: 640px) and (orientation: landscape) {
+        :global(main) {
+            align-items: stretch;
+            padding: 0;
+        }
+
+        .login-container {
+            height: 100vh;
+            border-radius: 0;
+            justify-content: center;
+        }
+
+        h1 {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .button-group {
+            margin-top: 1.25rem;
+        }
+
+        .links {
+            margin-top: 1rem;
+        }
     }
 </style>

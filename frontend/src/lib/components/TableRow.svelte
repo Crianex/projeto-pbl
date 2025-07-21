@@ -47,34 +47,33 @@
                 </div>
             {:else if col.key === "badge"}
                 <span class="badge">{row.badge || ""}</span>
-            {:else if col.key === "actions" && col.render}
-                {#if col.render(row).component === "a"}
+            {:else if col.render}
+                {@const renderResult = col.render(row)}
+                {#if renderResult.component === "a"}
                     <Button
-                        variant={col.render(row).props.variant || "primary"}
-                        href={col.render(row).props.href}
-                        class={col.render(row).props.class || ""}
+                        variant={renderResult.props.variant || "primary"}
+                        href={renderResult.props.href}
+                        class={renderResult.props.class || ""}
                     >
-                        {col.render(row).props.textContent ||
-                            col.render(row).props.text ||
-                            ""}
+                        {renderResult.props.textContent || renderResult.props.text || ""}
                     </Button>
-                {:else if col.render(row).component === "button"}
+                {:else if renderResult.component === "button" || renderResult.component === "Button"}
                     <Button
-                        variant={col.render(row).props.variant || "primary"}
-                        class={col.render(row).props.class || ""}
+                        variant={renderResult.props.variant || "primary"}
+                        class={renderResult.props.class || ""}
                         on:click={() => handleCellClick(col, row)}
                     >
-                        {col.render(row).props.text || ""}
+                        {typeof renderResult.props.text === 'string' ? renderResult.props.text : String(renderResult.props.text || "")}
                     </Button>
-                {:else if col.render(row).component === "span"}
-                    <span class={col.render(row).props.class || ""}>
-                        {col.render(row).props.text || ""}
+                {:else if renderResult.component === "span"}
+                    <span class={renderResult.props.class || ""}>
+                        {typeof renderResult.props.text === 'string' ? renderResult.props.text : String(renderResult.props.text || "")}
                     </span>
+                {:else}
+                    {@html renderResult}
                 {/if}
             {:else if col.key === "actions"}
                 <span class="ellipsis" title="Actions">&#x22EE;</span>
-            {:else if col.render}
-                {@html col.render(row)}
             {:else}
                 {row[col.key] || ""}
             {/if}
@@ -260,7 +259,7 @@
             inset 0 1px 0 rgba(255, 255, 255, 0.2);
     }
 
-    /* Responsive Design */
+    /* Responsive Design - Only for desktop table adjustments */
     @media (max-width: 1024px) {
         td {
             padding: 10px 12px;
@@ -282,85 +281,6 @@
 
         .user-role {
             font-size: 12px;
-        }
-    }
-
-    @media (max-width: 768px) {
-        td {
-            padding: 8px 10px;
-            font-size: 13px;
-        }
-
-        .user-cell {
-            gap: 0.5rem;
-        }
-
-        .avatar {
-            width: 32px;
-            height: 32px;
-        }
-
-        .user-name {
-            font-size: 13px;
-        }
-
-        .user-role {
-            font-size: 11px;
-        }
-
-        .btn {
-            padding: 6px 12px;
-            font-size: 12px;
-            min-height: 32px;
-        }
-
-        .grade {
-            min-width: 2.5rem;
-            height: 1.75rem;
-            padding: 0 0.5rem;
-            font-size: 12px;
-        }
-    }
-
-    @media (max-width: 480px) {
-        td {
-            padding: 6px 8px;
-            font-size: 12px;
-        }
-
-        .user-cell {
-            gap: 0.375rem;
-        }
-
-        .avatar {
-            width: 28px;
-            height: 28px;
-        }
-
-        .user-name {
-            font-size: 12px;
-        }
-
-        .user-role {
-            font-size: 10px;
-        }
-
-        .btn {
-            padding: 4px 8px;
-            font-size: 11px;
-            min-height: 28px;
-        }
-
-        .grade {
-            min-width: 2rem;
-            height: 1.5rem;
-            padding: 0 0.375rem;
-            font-size: 11px;
-        }
-
-        input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
         }
     }
 </style>

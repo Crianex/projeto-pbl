@@ -52,12 +52,12 @@ export const ProblemaController: EndpointController = {
         }),
 
         'list-by-turma': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            const { id_turma } = req.query;
+            const { id_turma, id_aluno } = req.query;
             if (!id_turma) {
                 logger.error('No id_turma provided');
                 return res.status(400).json({ error: 'No id_turma provided' });
             }
-            logger.info(`Fetching problemas for turma ${id_turma}`);
+            logger.info(`Fetching problemas for turma ${id_turma}${id_aluno ? ` with student-specific averages for aluno ${id_aluno}` : ''}`);
 
             const { data, error } = await supabase
                 .from('problemas')
@@ -70,6 +70,35 @@ export const ProblemaController: EndpointController = {
             if (error) {
                 logger.error(`Error fetching problemas for turma ${id_turma}: ${error.message}`);
                 return res.status(500).json({ error: error.message });
+            }
+
+            // If id_aluno is provided, calculate student-specific averages
+            if (id_aluno && data) {
+                logger.info(`Calculating student-specific averages for aluno ${id_aluno}`);
+
+                for (const problema of data) {
+                    // Get all evaluations for this problem where the specified student was evaluated
+                    const { data: avaliacoes, error: avaliacoesError } = await supabase
+                        .from('avaliacoes')
+                        .select('notas')
+                        .eq('id_problema', problema.id_problema)
+                        .eq('id_aluno_avaliado', id_aluno);
+
+                    if (!avaliacoesError && avaliacoes && avaliacoes.length > 0) {
+                        // Calculate average of all grades this student received for this problem
+                        const notas = avaliacoes.map(a => calculateAverageNota(a.notas));
+                        const studentAverage = notas.reduce((a, b) => a + b, 0) / notas.length;
+
+                        // Replace the general average with the student's specific average
+                        problema.media_geral = Number(studentAverage.toFixed(2));
+
+                        logger.info(`Student ${id_aluno} average for problema ${problema.id_problema}: ${problema.media_geral} (from ${avaliacoes.length} evaluations)`);
+                    } else {
+                        // No evaluations found for this student on this problem
+                        problema.media_geral = null;
+                        logger.info(`No evaluations found for student ${id_aluno} on problema ${problema.id_problema}`);
+                    }
+                }
             }
 
             logger.info(`Successfully fetched ${data?.length || 0} problemas for turma ${id_turma}`);

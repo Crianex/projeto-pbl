@@ -7,4 +7,5 @@ export interface Column {
     width?: string;
     align?: "left" | "center" | "right";
     render?: (row: any) => any;
+    tooltip?: string; // Tooltip for column header
 }

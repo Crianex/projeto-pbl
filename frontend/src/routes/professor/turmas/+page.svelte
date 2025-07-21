@@ -165,16 +165,22 @@
     {:else}
         <div class="turmas-list">
             {#each turmas as turma}
-                <div class="turma-item">
+                <div
+                    class="turma-item"
+                    on:click={() =>
+                        goto(`/professor/turmas/${turma.id_turma}/problemas`)}
+                    role="button"
+                    tabindex="0"
+                    on:keydown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                            goto(
+                                `/professor/turmas/${turma.id_turma}/problemas`,
+                            );
+                        }
+                    }}
+                >
                     <span>{turma.nome_turma}</span>
                     <div class="actions">
-                        <Button
-                            variant="primary"
-                            on:click={() =>
-                                goto(`/professor/turmas/${turma.id_turma}`)}
-                        >
-                            Editar
-                        </Button>
                         <div class="dropdown">
                             <Button
                                 variant="secondary"
@@ -203,10 +209,12 @@
                                 <Button
                                     variant="secondary"
                                     class="dropdown-item"
-                                    on:click={() =>
+                                    on:click={(e) => {
+                                        e.stopPropagation();
                                         goto(
-                                            `/professor/turmas/${turma.id_turma}/problemas`,
-                                        )}
+                                            `/professor/turmas/${turma.id_turma}`,
+                                        );
+                                    }}
                                 >
                                     <svg
                                         width="16"
@@ -216,19 +224,22 @@
                                         xmlns="http://www.w3.org/2000/svg"
                                     >
                                         <path
-                                            d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+                                            d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
                                             stroke="currentColor"
                                             stroke-width="2"
                                             stroke-linecap="round"
                                             stroke-linejoin="round"
                                         />
                                     </svg>
-                                    Ver problemas
+                                    Editar
                                 </Button>
                                 <Button
                                     variant="danger"
                                     class="dropdown-item delete"
-                                    on:click={() => openDeleteConfirm(turma)}
+                                    on:click={(e) => {
+                                        e.stopPropagation();
+                                        openDeleteConfirm(turma);
+                                    }}
                                 >
                                     <svg
                                         width="16"
@@ -338,6 +349,12 @@
         align-items: center;
         padding: 1rem;
         border-bottom: 1px solid #e9ecef;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .turma-item:hover {
+        background-color: #f8f9fa;
     }
 
     .turma-item:last-child {
@@ -361,7 +378,8 @@
         right: 0;
         top: 100%;
         background-color: white;
-        min-width: 160px;
+        min-width: max-content;
+        width: max-content;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         border-radius: 4px;
         z-index: 1;
@@ -384,6 +402,7 @@
         cursor: pointer;
         color: #212529;
         font-size: 0.875rem;
+        white-space: nowrap;
     }
 
     .dropdown-item.delete {

@@ -53,6 +53,12 @@
         await goto(`/professor/turmas/${turmaId}/problemas/novo`);
     }
 
+    async function handleEditProblema(problema: ProblemaModel) {
+        await goto(
+            `/professor/turmas/${turmaId}/problemas/${problema.id_problema}/editar`,
+        );
+    }
+
     async function handleDeleteProblema() {
         if (!problemaToDelete) return;
 
@@ -162,11 +168,11 @@
                                     problema.data_fim || new Date(),
                                 )}</span
                             >
-                            <span
+                            <!-- <span
                                 >Média geral: {problema.media_geral?.toFixed(
                                     2,
                                 ) || "0.00"}</span
-                            >
+                            > -->
                         </div>
                     </div>
                     <div class="actions">
@@ -178,6 +184,36 @@
                                 )}
                         >
                             Ver detalhes
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            size="icon"
+                            class="edit-button"
+                            on:click={() => handleEditProblema(problema)}
+                            title="Editar problema"
+                        >
+                            <svg
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                                <path
+                                    d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
                         </Button>
                         <Button
                             variant="danger"
@@ -259,6 +295,20 @@
         display: flex;
         gap: 0.5rem;
         align-items: center;
+    }
+
+    .edit-button {
+        background: none;
+        border: none;
+        padding: 0.5rem;
+        cursor: pointer;
+        color: #6c757d;
+        border-radius: 4px;
+    }
+
+    .edit-button:hover {
+        background-color: #f8f9fa;
+        color: #0d6efd;
     }
 
     .delete-button {

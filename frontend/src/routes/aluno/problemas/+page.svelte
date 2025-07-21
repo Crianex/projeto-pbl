@@ -43,10 +43,10 @@
         },
         {
             key: "media_geral",
-            label: "Média Geral",
+            label: "Minha Média",
             sortable: true,
             render: (row: ProblemaModel) =>
-                row.media_geral ? row.media_geral.toFixed(2) : "0.00",
+                row.media_geral ? row.media_geral.toFixed(2) : "Não avaliado",
         },
         {
             key: "actions",
@@ -74,7 +74,9 @@
 
             problems = await api.get(
                 "/problemas/list-by-turma?id_turma=" +
-                    ($currentUser as AlunoModel).id_turma,
+                    ($currentUser as AlunoModel).id_turma +
+                    "&id_aluno=" +
+                    ($currentUser as AlunoModel).id,
             );
 
             problems = Parsers.parseProblemas(problems);
@@ -222,6 +224,43 @@
         justify-content: center;
         align-items: flex-start;
         box-sizing: border-box;
+    }
+
+    /* Responsive adjustments for mobile */
+    @media (max-width: 768px) {
+        .page-wrapper {
+            padding: 1rem 0.5rem;
+        }
+
+        .header {
+            margin-bottom: 1.5rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .page-wrapper {
+            padding: 0.5rem 0.25rem;
+        }
+
+        .header {
+            margin-bottom: 1rem;
+        }
+
+        .header h1 {
+            font-size: 1.75rem;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+        }
     }
 
     .header {
