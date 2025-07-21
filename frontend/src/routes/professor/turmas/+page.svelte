@@ -9,6 +9,7 @@
     import { currentUser, isProfessor } from "$lib/utils/auth";
     import { TurmasService } from "$lib/services/turmas_service";
     import { cacheInvalidation } from "$lib/utils/stores";
+    import Pagination from "../../../lib/components/Pagination.svelte";
 
     let turmas: TurmaModel[] = [];
     let loading = true;
@@ -162,21 +163,24 @@
         </div>
     {:else}
         <div class="turmas-list">
-            {#each paginatedTurmas as turma (turma.id_turma)}
+            {#each turmas as turma}
                 <div class="turma-item">
                     <span>{turma.nome_turma}</span>
                     <div class="actions">
-                        <a
-                            href={`/professor/turmas/${turma.id_turma}`}
-                            class="btn-primary"
+                        <Button
+                            variant="primary"
+                            on:click={() =>
+                                goto(`/professor/turmas/${turma.id_turma}`)}
                         >
                             Editar
-                        </a>
+                        </Button>
                         <div class="dropdown">
-                            <button
+                            <Button
+                                variant="secondary"
                                 class="more-options"
                                 on:click={(e) =>
                                     toggleDropdown(e, turma.id_turma)}
+                                style="min-width:unset;padding:0.5rem;"
                             >
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -191,14 +195,18 @@
                                     <circle cx="19" cy="12" r="1" />
                                     <circle cx="5" cy="12" r="1" />
                                 </svg>
-                            </button>
+                            </Button>
                             <div
                                 class="dropdown-content"
                                 class:show={openDropdownId === turma.id_turma}
                             >
-                                <a
-                                    href={`/professor/turmas/${turma.id_turma}/problemas`}
+                                <Button
+                                    variant="secondary"
                                     class="dropdown-item"
+                                    on:click={() =>
+                                        goto(
+                                            `/professor/turmas/${turma.id_turma}/problemas`,
+                                        )}
                                 >
                                     <svg
                                         width="16"
@@ -216,8 +224,9 @@
                                         />
                                     </svg>
                                     Ver problemas
-                                </a>
-                                <button
+                                </Button>
+                                <Button
+                                    variant="danger"
                                     class="dropdown-item delete"
                                     on:click={() => openDeleteConfirm(turma)}
                                 >
@@ -234,7 +243,7 @@
                                         />
                                     </svg>
                                     Excluir turma
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -242,33 +251,11 @@
             {/each}
         </div>
 
-        <div class="pagination">
-            <button
-                class="page-nav"
-                disabled={currentPage === 1}
-                on:click={() => currentPage--}
-            >
-                Previous
-            </button>
-
-            {#each Array(totalPages) as _, i}
-                <button
-                    class="page-number"
-                    class:active={currentPage === i + 1}
-                    on:click={() => (currentPage = i + 1)}
-                >
-                    {i + 1}
-                </button>
-            {/each}
-
-            <button
-                class="page-nav"
-                disabled={currentPage === totalPages}
-                on:click={() => currentPage++}
-            >
-                Next
-            </button>
-        </div>
+        <Pagination
+            {currentPage}
+            {totalPages}
+            on:pageChange={(e) => (currentPage = e.detail.page)}
+        />
     {/if}
 </div>
 

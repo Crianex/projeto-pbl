@@ -349,12 +349,14 @@
                                         <span class="email">{aluno.email}</span>
                                     </div>
                                 </div>
-                                <button
-                                    type="button"
+                                <Button
+                                    variant="danger"
                                     class="more-options"
+                                    type="button"
                                     on:click={() =>
                                         handleRemoveAluno(aluno.id_aluno)}
                                     title="Remover aluno"
+                                    style="padding:0.5rem;min-width:unset;"
                                 >
                                     <svg
                                         width="24"
@@ -368,7 +370,7 @@
                                             fill="currentColor"
                                         />
                                     </svg>
-                                </button>
+                                </Button>
                             </div>
                         {/each}
                     </div>

@@ -18,6 +18,7 @@
     import { ProblemasService } from "$lib/services/problemas_service";
     import { TurmasService } from "$lib/services/turmas_service";
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
+    import Pagination from "$lib/components/Pagination.svelte";
 
     interface AlunoComMedia extends AlunoModel {
         mediaNotas: {
@@ -278,26 +279,11 @@
                     <Table {columns} rows={tableRows} enableSelection={false} />
                 </div>
 
-                <div class="pagination">
-                    <button
-                        class="page-nav"
-                        disabled={currentPage === 1}
-                        on:click={() => currentPage--}
-                    >
-                        &lt;
-                    </button>
-                    <span class="page-number active">{currentPage}</span>
-                    {#if currentPage < totalPages}
-                        <span class="page-number">{currentPage + 1}</span>
-                    {/if}
-                    <button
-                        class="page-nav"
-                        disabled={currentPage === totalPages}
-                        on:click={() => currentPage++}
-                    >
-                        &gt;
-                    </button>
-                </div>
+                <Pagination
+                    {currentPage}
+                    {totalPages}
+                    on:pageChange={(e) => (currentPage = e.detail.page)}
+                />
             </div>
         </div>
     {/if}

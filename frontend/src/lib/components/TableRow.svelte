@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Column } from "../interfaces/column";
+    import Button from "./Button.svelte";
 
     export let columns: Column[] = [];
     export let row: any = {};
@@ -48,21 +49,23 @@
                 <span class="badge">{row.badge || ""}</span>
             {:else if col.key === "actions" && col.render}
                 {#if col.render(row).component === "a"}
-                    <a
+                    <Button
+                        variant={col.render(row).props.variant || "primary"}
                         href={col.render(row).props.href}
                         class={col.render(row).props.class || ""}
                     >
                         {col.render(row).props.textContent ||
                             col.render(row).props.text ||
                             ""}
-                    </a>
+                    </Button>
                 {:else if col.render(row).component === "button"}
-                    <button
-                        class={`btn ${col.render(row).props.variant === "secondary" ? "btn-secondary" : "btn-primary"}`}
+                    <Button
+                        variant={col.render(row).props.variant || "primary"}
+                        class={col.render(row).props.class || ""}
                         on:click={() => handleCellClick(col, row)}
                     >
                         {col.render(row).props.text || ""}
-                    </button>
+                    </Button>
                 {:else if col.render(row).component === "span"}
                     <span class={col.render(row).props.class || ""}>
                         {col.render(row).props.text || ""}

@@ -15,6 +15,7 @@
     import Table from "$lib/components/Table.svelte";
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
     import { ProblemasService } from "$lib/services/problemas_service";
+    import Pagination from "$lib/components/Pagination.svelte";
 
     interface Avaliacao {
         id_avaliacao: number;
@@ -197,28 +198,6 @@
         }
     }
 
-    function goToPage(page: number) {
-        if (page >= 1 && page <= totalPages) {
-            currentPage = page;
-        }
-    }
-
-    function getPageNumbers() {
-        const pages = [];
-        for (let i = 1; i <= totalPages; i++) {
-            if (
-                i === 1 ||
-                i === totalPages ||
-                (i >= currentPage - 1 && i <= currentPage + 1)
-            ) {
-                pages.push(i);
-            } else if (i === currentPage - 2 || i === currentPage + 2) {
-                pages.push("...");
-            }
-        }
-        return pages;
-    }
-
     function handleSelfEvaluation() {
         const id_problema = $page.params.id_problema;
         goto(`/aluno/problemas/${id_problema}/avaliacoes/${$currentUser?.id}`);
@@ -266,58 +245,11 @@
         </div>
 
         {#if totalPages > 1}
-            <div class="pagination">
-                <button
-                    class="pagination-btn"
-                    disabled={currentPage === 1}
-                    on:click={() => goToPage(currentPage - 1)}
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                    >
-                        <path d="M15 18l-6-6 6-6" />
-                    </svg>
-                </button>
-
-                {#each getPageNumbers() as page}
-                    {#if page === "..."}
-                        <span class="ellipsis">...</span>
-                    {:else}
-                        <button
-                            class="page-btn"
-                            class:active={currentPage === page}
-                            on:click={() =>
-                                typeof page === "number" && goToPage(page)}
-                        >
-                            {page}
-                        </button>
-                    {/if}
-                {/each}
-
-                <button
-                    class="pagination-btn"
-                    disabled={currentPage === totalPages}
-                    on:click={() => goToPage(currentPage + 1)}
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                    >
-                        <path d="M9 18l6-6-6-6" />
-                    </svg>
-                </button>
-            </div>
+            <Pagination
+                {currentPage}
+                {totalPages}
+                on:pageChange={(e) => (currentPage = e.detail.page)}
+            />
         {/if}
     {/if}
 </div>

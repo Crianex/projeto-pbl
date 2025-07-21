@@ -178,10 +178,12 @@
                         >
                             Ver detalhes
                         </Button>
-                        <button
+                        <Button
+                            variant="danger"
                             class="delete-button"
                             on:click={() => openDeleteConfirm(problema)}
                             title="Excluir problema"
+                            style="padding:0.5rem;min-width:unset;"
                         >
                             <svg
                                 width="24"
@@ -195,7 +197,7 @@
                                     fill="currentColor"
                                 />
                             </svg>
-                        </button>
+                        </Button>
                     </div>
                 </div>
             {/each}

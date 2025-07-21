@@ -1,11 +1,10 @@
-
 <script lang="ts">
-    import { fade } from 'svelte/transition';
-    import { goto } from '$app/navigation';
-    import Container from '$lib/components/Container.svelte';
-    import ProfileView from '$lib/components/ProfileView.svelte';
-    import ProfileForm from '$lib/components/ProfileForm.svelte';
-    import Toast from '$lib/components/Toast.svelte';
+    import { fade } from "svelte/transition";
+    import { goto } from "$app/navigation";
+    import Container from "$lib/components/Container.svelte";
+    import ProfileView from "$lib/components/ProfileView.svelte";
+    import ProfileForm from "$lib/components/ProfileForm.svelte";
+    import Toast from "$lib/components/Toast.svelte";
 
     interface UserProfile {
         nome: string;
@@ -16,7 +15,7 @@
     let profile: UserProfile = {
         nome: "Fulana da Silva",
         email: "fulanadsilva@gmail.com",
-        avatar: "/avatars/default.png"
+        avatar: "/avatars/default.png",
     };
 
     let isEditing = false;
@@ -24,8 +23,8 @@
     let avatarPreview = profile.avatar;
     let loading = false;
     let showToast = false;
-    let toastMessage = '';
-    let toastType: 'success' | 'error' = 'success';
+    let toastMessage = "";
+    let toastType: "success" | "error" = "success";
 
     function handleEditClick() {
         isEditing = true;
@@ -49,30 +48,30 @@
 
     function handleAvatarRemove() {
         newAvatar = null;
-        avatarPreview = '/avatars/default.png';
+        avatarPreview = "/avatars/default.png";
     }
 
     async function handleSave() {
         loading = true;
-        
+
         try {
             // TODO: Implementar lógica de salvamento
-            console.log('Salvando perfil:', { ...profile, newAvatar });
-            
+            console.log("Salvando perfil:", { ...profile, newAvatar });
+
             // Simular delay de salvamento
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+
             // Atualizar o perfil com os novos dados
             profile = { ...profile };
             if (newAvatar) {
                 profile.avatar = avatarPreview;
             }
-            
+
             isEditing = false;
-            showSuccessToast('Perfil atualizado com sucesso!');
+            showSuccessToast("Perfil atualizado com sucesso!");
         } catch (error) {
-            console.error('Erro ao salvar perfil:', error);
-            showErrorToast('Erro ao salvar perfil. Tente novamente.');
+            console.error("Erro ao salvar perfil:", error);
+            showErrorToast("Erro ao salvar perfil. Tente novamente.");
         } finally {
             loading = false;
         }
@@ -80,9 +79,9 @@
 
     function showSuccessToast(message: string) {
         toastMessage = message;
-        toastType = 'success';
+        toastType = "success";
         showToast = true;
-        
+
         setTimeout(() => {
             showToast = false;
         }, 3000);
@@ -90,9 +89,9 @@
 
     function showErrorToast(message: string) {
         toastMessage = message;
-        toastType = 'error';
+        toastType = "error";
         showToast = true;
-        
+
         setTimeout(() => {
             showToast = false;
         }, 3000);
@@ -102,10 +101,7 @@
 <Container>
     <div class="profile-container" transition:fade={{ duration: 300 }}>
         {#if !isEditing}
-            <ProfileView 
-                {profile}
-                onEdit={handleEditClick}
-            />
+            <ProfileView {profile} onEdit={handleEditClick} />
         {:else}
             <ProfileForm
                 {profile}
@@ -121,10 +117,10 @@
 </Container>
 
 {#if showToast}
-    <Toast 
-        message={toastMessage} 
-        type={toastType} 
-        on:dismiss={() => showToast = false}
+    <Toast
+        message={toastMessage}
+        type={toastType}
+        on:dismiss={() => (showToast = false)}
     />
 {/if}
 
@@ -140,4 +136,4 @@
             padding: 1rem 0;
         }
     }
-</style> 
+</style>
