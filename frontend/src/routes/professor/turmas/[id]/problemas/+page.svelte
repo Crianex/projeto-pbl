@@ -180,10 +180,10 @@
                         </Button>
                         <Button
                             variant="danger"
+                            size="icon"
                             class="delete-button"
                             on:click={() => openDeleteConfirm(problema)}
                             title="Excluir problema"
-                            style="padding:0.5rem;min-width:unset;"
                         >
                             <svg
                                 width="24"

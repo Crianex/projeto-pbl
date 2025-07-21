@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { fade } from "svelte/transition";
     import { page } from "$app/stores";
     import { api } from "$lib/utils/api";
     import { onMount } from "svelte";
@@ -303,11 +302,11 @@
 </script>
 
 <Container maxWidth="lg" glass={true} shadow={true} center={true}>
-    <div class="evaluation-container" transition:fade={{ duration: 300 }}>
+    <div class="evaluation-container">
         <div class="back-section">
             <BackButton text="Voltar" on:click={() => history.back()} />
         </div>
-        
+
         <div class="header">
             <h1>Avaliação Individual</h1>
         </div>
@@ -390,37 +389,37 @@
     </div>
 </Container>
 
-    {#if criterioAtual && showDialog}
-        <Dialog
-            open={showDialog}
-            closeOnClickOutside={true}
-            on:close={hideCriterios}
-        >
-            <h3 slot="header">
-                Critérios de {criterioAtual.tag} - {criterioAtual.criterio
-                    .nome_criterio}
-            </h3>
-            <div class="dialog-content">
-                <p class="criteria-subtitle">
-                    Para avaliar o desempenho sobre esse critério siga a
-                    seguinte descrição:
-                </p>
-                <div class="criteria-description">
-                    {#each criterioAtual.criterio.descricao_criterio.split("\n") as line}
-                        <p>{line}</p>
-                    {/each}
-                </div>
+{#if criterioAtual && showDialog}
+    <Dialog
+        open={showDialog}
+        closeOnClickOutside={true}
+        on:close={hideCriterios}
+    >
+        <h3 slot="header">
+            Critérios de {criterioAtual.tag} - {criterioAtual.criterio
+                .nome_criterio}
+        </h3>
+        <div class="dialog-content">
+            <p class="criteria-subtitle">
+                Para avaliar o desempenho sobre esse critério siga a seguinte
+                descrição:
+            </p>
+            <div class="criteria-description">
+                {#each criterioAtual.criterio.descricao_criterio.split("\n") as line}
+                    <p>{line}</p>
+                {/each}
             </div>
-        </Dialog>
-    {/if}
+        </div>
+    </Dialog>
+{/if}
 
-    {#if showToast}
-        <Toast
-            message={toastMessage}
-            type={toastType}
-            on:close={() => (showToast = false)}
-        />
-    {/if}
+{#if showToast}
+    <Toast
+        message={toastMessage}
+        type={toastType}
+        on:close={() => (showToast = false)}
+    />
+{/if}
 
 <style>
     .evaluation-container {
@@ -687,13 +686,18 @@
     }
 
     .submit-btn::before {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         left: -100%;
         width: 100%;
         height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.2),
+            transparent
+        );
         transition: left 0.5s;
     }
 

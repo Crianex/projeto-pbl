@@ -56,6 +56,7 @@
     ];
 
     export let enableSelection: boolean = false;
+    export let loading: boolean = false;
     export let onRowSelect: ((selectedIds: Set<number>) => void) | null = null;
 
     let selected: Set<number> = new Set();
@@ -86,6 +87,14 @@
     $: displayColumns = enableSelection
         ? columns
         : columns.filter((col) => col.key !== "select");
+
+    // Create skeleton rows for loading state
+    $: skeletonRows = Array(5)
+        .fill(null)
+        .map((_, index) => ({
+            id: `skeleton-${index}`,
+            skeleton: true,
+        }));
 </script>
 
 <div class="table-container">
@@ -105,6 +114,7 @@
                                 bind:checked={selectAll}
                                 on:change={toggleSelectAll}
                                 aria-label="Select all rows"
+                                disabled={loading}
                             />
                         {:else if col.sortable}
                             {col.label}
@@ -117,14 +127,46 @@
             </tr>
         </thead>
         <tbody>
-            {#each rows as row}
-                <TableRow
-                    columns={displayColumns}
-                    {row}
-                    selected={selected.has(row.id)}
-                    onToggleSelect={enableSelection ? toggleSelectRow : null}
-                />
-            {/each}
+            {#if loading}
+                {#each skeletonRows as skeletonRow}
+                    <tr class="skeleton-row">
+                        {#each displayColumns as col}
+                            <td class="skeleton-cell">
+                                {#if col.key === "select"}
+                                    <div class="skeleton-checkbox"></div>
+                                {:else if col.key === "user"}
+                                    <div class="skeleton-user">
+                                        <div class="skeleton-avatar"></div>
+                                        <div class="skeleton-text-group">
+                                            <div
+                                                class="skeleton-text skeleton-name"
+                                            ></div>
+                                            <div
+                                                class="skeleton-text skeleton-role"
+                                            ></div>
+                                        </div>
+                                    </div>
+                                {:else if col.key === "actions"}
+                                    <div class="skeleton-button"></div>
+                                {:else}
+                                    <div class="skeleton-text"></div>
+                                {/if}
+                            </td>
+                        {/each}
+                    </tr>
+                {/each}
+            {:else}
+                {#each rows as row}
+                    <TableRow
+                        columns={displayColumns}
+                        {row}
+                        selected={selected.has(row.id)}
+                        onToggleSelect={enableSelection
+                            ? toggleSelectRow
+                            : null}
+                    />
+                {/each}
+            {/if}
         </tbody>
     </table>
 </div>
@@ -198,6 +240,103 @@
         vertical-align: middle;
         font-size: 13px;
         color: #697077;
+    }
+
+    /* Skeleton Loading Styles */
+    .skeleton-row {
+        height: 64px;
+    }
+
+    .skeleton-cell {
+        padding: 12px 16px;
+        border-bottom: 1px solid #e0e3e8;
+        vertical-align: middle;
+    }
+
+    .skeleton-text {
+        height: 16px;
+        background: linear-gradient(
+            90deg,
+            #f0f0f0 25%,
+            #e0e0e0 50%,
+            #f0f0f0 75%
+        );
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s infinite;
+        border-radius: 4px;
+    }
+
+    .skeleton-name {
+        width: 120px;
+        margin-bottom: 4px;
+    }
+
+    .skeleton-role {
+        width: 80px;
+        height: 12px;
+    }
+
+    .skeleton-user {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .skeleton-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(
+            90deg,
+            #f0f0f0 25%,
+            #e0e0e0 50%,
+            #f0f0f0 75%
+        );
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s infinite;
+    }
+
+    .skeleton-text-group {
+        flex: 1;
+    }
+
+    .skeleton-button {
+        width: 80px;
+        height: 32px;
+        background: linear-gradient(
+            90deg,
+            #f0f0f0 25%,
+            #e0e0e0 50%,
+            #f0f0f0 75%
+        );
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s infinite;
+        border-radius: 6px;
+        margin-left: auto;
+    }
+
+    .skeleton-checkbox {
+        width: 18px;
+        height: 18px;
+        background: linear-gradient(
+            90deg,
+            #f0f0f0 25%,
+            #e0e0e0 50%,
+            #f0f0f0 75%
+        );
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s infinite;
+        border-radius: 2px;
+        margin: 0 auto;
+    }
+
+    @keyframes skeleton-loading {
+        0% {
+            background-position: 200% 0;
+        }
+        100% {
+            background-position: -200% 0;
+        }
     }
 
     /* Responsive Design */

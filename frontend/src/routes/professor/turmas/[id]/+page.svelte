@@ -351,12 +351,11 @@
                                 </div>
                                 <Button
                                     variant="danger"
-                                    class="more-options"
+                                    size="icon"
                                     type="button"
                                     on:click={() =>
                                         handleRemoveAluno(aluno.id_aluno)}
                                     title="Remover aluno"
-                                    style="padding:0.5rem;min-width:unset;"
                                 >
                                     <svg
                                         width="24"
