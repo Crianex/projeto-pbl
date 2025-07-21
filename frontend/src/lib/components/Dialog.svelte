@@ -110,4 +110,43 @@
 	.dialog::-webkit-scrollbar-thumb:hover {
 		background: #555;
 	}
+
+	/* Responsive Design */
+	@media (max-width: 768px) {
+		.dialog {
+			max-width: 95vw;
+			max-height: 95vh;
+			border-radius: 20px;
+			margin: 1rem;
+		}
+
+		.dialog-header {
+			padding: 1.5rem 2rem 1rem 2rem;
+		}
+
+		.dialog-content {
+			padding: 1rem 2rem 1.5rem 2rem;
+		}
+	}
+
+	@media (max-width: 480px) {
+		.dialog {
+			max-width: 100vw;
+			max-height: 100vh;
+			border-radius: 16px;
+			margin: 0.5rem;
+		}
+
+		.dialog-header {
+			padding: 1.25rem 1.5rem 0.75rem 1.5rem;
+		}
+
+		.dialog-content {
+			padding: 0.75rem 1.5rem 1.25rem 1.5rem;
+		}
+
+		.dialog-overlay {
+			backdrop-filter: blur(8px);
+		}
+	}
 </style>

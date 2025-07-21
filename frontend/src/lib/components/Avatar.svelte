@@ -38,15 +38,6 @@
                     <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
             </button>
-            
-            {#if onRemove}
-                <button type="button" class="action-btn remove-btn" on:click={handleRemoveClick}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            {/if}
         </div>
         
         <input
@@ -164,6 +155,62 @@
         .xl .avatar {
             width: 120px;
             height: 120px;
+        }
+
+        .action-btn {
+            width: 28px;
+            height: 28px;
+        }
+
+        .lg .action-btn,
+        .xl .action-btn {
+            width: 32px;
+            height: 32px;
+        }
+
+        .lg .action-btn svg,
+        .xl .action-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .md .avatar {
+            width: 70px;
+            height: 70px;
+        }
+
+        .lg .avatar {
+            width: 90px;
+            height: 90px;
+        }
+        
+        .xl .avatar {
+            width: 100px;
+            height: 100px;
+        }
+
+        .action-btn {
+            width: 24px;
+            height: 24px;
+        }
+
+        .lg .action-btn,
+        .xl .action-btn {
+            width: 28px;
+            height: 28px;
+        }
+
+        .lg .action-btn svg,
+        .xl .action-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .avatar-actions {
+            bottom: -2rem;
+            gap: 0.375rem;
         }
     }
 </style> 

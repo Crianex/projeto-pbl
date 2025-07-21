@@ -259,4 +259,108 @@
             0 4px 12px rgba(102, 126, 234, 0.3),
             inset 0 1px 0 rgba(255, 255, 255, 0.2);
     }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        td {
+            padding: 10px 12px;
+            font-size: 14px;
+        }
+
+        .user-cell {
+            gap: 0.75rem;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+        }
+
+        .user-name {
+            font-size: 14px;
+        }
+
+        .user-role {
+            font-size: 12px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        td {
+            padding: 8px 10px;
+            font-size: 13px;
+        }
+
+        .user-cell {
+            gap: 0.5rem;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+        }
+
+        .user-name {
+            font-size: 13px;
+        }
+
+        .user-role {
+            font-size: 11px;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            min-height: 32px;
+        }
+
+        .grade {
+            min-width: 2.5rem;
+            height: 1.75rem;
+            padding: 0 0.5rem;
+            font-size: 12px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        td {
+            padding: 6px 8px;
+            font-size: 12px;
+        }
+
+        .user-cell {
+            gap: 0.375rem;
+        }
+
+        .avatar {
+            width: 28px;
+            height: 28px;
+        }
+
+        .user-name {
+            font-size: 12px;
+        }
+
+        .user-role {
+            font-size: 10px;
+        }
+
+        .btn {
+            padding: 4px 8px;
+            font-size: 11px;
+            min-height: 28px;
+        }
+
+        .grade {
+            min-width: 2rem;
+            height: 1.5rem;
+            padding: 0 0.375rem;
+            font-size: 11px;
+        }
+
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+    }
 </style>

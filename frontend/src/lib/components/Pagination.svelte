@@ -73,4 +73,33 @@
     .page-number:hover:not(.active) {
         background: #f8f9fa;
     }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .pagination {
+            gap: 0.375rem;
+            margin-top: 1.5rem;
+        }
+
+        .page-nav,
+        .page-number {
+            padding: 0.625rem 0.875rem;
+            font-size: 0.9rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .pagination {
+            gap: 0.25rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .page-nav,
+        .page-number {
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            min-width: 44px;
+        }
+    }
 </style>

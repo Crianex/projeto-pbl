@@ -271,4 +271,34 @@
             font-size: 0.85rem;
         }
     }
+
+    @media (max-width: 480px) {
+        .toast {
+            margin: 0.375rem;
+            max-width: calc(100vw - 0.75rem);
+            border-radius: 8px;
+        }
+        
+        .toast-content {
+            padding: 0.875rem;
+        }
+        
+        .title {
+            font-size: 1rem;
+        }
+        
+        .message {
+            font-size: 0.9rem;
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .close {
+            width: 20px;
+            height: 20px;
+        }
+    }
 </style> 

@@ -16,8 +16,10 @@
         />
 
         <div class="profile-info">
-            <h1>{get(currentUser)?.nome_completo || ""}</h1>
-            <p class="email">{get(currentUser)?.email || ""}</p>
+            <div class="user-details">
+                <h1>{get(currentUser)?.nome_completo || ""}</h1>
+                <p class="email">{get(currentUser)?.email || ""}</p>
+            </div>
         </div>
     </div>
 
@@ -60,17 +62,26 @@
         flex: 1;
     }
 
+    .user-details {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+
     .profile-info h1 {
         font-size: 1.75rem;
         font-weight: 600;
         color: #1a1a1a;
-        margin: 0 0 0.5rem 0;
+        margin: 0;
+        line-height: 1.2;
     }
 
     .email {
         color: #6c757d;
         font-size: 1rem;
         margin: 0;
+        line-height: 1.2;
     }
 
     .profile-actions {
@@ -91,6 +102,10 @@
             flex-direction: column;
             text-align: center;
             gap: 1rem;
+        }
+
+        .user-details {
+            align-items: center;
         }
 
         .profile-info h1 {

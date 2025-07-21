@@ -445,11 +445,11 @@
     @media (max-width: 480px) {
         .page-wrapper {
             padding: 0.5rem;
-            padding-top: 5rem;
+            padding-top: 4.5rem;
         }
 
         .header {
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
         .header h1 {
@@ -463,6 +463,41 @@
         .error-content,
         .empty-content {
             padding: 1rem;
+        }
+
+        .error-icon,
+        .empty-icon {
+            font-size: 2rem;
+        }
+
+        .error-content h3,
+        .empty-content h3 {
+            font-size: 1.125rem;
+        }
+
+        .error-content p,
+        .empty-content p {
+            font-size: 0.875rem;
+        }
+    }
+
+    @media (max-width: 360px) {
+        .page-wrapper {
+            padding: 0.375rem;
+            padding-top: 4rem;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+        }
+
+        .subtitle {
+            font-size: 0.8rem;
+        }
+
+        .error-content,
+        .empty-content {
+            padding: 0.75rem;
         }
     }
 </style>

@@ -312,5 +312,45 @@
             margin-left: 0;
             padding-top: 4rem;
         }
+
+        .sidebar {
+            width: 280px;
+            padding: 1.5rem 0.75rem;
+        }
+
+        nav a,
+        .logout button {
+            padding: 1rem 0.75rem;
+            font-size: 1rem;
+        }
+
+        .mobile-menu-btn {
+            top: 0.75rem;
+            left: 0.75rem;
+            padding: 0.75rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .main-content {
+            padding-top: 3.5rem;
+        }
+
+        .sidebar {
+            width: 100%;
+            padding: 1rem 0.5rem;
+        }
+
+        nav a,
+        .logout button {
+            padding: 1.25rem 1rem;
+            font-size: 1.1rem;
+        }
+
+        .mobile-menu-btn {
+            top: 0.5rem;
+            left: 0.5rem;
+            padding: 0.875rem;
+        }
     }
 </style>

@@ -199,4 +199,74 @@
         font-size: 13px;
         color: #697077;
     }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        table {
+            min-width: 700px;
+        }
+
+        th {
+            padding: 10px 12px;
+            font-size: 14px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .table-container {
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        table {
+            min-width: 600px;
+        }
+
+        th {
+            padding: 8px 10px;
+            font-size: 13px;
+        }
+
+        th.select {
+            width: 35px;
+            padding-left: 6px;
+            padding-right: 6px;
+        }
+
+        th.actions {
+            padding: 6px 10px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .table-container {
+            border-radius: 0;
+            border-left: none;
+            border-right: none;
+        }
+
+        table {
+            min-width: 500px;
+        }
+
+        th {
+            padding: 6px 8px;
+            font-size: 12px;
+        }
+
+        th.select {
+            width: 30px;
+            padding-left: 4px;
+            padding-right: 4px;
+        }
+
+        th.actions {
+            padding: 4px 8px;
+        }
+
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+    }
 </style>

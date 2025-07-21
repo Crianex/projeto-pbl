@@ -265,4 +265,42 @@
     .input:focus::placeholder {
         color: #cbd5e0;
     }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .input {
+            padding: 0.875rem 1rem;
+            font-size: 1rem;
+            border-radius: 10px;
+        }
+
+        .label {
+            font-size: 0.9rem;
+        }
+
+        .error-message {
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .input {
+            padding: 1rem 1.125rem;
+            font-size: 1.1rem;
+            border-radius: 8px;
+        }
+
+        .label {
+            font-size: 1rem;
+            margin-bottom: 0.375rem;
+        }
+
+        .error-message {
+            font-size: 0.875rem;
+        }
+
+        .icon {
+            right: 0.875rem;
+        }
+    }
 </style> 

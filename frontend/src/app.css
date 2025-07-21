@@ -98,6 +98,64 @@ button:focus:not(:focus-visible) {
 	}
 }
 
+/* Mobile Responsive Improvements */
+@media (max-width: 768px) {
+	h1 {
+		font-size: 1.75rem;
+	}
+
+	h2 {
+		font-size: 0.9rem;
+	}
+
+	p {
+		font-size: 0.9rem;
+	}
+
+	pre {
+		font-size: 14px;
+		padding: 0.375em;
+	}
+}
+
+@media (max-width: 480px) {
+	h1 {
+		font-size: 1.5rem;
+	}
+
+	h2 {
+		font-size: 0.85rem;
+	}
+
+	p {
+		font-size: 0.85rem;
+	}
+
+	pre {
+		font-size: 12px;
+		padding: 0.25em;
+	}
+
+	.text-column {
+		max-width: 100%;
+		padding: 0 1rem;
+	}
+}
+
+@media (max-width: 360px) {
+	h1 {
+		font-size: 1.25rem;
+	}
+
+	h2 {
+		font-size: 0.8rem;
+	}
+
+	p {
+		font-size: 0.8rem;
+	}
+}
+
 .visually-hidden {
 	border: 0;
 	clip: rect(0 0 0 0);

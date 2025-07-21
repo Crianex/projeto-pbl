@@ -114,6 +114,10 @@
             padding-top: 1rem;
             padding-bottom: 1rem;
         }
+
+        .rounded {
+            border-radius: 12px;
+        }
     }
 
     @media (max-width: 768px) {
@@ -124,6 +128,38 @@
 
         .rounded {
             border-radius: 16px;
+        }
+
+        .glass {
+            backdrop-filter: blur(15px);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .sm,
+        .md,
+        .lg,
+        .xl {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+
+        .lg {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+
+        .md {
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+        }
+
+        .rounded {
+            border-radius: 8px;
+        }
+
+        .glass {
+            backdrop-filter: blur(10px);
         }
     }
 </style>

@@ -149,5 +149,33 @@
             height: 40px;
             border-width: 3px;
         }
+
+        .text {
+            font-size: 0.9rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .xl .spinner {
+            width: 40px;
+            height: 40px;
+            border-width: 3px;
+        }
+        
+        .lg .spinner {
+            width: 36px;
+            height: 36px;
+            border-width: 3px;
+        }
+
+        .md .spinner {
+            width: 28px;
+            height: 28px;
+            border-width: 2px;
+        }
+
+        .text {
+            font-size: 0.85rem;
+        }
     }
 </style> 

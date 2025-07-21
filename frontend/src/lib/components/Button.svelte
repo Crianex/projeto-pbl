@@ -125,4 +125,32 @@
             transform: rotate(360deg);
         }
     }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .button {
+            padding: 0.75rem 1.25rem;
+            font-size: 1rem;
+            border-radius: 10px;
+        }
+
+        .loading-spinner {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .button {
+            padding: 0.875rem 1.5rem;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            gap: 0.75rem;
+        }
+
+        .loading-spinner {
+            width: 18px;
+            height: 18px;
+        }
+    }
 </style>

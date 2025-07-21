@@ -74,4 +74,33 @@
     :global(.action-button) {
         flex: 1;
     }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .search-bar {
+            gap: 0.75rem;
+        }
+
+        input {
+            padding: 0.875rem;
+            font-size: 1rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .search-bar {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+        }
+
+        :global(.action-button) {
+            width: 100%;
+        }
+    }
 </style>

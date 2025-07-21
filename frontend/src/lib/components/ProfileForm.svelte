@@ -138,6 +138,20 @@
 
         h1 {
             font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .avatar-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-fields {
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-actions {
+            gap: 0.75rem;
         }
     }
 </style>
