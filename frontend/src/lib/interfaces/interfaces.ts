@@ -9,6 +9,7 @@ export interface AlunoDB {
     nome_completo: string | null;
     email: string | null;
     id_turma: number | null;
+    link_avatar: string | null;
 }
 
 
@@ -37,6 +38,7 @@ export interface ProfessorDB {
     created_at: Date;
     nome_completo: string | null;
     email: string | null;
+    link_avatar: string | null;
 }
 
 export interface TurmaDB {
@@ -77,6 +79,7 @@ export interface BaseUser {
     nome_completo: string | null;
     email: string | null;
     tipo: 'aluno' | 'professor';
+    link_avatar: string | null;
 }
 
 export interface Criterio {
@@ -124,7 +127,8 @@ export function parseToAlunoModel(data: any): AlunoModel {
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
         nome_completo: data.nome_completo || null,
         email: data.email || null,
-        id_turma: data.id_turma || null
+        id_turma: data.id_turma || null,
+        link_avatar: data.link_avatar || null
     };
 }
 
@@ -134,6 +138,7 @@ export function parseToProfessorModel(data: any): ProfessorModel {
         id: data.id_professor,
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
         nome_completo: data.nome_completo || null,
-        email: data.email || null
+        email: data.email || null,
+        link_avatar: data.link_avatar || null
     };
 } 

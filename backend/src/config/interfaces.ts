@@ -21,14 +21,9 @@ export interface Aluno {
     nome_completo: string | null;
     email: string | null;
     id_turma: number | null;
+    link_avatar: string | null;
 }
 
-export interface AlunoPorTurma {
-    id_aluno_por_turma: number;
-    created_at: Date;
-    id_turma: number | null;
-    id_aluno: number | null;
-}
 
 export interface Avaliacao {
     id_avaliacao: number;
@@ -55,6 +50,7 @@ export interface Professor {
     created_at: Date;
     nome_completo: string | null;
     email: string | null;
+    link_avatar: string | null;
 }
 
 export interface Turma {

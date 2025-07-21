@@ -136,6 +136,77 @@ export const ProfessorController: EndpointController = {
             }
 
             return res.status(204).send();
+        }),
+
+        'uploadAvatar': new Pair(RequestType.POST, async (req: Request, res: Response) => {
+            const { id_professor } = req.query;
+            
+            if (!id_professor) {
+                return res.status(400).json({ error: 'id_professor is required' });
+            }
+
+            if (!req.files || !req.files.avatar) {
+                return res.status(400).json({ error: 'Avatar file is required' });
+            }
+
+            const avatarFile = req.files.avatar as any;
+            
+            // Validate file type
+            if (!avatarFile.mimetype.startsWith('image/')) {
+                return res.status(400).json({ error: 'File must be an image' });
+            }
+
+            // Validate file size (max 5MB)
+            if (avatarFile.size > 5 * 1024 * 1024) {
+                return res.status(400).json({ error: 'File size must be less than 5MB' });
+            }
+
+            try {
+                // Generate unique filename
+                const fileExtension = avatarFile.name.split('.').pop();
+                const fileName = `professores/avatar_${id_professor}_${Date.now()}.${fileExtension}`;
+
+                // Upload to Supabase Storage
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('avatars')
+                    .upload(fileName, avatarFile.data, {
+                        contentType: avatarFile.mimetype,
+                        upsert: true
+                    });
+
+                if (uploadError) {
+                    logger.error(`Error uploading to Supabase storage: ${uploadError.message}`);
+                    return res.status(500).json({ error: 'Error uploading avatar to storage' });
+                }
+
+                // Generate private URL with infinite expiration
+                const { data: urlData } = supabase.storage
+                    .from('avatars')
+                    .getPublicUrl(fileName);
+
+                // Update database with avatar link
+                const { data, error: updateError } = await supabase
+                    .from('professores')
+                    .update({ link_avatar: urlData.publicUrl })
+                    .eq('id_professor', id_professor)
+                    .select()
+                    .single();
+
+                if (updateError) {
+                    logger.error(`Error updating professor avatar ${id_professor}: ${updateError.message}`);
+                    return res.status(500).json({ error: updateError.message });
+                }
+
+                return res.json({
+                    success: true,
+                    avatar_url: urlData.publicUrl,
+                    professor: data
+                });
+
+            } catch (error) {
+                logger.error(`Error uploading avatar for professor ${id_professor}: ${error}`);
+                return res.status(500).json({ error: 'Error uploading avatar' });
+            }
         })
     }
 }; 

@@ -12,7 +12,8 @@
         "start-and-monitor": "python3 start_and_monitor.py",
         "build-and-start": "npm run build; npm run start",
         "start-prod": "ts-node src/index.ts",
-        "debug-start": "echo 'Starting debug mode...'; ls -la dist/; node dist/index.js"
+        "debug-start": "echo 'Starting debug mode...'; ls -la dist/; node dist/index.js",
+        "setup-storage": "node scripts/setup_storage.js"
     },
     "keywords": [],
     "author": "",

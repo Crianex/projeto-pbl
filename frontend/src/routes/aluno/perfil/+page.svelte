@@ -1,4 +1,3 @@
-
 <script lang="ts">
     import { fade } from 'svelte/transition';
     import { goto } from '$app/navigation';
@@ -6,6 +5,7 @@
     import ProfileView from '$lib/components/ProfileView.svelte';
     import ProfileForm from '$lib/components/ProfileForm.svelte';
     import Toast from '$lib/components/Toast.svelte';
+    import { AvatarService } from '$lib/services/avatar_service';
 
     interface UserProfile {
         nome: string;
@@ -56,17 +56,28 @@
         loading = true;
         
         try {
-            // TODO: Implementar lógica de salvamento
-            console.log('Salvando perfil:', { ...profile, newAvatar });
+            // Upload avatar se houver um novo
+            if (newAvatar) {
+                try {
+                    // TODO: Obter o ID do aluno atual (pode vir do store de autenticação)
+                    const alunoId = 1; // Temporário - deve vir do contexto de autenticação
+                    const uploadResult = await AvatarService.uploadAlunoAvatar(alunoId, newAvatar);
+                    
+                    // Atualizar o avatar com a URL retornada
+                    profile.avatar = AvatarService.getAvatarUrl(uploadResult.avatar_url);
+                    avatarPreview = profile.avatar;
+                } catch (uploadError) {
+                    console.error('Erro ao fazer upload do avatar:', uploadError);
+                    showErrorToast('Erro ao fazer upload do avatar. Tente novamente.');
+                    return;
+                }
+            }
+            
+            // TODO: Implementar atualização dos outros dados do perfil
+            console.log('Salvando perfil:', { ...profile });
             
             // Simular delay de salvamento
             await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Atualizar o perfil com os novos dados
-            profile = { ...profile };
-            if (newAvatar) {
-                profile.avatar = avatarPreview;
-            }
             
             isEditing = false;
             showSuccessToast('Perfil atualizado com sucesso!');
@@ -100,7 +111,7 @@
 </script>
 
 <Container>
-    <div class="profile-container" transition:fade={{ duration: 300 }}>
+    <div transition:fade={{ duration: 300 }}>
         {#if !isEditing}
             <ProfileView 
                 {profile}
@@ -129,15 +140,9 @@
 {/if}
 
 <style>
-    .profile-container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 2rem 0;
-    }
+
 
     @media (max-width: 768px) {
-        .profile-container {
-            padding: 1rem 0;
-        }
+
     }
 </style> 
