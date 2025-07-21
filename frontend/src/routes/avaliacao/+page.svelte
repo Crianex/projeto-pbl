@@ -13,7 +13,9 @@
     } from "$lib/interfaces/interfaces";
     import { Parsers } from "$lib/interfaces/parsers";
     import { logger } from "$lib/utils/logger";
+    import { MediaCalculator } from "$lib/utils/utils";
     import { currentUser } from "$lib/utils/auth";
+    import { AvaliacoesService } from "$lib/services/avaliacoes_service";
 
     interface AvaliacaoData {
         aluno: {
@@ -202,10 +204,11 @@
                     id_aluno_avaliado: parseInt(id_aluno_avaliado),
                     notas: JSON.stringify(notas),
                 };
-                await api.post("/avaliacoes/create", payload);
+                await AvaliacoesService.create(payload);
             } else {
                 // Use the existing problemas/add-avaliacao endpoint for student evaluations
-                const media = calculateMedia();
+                const media =
+                    MediaCalculator.calculateCurrentMedia(currentValues);
                 const notasWithMedia = {
                     ...notas,
                     media,
@@ -216,7 +219,7 @@
                     id_aluno_avaliado: parseInt(id_aluno_avaliado),
                     notas: JSON.stringify(notasWithMedia),
                 };
-                await api.post("/problemas/add-avaliacao", payload);
+                await AvaliacoesService.create(payload);
             }
 
             toastType = "success";
@@ -228,22 +231,6 @@
             toastType = "error";
             showToast = true;
         }
-    }
-
-    function calculateMedia(): number {
-        let total = 0;
-        let count = 0;
-
-        Object.entries(currentValues).forEach(([tag, criterios]) => {
-            Object.entries(criterios).forEach(([criterioKey, nota]) => {
-                if (!isNaN(nota)) {
-                    total += nota;
-                    count++;
-                }
-            });
-        });
-
-        return count > 0 ? total / count : 0;
     }
 
     onMount(fetchData);

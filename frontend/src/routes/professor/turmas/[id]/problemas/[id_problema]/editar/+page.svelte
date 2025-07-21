@@ -115,13 +115,13 @@
                 criterios: JSON.stringify(formData.criterios),
             };
 
-            const response = await api.put(
-                `/problemas/update?id_problema=${problemaId}`,
+            // Use the service instead of raw API call
+            const updatedProblema = await ProblemasService.update(
+                problemaId,
                 payload,
             );
 
-            // Parse the response and update store
-            const updatedProblema = Parsers.parseProblema(response);
+            // Update store (cache will be automatically invalidated by service)
             problemaStore.update((problemas) =>
                 problemas.map((p) =>
                     p.id_problema === updatedProblema.id_problema
@@ -129,9 +129,6 @@
                         : p,
                 ),
             );
-
-            // Invalidate cache
-            ProblemasService.invalidateCache(problemaId, turmaId);
 
             await goto(`/professor/turmas/${turmaId}/problemas`);
         } catch (err) {

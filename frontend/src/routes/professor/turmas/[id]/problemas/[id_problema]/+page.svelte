@@ -15,6 +15,7 @@
     import Container from "$lib/components/Container.svelte";
     import Table from "$lib/components/Table.svelte";
     import BackButton from "$lib/components/BackButton.svelte";
+    import SearchBar from "$lib/components/SearchBar.svelte";
     import { ProblemasService } from "$lib/services/problemas_service";
     import { TurmasService } from "$lib/services/turmas_service";
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
@@ -28,6 +29,7 @@
     let error: string | null = null;
     let currentPage = 1;
     let itemsPerPage = 10;
+    let searchTerm = "";
     let alunos: Array<AlunoModel & { medias: Record<string, number> | null }> =
         [];
     let criteriosList: { nome_criterio: string; descricao_criterio: string }[] =
@@ -182,22 +184,21 @@
         }
     });
 
-    // Process alunos only after criteriosList is ready
-    $: if (
-        turma?.alunos &&
-        criteriosList.length > 0 &&
-        avaliacoesData.length > 0
-    ) {
+    // Process alunos - show all alunos even if there are no evaluations yet
+    $: if (turma?.alunos && criteriosList.length > 0) {
         console.log(
             "🔍 DEBUG - Processing alunos with criteriosList:",
             criteriosList,
         );
         alunos = turma.alunos.map((aluno) => {
-            const medias = MediaCalculator.calcularMediaPorCriterio(
-                avaliacoesData,
-                aluno.id,
-                criteriosList,
-            );
+            const medias =
+                avaliacoesData.length > 0
+                    ? MediaCalculator.calcularMediaPorCriterio(
+                          avaliacoesData,
+                          aluno.id,
+                          criteriosList,
+                      )
+                    : null; // Show alunos without evaluations
             return {
                 ...aluno,
                 medias,
@@ -206,6 +207,12 @@
         logger.info(
             `Successfully processed ${alunos.length} alunos with ${criteriosList.length} criterios`,
         );
+    } else if (turma?.alunos && criteriosList.length === 0) {
+        // Show alunos even when criterios haven't loaded yet
+        alunos = turma.alunos.map((aluno) => ({
+            ...aluno,
+            medias: null,
+        }));
     }
 
     function verDetalhes(id_aluno: string) {
@@ -226,8 +233,22 @@
         goto(`/professor/turmas/${$page.params.id}/problemas`);
     }
 
-    $: totalPages = Math.ceil(alunos.length / itemsPerPage);
-    $: paginatedAlunos = alunos.slice(
+    function handleSearch(event: CustomEvent<string>) {
+        searchTerm = event.detail;
+        currentPage = 1; // Reset to first page when searching
+    }
+
+    // Filter alunos based on search term
+    $: filteredAlunos = searchTerm
+        ? alunos.filter((aluno) =>
+              aluno.nome_completo
+                  ?.toLowerCase()
+                  .includes(searchTerm.toLowerCase()),
+          )
+        : alunos;
+
+    $: totalPages = Math.ceil(filteredAlunos.length / itemsPerPage);
+    $: paginatedAlunos = filteredAlunos.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage,
     );
@@ -259,7 +280,9 @@
         });
 
         // Calculate overall media from individual criteria
-        row.media = MediaCalculator.calculateOverallMedia(aluno.medias);
+        row.media = aluno.medias
+            ? MediaCalculator.calculateOverallMedia(aluno.medias)
+            : "Não avaliado";
 
         return row;
     });
@@ -288,6 +311,15 @@
             </div>
 
             <div class="alunos-section">
+                <div class="search-section">
+                    <SearchBar
+                        bind:value={searchTerm}
+                        placeholder="Pesquisar alunos..."
+                        showButton={false}
+                        on:search={handleSearch}
+                    />
+                </div>
+
                 <div class="table-wrapper">
                     <Table {columns} rows={tableRows} enableSelection={false} />
                 </div>
@@ -330,6 +362,10 @@
         border-radius: 12px;
         padding: 1.5rem;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .search-section {
+        margin-bottom: 1.5rem;
     }
 
     .table-wrapper {

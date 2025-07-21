@@ -2,11 +2,14 @@ import type { ProblemaModel } from "$lib/interfaces/interfaces";
 import { api } from "$lib/utils/api";
 import { Parsers } from "$lib/interfaces/parsers";
 import { logger } from "$lib/utils/logger";
-import { problemasCache, problemaCache } from "$lib/utils/cache";
+import { problemasCache, problemaCache, autoInvalidate, triggerPageRefresh } from "$lib/utils/cache";
 
 export const ProblemasService = {
     getByTurma,
     getById,
+    create,
+    update,
+    delete: deleteProblema,
     invalidateCache,
 };
 
@@ -80,6 +83,70 @@ async function getById(id: string, forceRefresh = false): Promise<ProblemaModel>
     } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Failed to fetch problema';
         problemaCache.setError(cacheKey, errorMsg);
+        throw error;
+    }
+}
+
+async function create(problemaData: {
+    nome_problema: string;
+    data_inicio: string;
+    data_fim: string;
+    id_turma: number;
+    criterios: string;
+}): Promise<ProblemaModel> {
+    try {
+        logger.info('Creating new problema', problemaData);
+        const response = await api.post('/problemas/create', problemaData);
+        const createdProblema = Parsers.parseProblema(response);
+
+        // Auto-invalidate related caches
+        await autoInvalidate.problemaCreated(createdProblema);
+        triggerPageRefresh.problemas();
+
+        logger.info('Problema created successfully', { id: createdProblema.id_problema });
+        return createdProblema;
+    } catch (error) {
+        logger.error('Failed to create problema', error);
+        throw error;
+    }
+}
+
+async function update(id: string, problemaData: {
+    nome_problema: string;
+    data_inicio: string;
+    data_fim: string;
+    id_turma: number;
+    criterios: string;
+}): Promise<ProblemaModel> {
+    try {
+        logger.info(`Updating problema ${id}`, problemaData);
+        const response = await api.put(`/problemas/update?id_problema=${id}`, problemaData);
+        const updatedProblema = Parsers.parseProblema(response);
+
+        // Auto-invalidate related caches
+        await autoInvalidate.problemaUpdated(id, problemaData.id_turma.toString(), updatedProblema);
+        triggerPageRefresh.problemas();
+
+        logger.info('Problema updated successfully', { id });
+        return updatedProblema;
+    } catch (error) {
+        logger.error('Failed to update problema', error);
+        throw error;
+    }
+}
+
+async function deleteProblema(id: string, turmaId?: string): Promise<void> {
+    try {
+        logger.info(`Deleting problema ${id}`);
+        await api.delete(`/problemas/delete?id_problema=${id}`);
+
+        // Auto-invalidate related caches
+        await autoInvalidate.problemaDeleted(id, turmaId);
+        triggerPageRefresh.problemas();
+
+        logger.info('Problema deleted successfully', { id });
+    } catch (error) {
+        logger.error('Failed to delete problema', error);
         throw error;
     }
 }

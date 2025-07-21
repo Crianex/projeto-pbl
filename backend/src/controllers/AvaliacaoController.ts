@@ -3,31 +3,9 @@ import { Request, Response } from 'express';
 import { Pair } from '../config/utils';
 import { supabase } from '../config/supabase_wrapper';
 import { createControllerLogger } from '../utils/controller_logger';
+import { MediaCalculator } from '../utils/utils';
 
 const logger = createControllerLogger('Avaliacao', 'Controller');
-
-interface NotasObject {
-    [key: string]: number;
-}
-
-function isValidNotasObject(obj: any): obj is NotasObject {
-    if (typeof obj !== 'object' || obj === null) return false;
-    return Object.entries(obj).every(([key, value]) =>
-        typeof key === 'string' && typeof value === 'number'
-    );
-}
-
-function calculateAverageNota(notasString: string): number {
-    try {
-        const notasObj = JSON.parse(notasString);
-        if (!isValidNotasObject(notasObj)) return 0;
-        const values = Object.values(notasObj);
-        if (values.length === 0) return 0;
-        return values.reduce((a, b) => a + b, 0) / values.length;
-    } catch {
-        return 0;
-    }
-}
 
 export const AvaliacaoController: EndpointController = {
     name: 'avaliacoes',
@@ -135,7 +113,7 @@ export const AvaliacaoController: EndpointController = {
                 .eq('id_problema', id_problema);
 
             if (!avaliacoesError && avaliacoes) {
-                const notas = avaliacoes.map(a => calculateAverageNota(a.notas));
+                const notas = avaliacoes.map(a => MediaCalculator.calculateSimpleMedia(a.notas));
                 const media = notas.length > 0 ? notas.reduce((a, b) => a + b, 0) / notas.length : 0;
 
                 await supabase
@@ -194,7 +172,7 @@ export const AvaliacaoController: EndpointController = {
                 .eq('id_problema', data.id_problema);
 
             if (!avaliacoesError && avaliacoes) {
-                const notas = avaliacoes.map(a => calculateAverageNota(a.notas));
+                const notas = avaliacoes.map(a => MediaCalculator.calculateSimpleMedia(a.notas));
                 const media = notas.length > 0 ? notas.reduce((a, b) => a + b, 0) / notas.length : 0;
 
                 await supabase
@@ -239,7 +217,7 @@ export const AvaliacaoController: EndpointController = {
                     .eq('id_problema', avaliacao.id_problema);
 
                 if (!avaliacoesError && avaliacoes && avaliacoes.length > 0) {
-                    const notas = avaliacoes.map(a => calculateAverageNota(a.notas));
+                    const notas = avaliacoes.map(a => MediaCalculator.calculateSimpleMedia(a.notas));
                     const media = notas.length > 0 ? notas.reduce((a, b) => a + b, 0) / notas.length : 0;
 
                     await supabase

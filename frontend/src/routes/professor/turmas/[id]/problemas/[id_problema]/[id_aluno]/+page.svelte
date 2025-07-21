@@ -13,6 +13,7 @@
     import Container from "$lib/components/Container.svelte";
     import Table from "$lib/components/Table.svelte";
     import BackButton from "$lib/components/BackButton.svelte";
+    import { MediaCalculator } from "$lib/utils/utils";
     import Button from "$lib/components/Button.svelte";
     import { ProblemasService } from "$lib/services/problemas_service";
     import { AlunosService } from "$lib/services/alunos_service";
@@ -27,15 +28,16 @@
     let avaliacoesRecebidas: any[] = [];
     let loading = true;
     let error: string | null = null;
-    
+
     // Paginação para avaliações enviadas
     let currentPageEnviadas = 1;
     let itemsPerPage = 10;
-    
+
     // Paginação para avaliações recebidas
     let currentPageRecebidas = 1;
 
-    let criteriosList: { nome_criterio: string; descricao_criterio: string }[] = [];
+    let criteriosList: { nome_criterio: string; descricao_criterio: string }[] =
+        [];
 
     $: if (problema && problema.criterios) {
         const criteriosMap = new Map<string, string>();
@@ -120,21 +122,15 @@
                 .filter((av: any) => av.id_aluno_avaliador === currentAlunoId)
                 .map((av: any) => {
                     const alunoAvaliado = turma?.alunos?.find(
-                        (a: any) => a.id === av.id_aluno_avaliado
+                        (a: any) => a.id === av.id_aluno_avaliado,
                     );
                     return {
                         id: av.id,
-                        aluno: {
-                            name: aluno?.nome_completo || "Aluno",
-                            role: "Avaliador",
-                            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(aluno?.nome_completo || "Aluno")}&background=random`,
-                        },
+                        aluno: aluno?.nome_completo || "Aluno",
                         notas: formatNotas(av.notas),
-                        enviada_para: {
-                            name: alunoAvaliado?.nome_completo || "Aluno não encontrado",
-                            role: "Avaliado",
-                            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(alunoAvaliado?.nome_completo || "Aluno")}&background=random`,
-                        },
+                        enviada_para:
+                            alunoAvaliado?.nome_completo ||
+                            "Aluno não encontrado",
                     };
                 });
 
@@ -143,24 +139,15 @@
                 .filter((av: any) => av.id_aluno_avaliado === currentAlunoId)
                 .map((av: any) => {
                     const alunoAvaliador = turma?.alunos?.find(
-                        (a: any) => a.id === av.id_aluno_avaliador
+                        (a: any) => a.id === av.id_aluno_avaliador,
                     );
                     return {
                         id: av.id,
-                        aluno: {
-                            name: alunoAvaliador?.nome_completo || "Aluno",
-                            role: "Avaliador",
-                            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(alunoAvaliador?.nome_completo || "Aluno")}&background=random`,
-                        },
+                        aluno: alunoAvaliador?.nome_completo || "Aluno",
                         notas: formatNotas(av.notas),
-                        enviada_para: {
-                            name: aluno?.nome_completo || "Aluno",
-                            role: "Avaliado",
-                            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(aluno?.nome_completo || "Aluno")}&background=random`,
-                        },
+                        enviada_para: aluno?.nome_completo || "Aluno",
                     };
                 });
-
         } catch (e: any) {
             logger.error("Error loading aluno details:", e);
             error = e.message || "Erro ao carregar os dados";
@@ -171,37 +158,32 @@
 
     function formatNotas(notas: string | null) {
         if (!notas) return "Não avaliado";
-        try {
-            const notasObj = JSON.parse(notas);
-            let competencia = 0;
-            let habilidade = 0;
-            let atitude = 0;
-            let count = 0;
 
-            Object.values(notasObj).forEach((categoria: any) => {
-                if (typeof categoria === "object" && categoria !== null) {
-                    competencia += categoria.conhecimento || 0;
-                    habilidade += categoria.habilidades || 0;
-                    atitude += categoria.atitudes || 0;
-                    count++;
-                }
-            });
+        const criteriosHardcoded = [
+            { nome_criterio: "conhecimento" },
+            { nome_criterio: "habilidades" },
+            { nome_criterio: "atitudes" },
+        ];
 
-            if (count > 0) {
-                competencia = competencia / count;
-                habilidade = habilidade / count;
-                atitude = atitude / count;
-            }
+        const medias = MediaCalculator.calcularMediaPorCriterioSingle(
+            notas,
+            criteriosHardcoded,
+        );
 
-            return `(${competencia.toFixed(2)}, ${habilidade.toFixed(2)}, ${atitude.toFixed(2)})`;
-        } catch (error) {
-            return "Erro ao processar notas";
-        }
+        if (!medias) return "Erro ao processar notas";
+
+        const competencia = medias.conhecimento || 0;
+        const habilidade = medias.habilidades || 0;
+        const atitude = medias.atitudes || 0;
+
+        return `(${competencia.toFixed(2)}, ${habilidade.toFixed(2)}, ${atitude.toFixed(2)})`;
     }
 
     function handleAvaliarAluno() {
         const { id_problema, id_aluno, id } = $page.params;
-        goto(`/professor/turmas/${id}/problemas/${id_problema}/avaliar/${id_aluno}`);
+        goto(
+            `/professor/turmas/${id}/problemas/${id_problema}/avaliar/${id_aluno}`,
+        );
     }
 
     // Paginação para avaliações enviadas
@@ -212,7 +194,9 @@
     );
 
     // Paginação para avaliações recebidas
-    $: totalPagesRecebidas = Math.ceil(avaliacoesRecebidas.length / itemsPerPage);
+    $: totalPagesRecebidas = Math.ceil(
+        avaliacoesRecebidas.length / itemsPerPage,
+    );
     $: paginatedAvaliacoesRecebidas = avaliacoesRecebidas.slice(
         (currentPageRecebidas - 1) * itemsPerPage,
         currentPageRecebidas * itemsPerPage,
@@ -234,14 +218,16 @@
             <div class="back-button-container">
                 <BackButton text="Voltar" on:click={() => history.back()} />
             </div>
-            
+
             <div class="page-title">
                 <h1>Avaliações do Aluno</h1>
             </div>
-            
+
             <div class="header">
                 <div class="problema-info">
-                    <span class="problema-title">{problema?.nome_problema || ""}</span>
+                    <span class="problema-title"
+                        >{problema?.nome_problema || ""}</span
+                    >
                     <span class="aluno-name">{aluno?.nome_completo || ""}</span>
                 </div>
             </div>
@@ -249,7 +235,7 @@
             <!-- Seção de Avaliações Enviadas -->
             <div class="avaliacoes-section">
                 <h2>Avaliações Enviadas</h2>
-                
+
                 {#if paginatedAvaliacoesEnviadas.length === 0}
                     <div class="empty-state">
                         <div class="empty-icon">📤</div>
@@ -258,10 +244,10 @@
                     </div>
                 {:else}
                     <div class="table-wrapper">
-                        <Table 
-                            columns={columnsEnviadas} 
-                            rows={paginatedAvaliacoesEnviadas} 
-                            enableSelection={false} 
+                        <Table
+                            columns={columnsEnviadas}
+                            rows={paginatedAvaliacoesEnviadas}
+                            enableSelection={false}
                         />
                     </div>
 
@@ -270,7 +256,8 @@
                             <Pagination
                                 currentPage={currentPageEnviadas}
                                 totalPages={totalPagesEnviadas}
-                                on:pageChange={(e) => (currentPageEnviadas = e.detail.page)}
+                                on:pageChange={(e) =>
+                                    (currentPageEnviadas = e.detail.page)}
                             />
                         </div>
                     {/if}
@@ -280,7 +267,7 @@
             <!-- Seção de Avaliações Recebidas -->
             <div class="avaliacoes-section">
                 <h2>Avaliações Recebidas</h2>
-                
+
                 {#if paginatedAvaliacoesRecebidas.length === 0}
                     <div class="empty-state">
                         <div class="empty-icon">📥</div>
@@ -289,10 +276,10 @@
                     </div>
                 {:else}
                     <div class="table-wrapper">
-                        <Table 
-                            columns={columnsRecebidas} 
-                            rows={paginatedAvaliacoesRecebidas} 
-                            enableSelection={false} 
+                        <Table
+                            columns={columnsRecebidas}
+                            rows={paginatedAvaliacoesRecebidas}
+                            enableSelection={false}
                         />
                     </div>
 
@@ -301,7 +288,8 @@
                             <Pagination
                                 currentPage={currentPageRecebidas}
                                 totalPages={totalPagesRecebidas}
-                                on:pageChange={(e) => (currentPageRecebidas = e.detail.page)}
+                                on:pageChange={(e) =>
+                                    (currentPageRecebidas = e.detail.page)}
                             />
                         </div>
                     {/if}
@@ -310,8 +298,8 @@
 
             <!-- Botão de Avaliar Aluno -->
             <div class="actions-section">
-                <Button 
-                    variant="primary" 
+                <Button
+                    variant="primary"
                     on:click={handleAvaliarAluno}
                     class="avaliar-button"
                 >
@@ -339,8 +327,6 @@
         padding-top: 2.5rem;
         padding-bottom: 2.5rem;
     }
-
-
 
     .page-title {
         text-align: center;

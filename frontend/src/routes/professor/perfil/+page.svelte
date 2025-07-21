@@ -73,7 +73,7 @@
                 }
             }
 
-            // atualizar o perfil no banco de dados
+            // atualizar o perfil no banco de dados (will auto-invalidate caches)
             await ProfessoresService.update(get(currentUser) as ProfessorModel);
 
             isEditing = false;

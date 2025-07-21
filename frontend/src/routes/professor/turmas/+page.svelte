@@ -4,8 +4,9 @@
     import SearchBar from "$lib/components/SearchBar.svelte";
     import type { TurmaModel } from "$lib/interfaces/interfaces";
     import { api } from "$lib/utils/api";
-    import { onMount } from "svelte";
+    import { onMount, onDestroy } from "svelte";
     import { goto } from "$app/navigation";
+    import { afterNavigate } from "$app/navigation";
     import { currentUser, isProfessor } from "$lib/utils/auth";
     import { TurmasService } from "$lib/services/turmas_service";
     import { cacheInvalidation } from "$lib/utils/stores";
@@ -22,14 +23,15 @@
     let currentPage = 1;
     let itemsPerPage = 5;
     let searchQuery = "";
+    let pageHidden = false;
 
-    async function fetchTurmas() {
+    async function fetchTurmas(forceRefresh = false) {
         try {
             loading = true;
             error = null;
 
             // Use the caching service instead of direct API call
-            const allTurmas = await TurmasService.getAll();
+            const allTurmas = await TurmasService.getAll(forceRefresh);
 
             // Filter turmas to only show those belonging to the current professor
             const user = $currentUser;
@@ -65,10 +67,38 @@
 
         // Add click outside listener
         document.addEventListener("click", handleClickOutside);
+
+        // Add page visibility listener to refresh data when page becomes visible
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                pageHidden = true;
+            } else if (pageHidden) {
+                // Page became visible again, refresh data
+                pageHidden = false;
+                if ($currentUser !== undefined) {
+                    fetchTurmas(true);
+                }
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
         return () => {
             document.removeEventListener("click", handleClickOutside);
+            document.removeEventListener(
+                "visibilitychange",
+                handleVisibilityChange,
+            );
             unsubscribe();
         };
+    });
+
+    // Refresh data when navigating to this page
+    afterNavigate(({ type }) => {
+        // Only refresh on regular navigation (not replace or popstate from same page)
+        if (type === "enter" && $currentUser !== undefined) {
+            fetchTurmas(true);
+        }
     });
 
     function handleClickOutside(event: MouseEvent) {
@@ -110,12 +140,10 @@
 
         try {
             loading = true;
-            await api.delete(
-                `/turmas/delete?id_turma=${turmaToDelete.id_turma}`,
-            );
-            // Invalidate cache after deletion
-            TurmasService.invalidateCache(turmaToDelete.id_turma.toString());
-            await fetchTurmas();
+            // Use the service instead of raw API call
+            await TurmasService.delete(turmaToDelete.id_turma.toString());
+            // Cache will be automatically invalidated by service
+            await fetchTurmas(true); // Force refresh after deletion
             closeDeleteConfirm();
         } catch (err) {
             error =
@@ -154,7 +182,7 @@
     {:else if error}
         <div class="error">
             <p>{error}</p>
-            <Button variant="secondary" on:click={fetchTurmas}
+            <Button variant="secondary" on:click={() => fetchTurmas(true)}
                 >Tentar novamente</Button
             >
         </div>

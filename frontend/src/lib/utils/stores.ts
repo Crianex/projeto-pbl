@@ -9,8 +9,12 @@ export {
     problemaCache,
     alunosCache,
     alunoCache,
+    professorCache,
     avaliacoesCache,
     cacheInvalidation,
+    autoInvalidate,
+    pageRefreshEvents,
+    triggerPageRefresh,
     isAnyLoading
 } from '$lib/utils/cache';
 

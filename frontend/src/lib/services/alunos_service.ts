@@ -2,12 +2,14 @@ import type { AlunoModel } from "$lib/interfaces/interfaces";
 import { api } from "$lib/utils/api";
 import { Parsers } from "$lib/interfaces/parsers";
 import { logger } from "$lib/utils/logger";
-import { alunoCache } from "$lib/utils/cache";
+import { alunoCache, autoInvalidate, triggerPageRefresh } from "$lib/utils/cache";
 
 export const AlunosService = {
     getById,
-    invalidateCache,
+    create,
     update,
+    delete: deleteAluno,
+    invalidateCache,
 };
 
 async function getById(id: string, forceRefresh = false): Promise<AlunoModel> {
@@ -47,17 +49,65 @@ async function getById(id: string, forceRefresh = false): Promise<AlunoModel> {
     }
 }
 
+async function create(alunoData: { nome_completo: string; email: string }): Promise<AlunoModel> {
+    try {
+        logger.info('Creating new aluno', alunoData);
+        const response = await api.post('/alunos/create', alunoData);
+        const createdAluno = Parsers.parseAluno(response);
+        
+        // Auto-invalidate related caches
+        await autoInvalidate.alunoCreated(createdAluno);
+        triggerPageRefresh.alunos();
+        
+        logger.info('Aluno created successfully', { id: createdAluno.id });
+        return createdAluno;
+    } catch (error) {
+        logger.error('Failed to create aluno', error);
+        throw error;
+    }
+}
+
+async function update(aluno: AlunoModel): Promise<AlunoModel> {
+    try {
+        logger.info(`Updating aluno ${aluno.id}`, aluno);
+        const response = await api.put(`/alunos/update?id_aluno=${aluno.id}`, {
+            nome_completo: aluno.nome_completo,
+            email: aluno.email,
+        });
+        const updatedAluno = Parsers.parseAluno(response);
+        
+        // Auto-invalidate related caches
+        await autoInvalidate.alunoUpdated(aluno.id.toString(), updatedAluno);
+        triggerPageRefresh.alunos();
+        
+        logger.info('Aluno updated successfully', { id: aluno.id });
+        return updatedAluno;
+    } catch (error) {
+        logger.error('Failed to update aluno', error);
+        throw error;
+    }
+}
+
+async function deleteAluno(id: string, turmaId?: string): Promise<void> {
+    try {
+        logger.info(`Deleting aluno ${id}`);
+        await api.delete(`/alunos/delete?id_aluno=${id}`);
+        
+        // Auto-invalidate related caches
+        await autoInvalidate.alunoDeleted(id, turmaId);
+        triggerPageRefresh.alunos();
+        
+        logger.info('Aluno deleted successfully', { id });
+    } catch (error) {
+        logger.error('Failed to delete aluno', error);
+        throw error;
+    }
+}
+
 function invalidateCache(alunoId?: string) {
     if (alunoId) {
         alunoCache.clear(`aluno_${alunoId}`);
     } else {
         alunoCache.clearAll();
     }
-} 
-
-function update(aluno: AlunoModel) {
-    return api.put(`/alunos/update?id_aluno=${aluno.id}`, {
-        nome_completo: aluno.nome_completo,
-        email: aluno.email,
-    });
 }
