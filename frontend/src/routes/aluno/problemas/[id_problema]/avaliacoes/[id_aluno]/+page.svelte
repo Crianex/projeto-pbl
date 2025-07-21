@@ -302,89 +302,93 @@
     });
 </script>
 
-<div class="container" transition:fade={{ duration: 300 }}>
-    <div class="back-section">
-        <BackButton text="Voltar" on:click={() => history.back()} />
-    </div>
-    <div class="header">
-        <h1>Avaliação Individual</h1>
-    </div>
-
-    <div class="student-info">
-        <div class="avatar">
-            <img
-                src={avaliacaoData.aluno.avatar}
-                alt={avaliacaoData.aluno.nome}
-            />
+<Container maxWidth="lg" glass={true} shadow={true} center={true}>
+    <div class="evaluation-container" transition:fade={{ duration: 300 }}>
+        <div class="back-section">
+            <BackButton text="Voltar" on:click={() => history.back()} />
         </div>
-        <p>
-            Como foi o desempenho de <span class="highlight"
-                >{avaliacaoData.aluno.nome}</span
-            > nesse problema?
-        </p>
-    </div>
+        
+        <div class="header">
+            <h1>Avaliação Individual</h1>
+        </div>
 
-    <form on:submit|preventDefault={handleSubmit}>
-        <div class="evaluation-grid">
-            {#each Object.entries(criterios) as [tag, criteriosList]}
-                <div class="evaluation-section">
-                    <h2>{tag}</h2>
+        <div class="student-info">
+            <div class="avatar">
+                <img
+                    src={avaliacaoData.aluno.avatar}
+                    alt={avaliacaoData.aluno.nome}
+                />
+            </div>
+            <p>
+                Como foi o desempenho de <span class="highlight"
+                    >{avaliacaoData.aluno.nome}</span
+                > nesse problema?
+            </p>
+        </div>
 
-                    <div class="criteria-group">
-                        {#each criteriosList as criterio}
-                            {@const criterioKey =
-                                criterio.nome_criterio.toLowerCase()}
-                            <label>
-                                <span class="criteria-header">
-                                    <span>{criterio.nome_criterio}</span>
-                                    <span class="range"
-                                        >0,0 a {criterio.nota_maxima}</span
-                                    >
-                                </span>
-                                <div class="input-wrapper">
-                                    <div class="slider-container">
-                                        <input
-                                            type="range"
-                                            step="0.1"
-                                            min="0"
-                                            max={criterio.nota_maxima}
-                                            value={currentValues[tag]?.[
-                                                criterioKey
-                                            ] || 0}
-                                            on:input={(e) =>
-                                                handleValueChange(
-                                                    tag,
-                                                    criterioKey,
-                                                    e,
-                                                )}
-                                            class="slider"
-                                        />
-                                        <div class="value-display">
-                                            {formatValue(
-                                                currentValues[tag]?.[
+        <form on:submit|preventDefault={handleSubmit}>
+            <div class="evaluation-grid">
+                {#each Object.entries(criterios) as [tag, criteriosList]}
+                    <div class="evaluation-section">
+                        <h2>{tag}</h2>
+
+                        <div class="criteria-group">
+                            {#each criteriosList as criterio}
+                                {@const criterioKey =
+                                    criterio.nome_criterio.toLowerCase()}
+                                <label>
+                                    <span class="criteria-header">
+                                        <span>{criterio.nome_criterio}</span>
+                                        <span class="range"
+                                            >0,0 a {criterio.nota_maxima}</span
+                                        >
+                                    </span>
+                                    <div class="input-wrapper">
+                                        <div class="slider-container">
+                                            <input
+                                                type="range"
+                                                step="0.1"
+                                                min="0"
+                                                max={criterio.nota_maxima}
+                                                value={currentValues[tag]?.[
                                                     criterioKey
-                                                ] || 0,
-                                            )}
+                                                ] || 0}
+                                                on:input={(e) =>
+                                                    handleValueChange(
+                                                        tag,
+                                                        criterioKey,
+                                                        e,
+                                                    )}
+                                                class="slider"
+                                            />
+                                            <div class="value-display">
+                                                {formatValue(
+                                                    currentValues[tag]?.[
+                                                        criterioKey
+                                                    ] || 0,
+                                                )}
+                                            </div>
                                         </div>
+                                        <button
+                                            type="button"
+                                            class="criteria-btn"
+                                            on:click={() =>
+                                                showCriterios(tag, criterio)}
+                                        >
+                                            Critérios
+                                        </button>
                                     </div>
-                                    <button
-                                        type="button"
-                                        class="criteria-btn"
-                                        on:click={() =>
-                                            showCriterios(tag, criterio)}
-                                    >
-                                        Critérios
-                                    </button>
-                                </div>
-                            </label>
-                        {/each}
+                                </label>
+                            {/each}
+                        </div>
                     </div>
-                </div>
-            {/each}
-        </div>
+                {/each}
+            </div>
 
-        <button type="submit" class="submit-btn">Salvar</button>
-    </form>
+            <button type="submit" class="submit-btn">Salvar Avaliação</button>
+        </form>
+    </div>
+</Container>
 
     {#if criterioAtual && showDialog}
         <Dialog
@@ -417,12 +421,9 @@
             on:close={() => (showToast = false)}
         />
     {/if}
-</div>
 
 <style>
-    .container {
-        max-width: 800px;
-        margin: 0 auto;
+    .evaluation-container {
         position: relative;
         min-height: 100%;
         height: fit-content;
@@ -451,17 +452,14 @@
         align-items: center;
         gap: 1.5rem;
         margin-bottom: 2rem;
-        background: linear-gradient(
-            135deg,
-            rgba(255, 255, 255, 0.95) 0%,
-            rgba(248, 249, 250, 0.95) 100%
-        );
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
         padding: 1.5rem;
         border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
         box-shadow:
             0 4px 20px rgba(0, 0, 0, 0.08),
-            0 2px 10px rgba(0, 0, 0, 0.04),
-            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            0 2px 10px rgba(0, 0, 0, 0.04);
     }
 
     .avatar {
@@ -499,17 +497,14 @@
     }
 
     .evaluation-section {
-        background: linear-gradient(
-            135deg,
-            rgba(255, 255, 255, 0.95) 0%,
-            rgba(248, 249, 250, 0.95) 100%
-        );
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
         border-radius: 16px;
         padding: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.3);
         box-shadow:
             0 4px 20px rgba(0, 0, 0, 0.08),
-            0 2px 10px rgba(0, 0, 0, 0.04),
-            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            0 2px 10px rgba(0, 0, 0, 0.04);
     }
 
     h2 {
@@ -550,14 +545,11 @@
         display: flex;
         align-items: center;
         gap: 1rem;
-        background: linear-gradient(
-            135deg,
-            rgba(255, 255, 255, 0.9) 0%,
-            rgba(248, 249, 250, 0.9) 100%
-        );
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(8px);
         padding: 0.5rem 1rem;
         border-radius: 8px;
-        border: 1px solid rgba(206, 212, 218, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.4);
         box-shadow:
             inset 0 2px 4px rgba(0, 0, 0, 0.05),
             0 1px 0 rgba(255, 255, 255, 0.8);
@@ -655,13 +647,10 @@
 
     .criteria-btn {
         padding: 0.75rem 1.25rem;
-        border: 1px solid rgba(206, 212, 218, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.4);
         border-radius: 8px;
-        background: linear-gradient(
-            135deg,
-            rgba(255, 255, 255, 0.95) 0%,
-            rgba(248, 249, 250, 0.95) 100%
-        );
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(8px);
         color: #667eea;
         font-weight: 500;
         cursor: pointer;
@@ -672,11 +661,7 @@
     }
 
     .criteria-btn:hover {
-        background: linear-gradient(
-            135deg,
-            rgba(255, 255, 255, 1) 0%,
-            rgba(248, 249, 250, 1) 100%
-        );
+        background: rgba(255, 255, 255, 0.95);
         transform: translateY(-1px);
         box-shadow:
             0 4px 12px rgba(0, 0, 0, 0.08),
@@ -685,25 +670,46 @@
 
     .submit-btn {
         width: 100%;
-        padding: 1rem;
+        padding: 1.25rem;
         border: none;
-        border-radius: 12px;
+        border-radius: 16px;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         font-weight: 600;
-        font-size: 1rem;
+        font-size: 1.1rem;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow:
-            0 4px 12px rgba(102, 126, 234, 0.3),
+            0 8px 25px rgba(102, 126, 234, 0.3),
             inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .submit-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
     }
 
     .submit-btn:hover {
-        transform: translateY(-2px);
+        transform: translateY(-3px);
         box-shadow:
-            0 6px 16px rgba(102, 126, 234, 0.4),
+            0 12px 35px rgba(102, 126, 234, 0.4),
             inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .submit-btn:hover::before {
+        left: 100%;
+    }
+
+    .submit-btn:active {
+        transform: translateY(-1px);
     }
 
     .dialog-content {
@@ -742,14 +748,11 @@
     }
 
     .criteria-description {
-        background: linear-gradient(
-            135deg,
-            rgba(255, 255, 255, 0.95) 0%,
-            rgba(248, 249, 250, 0.95) 100%
-        );
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
         padding: 1rem;
         border-radius: 8px;
-        border: 1px solid rgba(206, 212, 218, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.3);
         margin-top: 1rem;
     }
 
