@@ -78,24 +78,6 @@
                 required={true}
                 placeholder="Digite seu e-mail"
             />
-
-            <Input
-                type="password"
-                label="Nova senha"
-                bind:value={senha}
-                id="senha"
-                placeholder="Digite para alterar a senha"
-                error={senhaError}
-            />
-
-            <Input
-                type="password"
-                label="Confirmar senha"
-                bind:value={confirmarSenha}
-                id="confirmar-senha"
-                placeholder="Confirme a nova senha"
-                error={confirmarSenhaError}
-            />
         </div>
 
         <div class="form-actions">
@@ -121,13 +103,7 @@
 
 <style>
     .profile-form {
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 249, 250, 0.95) 100%);
-        border-radius: 16px;
         padding: 2rem;
-        box-shadow: 
-            0 4px 20px rgba(0, 0, 0, 0.08),
-            0 2px 10px rgba(0, 0, 0, 0.04),
-            inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
 
     h1 {

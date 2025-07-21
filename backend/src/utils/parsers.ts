@@ -21,7 +21,8 @@ function parseAluno(data: any): Aluno {
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
         nome_completo: data.nome_completo || null,
         email: data.email || null,
-        id_turma: data.id_turma || null
+        id_turma: data.id_turma || null,
+        link_avatar: data.link_avatar || null
     };
 }
 
@@ -43,7 +44,8 @@ function parseProfessor(data: any): Professor {
         id_professor: data.id_professor,
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
         nome_completo: data.nome_completo || null,
-        email: data.email || null
+        email: data.email || null,
+        link_avatar: data.link_avatar || null
     };
 }
 
