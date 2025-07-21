@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { fade } from "svelte/transition";
     import { onMount } from "svelte";
     import Table from "$lib/components/Table.svelte";
     import Container from "$lib/components/Container.svelte";
@@ -103,22 +104,13 @@
 
 <div class="page-wrapper">
     <Container maxWidth="xl" glass={true} shadow={true}>
-        <div class="header">
+        <div class="header" in:fade={{ duration: 300, delay: 50 }}>
             <h1>Meus Problemas</h1>
             <p class="subtitle">Explore e resolva os problemas disponíveis</p>
         </div>
 
-        <div class="content">
-            {#if loading}
-                <div class="loading-section">
-                    <LoadingSpinner
-                        size="lg"
-                        color="primary"
-                        text="Carregando problemas..."
-                        center={true}
-                    />
-                </div>
-            {:else if !user.id_turma}
+        <div class="content" in:fade={{ duration: 400, delay: 200 }}>
+            {#if !loading && !user.id_turma}
                 <div class="empty-section">
                     <div class="empty-content">
                         <div class="empty-icon">🎓</div>
@@ -133,7 +125,7 @@
                         </Button>
                     </div>
                 </div>
-            {:else if error}
+            {:else if !loading && error}
                 <div class="error-section">
                     <div class="error-content">
                         <div class="error-icon">⚠️</div>
@@ -148,7 +140,7 @@
                         </Button>
                     </div>
                 </div>
-            {:else if problems.length === 0}
+            {:else if !loading && problems.length === 0}
                 <div class="empty-section">
                     <div class="empty-content">
                         <div class="empty-icon">📚</div>
@@ -163,7 +155,7 @@
                     </div>
                 </div>
             {:else}
-                <Table rows={problems} {columns} />
+                <Table rows={problems} {columns} {loading} />
             {/if}
         </div>
     </Container>

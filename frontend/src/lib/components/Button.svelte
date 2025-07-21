@@ -1,18 +1,26 @@
 <script lang="ts">
     export let variant: "primary" | "secondary" | "danger" = "primary";
+    export let size: "sm" | "md" | "icon" = "md";
     export let disabled = false;
     export let type: "button" | "submit" | "reset" = "button";
     export let loading = false;
     export let href: string | undefined = undefined;
+
+    // Filter out props that could interfere with styling
+    $: filteredProps = Object.fromEntries(
+        Object.entries($$restProps).filter(
+            ([key]) => !["class", "style"].includes(key),
+        ),
+    );
 </script>
 
 {#if href}
     <a
         {href}
-        class="button {variant} {$$props.class || ''}"
+        class="button {variant} {size} {$$props.class || ''}"
         aria-disabled={disabled}
         tabindex={disabled ? -1 : 0}
-        {...$$restProps}
+        {...filteredProps}
     >
         {#if loading}
             <div class="loading-spinner"></div>
@@ -22,11 +30,11 @@
 {:else}
     <button
         {type}
-        class="button {variant} {$$props.class || ''}"
+        class="button {variant} {size} {$$props.class || ''}"
         {disabled}
         class:loading
         on:click
-        {...$$restProps}
+        {...filteredProps}
     >
         {#if loading}
             <div class="loading-spinner"></div>
@@ -37,86 +45,107 @@
 
 <style>
     .button {
-        padding: 0.5rem 1rem;
-        border: none;
-        border-radius: 12px;
-        font-size: 1rem;
-        font-weight: 600;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-weight: 500;
         cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
+        transition: all 0.2s ease;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
-        letter-spacing: 0.025em;
-        position: relative;
-        overflow: hidden;
+        text-decoration: none;
+        font-family: inherit;
+        background: white;
+        color: #374151;
+        box-sizing: border-box;
     }
 
     .button:disabled {
-        opacity: 0.6;
+        opacity: 0.5;
         cursor: not-allowed;
-        transform: none !important;
+    }
+
+    .button:hover:not(:disabled) {
+        border-color: #d1d5db;
+        background: #f9fafb;
     }
 
     .button:active:not(:disabled) {
-        transform: translateY(1px);
+        background: #f3f4f6;
     }
 
     .primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #667eea;
         color: white;
-        box-shadow:
-            0 10px 25px rgba(102, 126, 234, 0.3),
-            0 4px 12px rgba(102, 126, 234, 0.2);
+        border-color: #667eea;
     }
 
     .primary:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow:
-            0 15px 35px rgba(102, 126, 234, 0.4),
-            0 8px 20px rgba(102, 126, 234, 0.3);
+        background: #5a6fd8;
+        border-color: #5a6fd8;
+    }
+
+    .primary:active:not(:disabled) {
+        background: #4f5bd5;
     }
 
     .secondary {
-        background: rgba(255, 255, 255, 0.9);
+        background: white;
         color: #667eea;
-        border: 2px solid #667eea;
-        backdrop-filter: blur(10px);
-        box-shadow:
-            0 8px 20px rgba(102, 126, 234, 0.15),
-            0 3px 8px rgba(102, 126, 234, 0.1);
+        border-color: #667eea;
     }
 
     .secondary:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 1);
-        transform: translateY(-2px);
-        box-shadow:
-            0 12px 25px rgba(102, 126, 234, 0.2),
-            0 5px 12px rgba(102, 126, 234, 0.15);
+        background: #f8faff;
+        border-color: #5a6fd8;
+    }
+
+    .secondary:active:not(:disabled) {
+        background: #f1f5ff;
     }
 
     .danger {
-        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        background: #ef4444;
         color: white;
-        box-shadow:
-            0 10px 25px rgba(238, 90, 82, 0.3),
-            0 4px 12px rgba(238, 90, 82, 0.2);
+        border-color: #ef4444;
     }
 
     .danger:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow:
-            0 15px 35px rgba(238, 90, 82, 0.4),
-            0 8px 20px rgba(238, 90, 82, 0.3);
+        background: #dc2626;
+        border-color: #dc2626;
+    }
+
+    .danger:active:not(:disabled) {
+        background: #b91c1c;
+    }
+
+    /* Size variants */
+    .sm {
+        padding: 0.375rem 0.75rem;
+        min-height: 2rem;
+        font-size: 0.75rem;
+    }
+
+    .md {
+        padding: 0.5rem 1rem;
+        min-height: 2.5rem;
+        font-size: 0.875rem;
+    }
+
+    .icon {
+        padding: 0.5rem;
+        min-height: 2.5rem;
+        min-width: 2.5rem;
+        font-size: 0.875rem;
     }
 
     .loading-spinner {
-        width: 18px;
-        height: 18px;
+        width: 16px;
+        height: 16px;
         border: 2px solid rgba(255, 255, 255, 0.3);
         border-radius: 50%;
-        border-top-color: #fff;
+        border-top-color: currentColor;
         animation: spin 1s linear infinite;
     }
 
@@ -128,29 +157,42 @@
 
     /* Responsive Design */
     @media (max-width: 768px) {
-        .button {
-            padding: 0.75rem 1.25rem;
-            font-size: 1rem;
-            border-radius: 10px;
+        .sm {
+            padding: 0.25rem 0.5rem;
+            min-height: 1.75rem;
+            font-size: 0.7rem;
         }
 
-        .loading-spinner {
-            width: 16px;
-            height: 16px;
+        .md {
+            padding: 0.375rem 0.75rem;
+            min-height: 2.25rem;
+            font-size: 0.8rem;
+        }
+
+        .icon {
+            padding: 0.375rem;
+            min-height: 2.25rem;
+            min-width: 2.25rem;
         }
     }
 
     @media (max-width: 480px) {
-        .button {
-            padding: 0.875rem 1.5rem;
-            font-size: 1.1rem;
-            border-radius: 8px;
-            gap: 0.75rem;
+        .sm {
+            padding: 0.25rem 0.5rem;
+            min-height: 1.75rem;
+            font-size: 0.7rem;
         }
 
-        .loading-spinner {
-            width: 18px;
-            height: 18px;
+        .md {
+            padding: 0.375rem 0.75rem;
+            min-height: 2.25rem;
+            font-size: 0.8rem;
+        }
+
+        .icon {
+            padding: 0.375rem;
+            min-height: 2.25rem;
+            min-width: 2.25rem;
         }
     }
 </style>

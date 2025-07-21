@@ -84,6 +84,7 @@
     ];
 
     export let enableSelection: boolean = false;
+    export let loading: boolean = false;
     export let onRowSelect: ((selectedIds: Set<number>) => void) | null = null;
 
     let selected: Set<number> = new Set();
@@ -114,6 +115,14 @@
     $: displayColumns = enableSelection
         ? columns
         : columns.filter((col) => col.key !== "select");
+
+    // Create skeleton rows for loading state
+    $: skeletonRows = Array(5)
+        .fill(null)
+        .map((_, index) => ({
+            id: `skeleton-${index}`,
+            skeleton: true,
+        }));
 </script>
 
 <!-- Desktop Table View -->
@@ -134,6 +143,7 @@
                                 bind:checked={selectAll}
                                 on:change={toggleSelectAll}
                                 aria-label="Select all rows"
+                                disabled={loading}
                             />
                         {:else if col.sortable}
                             {col.label}
@@ -146,14 +156,46 @@
             </tr>
         </thead>
         <tbody>
-            {#each rows as row}
-                <TableRow
-                    columns={displayColumns}
-                    {row}
-                    selected={selected.has(row.id)}
-                    onToggleSelect={enableSelection ? toggleSelectRow : null}
-                />
-            {/each}
+            {#if loading}
+                {#each skeletonRows as skeletonRow}
+                    <tr class="skeleton-row">
+                        {#each displayColumns as col}
+                            <td class="skeleton-cell">
+                                {#if col.key === "select"}
+                                    <div class="skeleton-checkbox"></div>
+                                {:else if col.key === "user"}
+                                    <div class="skeleton-user">
+                                        <div class="skeleton-avatar"></div>
+                                        <div class="skeleton-text-group">
+                                            <div
+                                                class="skeleton-text skeleton-name"
+                                            ></div>
+                                            <div
+                                                class="skeleton-text skeleton-role"
+                                            ></div>
+                                        </div>
+                                    </div>
+                                {:else if col.key === "actions"}
+                                    <div class="skeleton-button"></div>
+                                {:else}
+                                    <div class="skeleton-text"></div>
+                                {/if}
+                            </td>
+                        {/each}
+                    </tr>
+                {/each}
+            {:else}
+                {#each rows as row}
+                    <TableRow
+                        columns={displayColumns}
+                        {row}
+                        selected={selected.has(row.id)}
+                        onToggleSelect={enableSelection
+                            ? toggleSelectRow
+                            : null}
+                    />
+                {/each}
+            {/if}
         </tbody>
     </table>
 </div>

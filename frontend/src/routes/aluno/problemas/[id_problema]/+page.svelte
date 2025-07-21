@@ -4,9 +4,7 @@
     import { page } from "$app/stores";
     import { onMount } from "svelte";
     import { currentUser } from "$lib/utils/auth";
-    import type {
-        ProblemaModel,
-    } from "$lib/interfaces/interfaces";
+    import type { ProblemaModel } from "$lib/interfaces/interfaces";
     import type { Column } from "$lib/interfaces/column";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
     import Table from "$lib/components/Table.svelte";
@@ -202,7 +200,7 @@
 
 <Container maxWidth="lg" glass={true} shadow={true} center={true}>
     <div class="evaluations-container">
-        {#if loading}
+        {#if loading && !problema}
             <div class="loading-container">
                 <LoadingSpinner size="lg" />
                 <p>Carregando avaliações...</p>
@@ -212,8 +210,10 @@
                 <p class="error-message">{error}</p>
             </div>
         {:else}
-            <div class="header">
-                <h1>Avaliações - {problema.nome_problema}</h1>
+            <div class="header" in:fade={{ duration: 300, delay: 50 }}>
+                <h1>
+                    Avaliações - {problema?.nome_problema || "Carregando..."}
+                </h1>
                 <button class="close-btn" on:click={() => history.back()}>
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -230,62 +230,22 @@
                 </button>
             </div>
 
-            <div class="table-wrapper">
-                <Table {columns} rows={tableRows} enableSelection={false} />
+            <div class="table-wrapper" in:fade={{ duration: 400, delay: 200 }}>
+                <Table
+                    {columns}
+                    rows={tableRows}
+                    enableSelection={false}
+                    {loading}
+                />
             </div>
 
-            {#if totalPages > 1}
-                <div class="pagination">
-                    <button
-                        class="pagination-btn"
-                        disabled={currentPage === 1}
-                        on:click={() => goToPage(currentPage - 1)}
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                        >
-                            <path d="M15 18l-6-6 6-6" />
-                        </svg>
-                    </button>
-
-                    {#each getPageNumbers() as page}
-                        {#if page === "..."}
-                            <span class="ellipsis">...</span>
-                        {:else}
-                            <button
-                                class="page-btn"
-                                class:active={currentPage === page}
-                                on:click={() =>
-                                    typeof page === "number" && goToPage(page)}
-                            >
-                                {page}
-                            </button>
-                        {/if}
-                    {/each}
-
-                    <button
-                        class="pagination-btn"
-                        disabled={currentPage === totalPages}
-                        on:click={() => goToPage(currentPage + 1)}
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                        >
-                            <path d="M9 18l6-6-6-6" />
-                        </svg>
-                    </button>
+            {#if !loading && totalPages > 1}
+                <div in:fade={{ duration: 300, delay: 350 }}>
+                    <Pagination
+                        {currentPage}
+                        {totalPages}
+                        on:pageChange={(e) => (currentPage = e.detail.page)}
+                    />
                 </div>
             {/if}
         {/if}
@@ -370,60 +330,6 @@
             inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
 
-
-
-    .pagination {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        margin-top: 1.5rem;
-        padding: 1rem 0;
-    }
-
-    .pagination-btn,
-    .page-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 36px;
-        height: 36px;
-        padding: 0 0.5rem;
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(8px);
-        color: #495057;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow:
-            0 2px 6px rgba(0, 0, 0, 0.05),
-            inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    }
-
-    .pagination-btn:hover:not(:disabled),
-    .page-btn:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.95);
-        transform: translateY(-2px);
-        box-shadow:
-            0 4px 12px rgba(0, 0, 0, 0.08),
-            inset 0 1px 0 rgba(255, 255, 255, 0.9);
-    }
-
-    .pagination-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .page-btn.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        box-shadow:
-            0 4px 12px rgba(102, 126, 234, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    }
-
     /* Estilo para o badge de nota */
     :global(.grade) {
         display: inline-block;
@@ -446,15 +352,8 @@
             inset 0 1px 0 rgba(255, 255, 255, 0.2);
     }
 
-    .ellipsis {
-        color: #6c757d;
-        padding: 0 0.25rem;
-    }
-
     /* Responsividade aprimorada */
     @media (max-width: 768px) {
- 
-
         .header {
             margin-bottom: 1rem;
             padding: 0.75rem 0;
@@ -463,12 +362,9 @@
         h1 {
             font-size: 1.5rem;
         }
-
     }
 
     @media (max-width: 480px) {
-
-
         .header {
             margin-bottom: 0.75rem;
             padding: 0.5rem 0;
@@ -477,21 +373,9 @@
         h1 {
             font-size: 1.25rem;
         }
-        .pagination {
-            margin-top: 0.75rem;
-            padding: 0.5rem 0;
-        }
 
-        .pagination-btn,
-        .page-btn {
-            min-width: 28px;
-            height: 28px;
-            font-size: 0.8125rem;
-        }
         .close-btn {
             padding: 0.375rem;
         }
     }
-
-
 </style>

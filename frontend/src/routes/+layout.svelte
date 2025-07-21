@@ -1,9 +1,22 @@
 <script lang="ts">
+	import { page } from "$app/stores";
+	import { fade } from "svelte/transition";
+
+	// Use the pathname as key to trigger transitions on route changes
+	$: key = $page.url.pathname;
 </script>
 
 <div class="app">
 	<main>
-		<slot></slot>
+		{#key key}
+			<div
+				class="page-container"
+				in:fade={{ duration: 500 }}
+				out:fade={{ duration: 500 }}
+			>
+				<slot></slot>
+			</div>
+		{/key}
 	</main>
 </div>
 
@@ -36,5 +49,16 @@
 		padding: 0;
 		height: 100vh;
 		width: 100vw;
+		position: relative;
+	}
+
+	.page-container {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		width: 100%;
+		height: 100%;
 	}
 </style>

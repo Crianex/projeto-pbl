@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { fade } from "svelte/transition";
     import { goto } from "$app/navigation";
     import Container from "$lib/components/Container.svelte";
     import ProfileView from "$lib/components/ProfileView.svelte";
@@ -108,8 +107,8 @@
 </script>
 
 <Container>
-    <div transition:fade={{ duration: 300 }}>
-        {#if !isEditing}    
+    <div>
+        {#if !isEditing}
             <ProfileView onEdit={handleEditClick} />
         {:else}
             <ProfileForm

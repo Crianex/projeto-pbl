@@ -177,10 +177,9 @@
                         <div class="dropdown">
                             <Button
                                 variant="secondary"
-                                class="more-options"
+                                size="icon"
                                 on:click={(e) =>
                                     toggleDropdown(e, turma.id_turma)}
-                                style="min-width:unset;padding:0.5rem;"
                             >
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -346,34 +345,6 @@
         display: flex;
         gap: 0.5rem;
         align-items: center;
-    }
-
-    :global(.btn-primary) {
-        display: inline-block;
-        padding: 0.375rem 0.75rem;
-        background: #0d6efd;
-        color: white;
-        text-decoration: none;
-        border-radius: 4px;
-        font-size: 0.875rem;
-        transition: background-color 0.2s;
-    }
-
-    :global(.btn-primary:hover) {
-        background: #0b5ed7;
-    }
-
-    .more-options {
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 0.5rem;
-        color: #6c757d;
-        border-radius: 4px;
-    }
-
-    .more-options:hover {
-        background-color: #f8f9fa;
     }
 
     .dropdown {
