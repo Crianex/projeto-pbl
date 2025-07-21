@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { page } from "$app/stores";
     import Button from "$lib/components/Button.svelte";
+    import BackButton from "$lib/components/BackButton.svelte";
     import { api } from "$lib/utils/api";
     import { goto } from "$app/navigation";
     import SearchAlunoDialog from "../SearchAlunoDialog.svelte";
@@ -310,6 +311,8 @@
 </script>
 
 <div class="container">
+    <BackButton text="Voltar" on:click={() => goto("/professor/turmas")} />
+    
     <div class="header">
         <h1>Editar Turma</h1>
     </div>
@@ -519,6 +522,10 @@
         width: 100%;
         margin: 0 auto;
         padding: 2rem;
+    }
+
+    .container :global(.back-btn) {
+        margin-bottom: 1.5rem;
     }
 
     .header {
@@ -747,6 +754,10 @@
 
     .change-list-item:last-child {
         margin-bottom: 0;
+    }
+
+    .change-list-item :global(.button) {
+        margin-left: 1rem;
     }
 
     .error-message {
