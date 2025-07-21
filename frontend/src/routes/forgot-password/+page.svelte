@@ -148,8 +148,8 @@
     }
 
     .header {
-        text-align: center;
-        margin-bottom: 2.5rem;
+        text-align: left;
+        margin-bottom: 2rem;
     }
 
     .header h1 {
@@ -157,29 +157,39 @@
         font-size: 2rem;
         font-weight: 700;
         letter-spacing: -0.025em;
-        margin: 0 0 1rem 0;
+        margin: 0 0 0.75rem 0;
     }
 
     .subtitle {
         color: #4a5568;
         font-size: 1rem;
         margin: 0;
-        line-height: 1.5;
+        line-height: 1.4;
         opacity: 0.9;
     }
 
     .form-group {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.25rem;
     }
 
     .button-group {
-        margin-top: 2rem;
-        margin-bottom: 2rem;
+        margin-top: 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+
+    .button-group :global(button) {
+        width: 100%;
+        max-width: none;
     }
 
     .back-to-login {
-        text-align: center;
-        margin-top: 1.5rem;
+        text-align: left;
+        margin-top: 1rem;
+        width: 100%;
     }
 
     .back-to-login a {
@@ -191,6 +201,7 @@
         padding: 0.5rem;
         border-radius: 6px;
         display: inline-block;
+        text-align: left;
     }
 
     .back-to-login a:hover {
@@ -202,22 +213,22 @@
 
     /* Success State Styles */
     .success-container {
-        text-align: center;
-        padding: 1rem;
+        text-align: left;
+        padding: 0.5rem;
     }
 
     .success-icon {
-        width: 80px;
-        height: 80px;
+        width: 70px;
+        height: 70px;
         border-radius: 50%;
         background: linear-gradient(135deg, #48bb78 0%, #38b2ac 100%);
         color: white;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 2.5rem;
+        font-size: 2.25rem;
         font-weight: bold;
-        margin: 0 auto 2rem auto;
+        margin: 0 0 1.5rem 0;
         box-shadow: 
             0 15px 35px rgba(72, 187, 120, 0.3),
             0 8px 20px rgba(72, 187, 120, 0.2);
@@ -243,28 +254,34 @@
         color: #2d3748;
         font-size: 2rem;
         font-weight: 700;
-        margin: 0 0 1rem 0;
+        margin: 0 0 0.75rem 0;
     }
 
     .success-message {
         color: #4a5568;
         font-size: 1.1rem;
-        margin: 0 0 1rem 0;
-        line-height: 1.5;
+        margin: 0 0 0.75rem 0;
+        line-height: 1.4;
     }
 
     .instructions {
         color: #718096;
         font-size: 0.95rem;
-        margin: 0 0 2.5rem 0;
-        line-height: 1.6;
+        margin: 0 0 2rem 0;
+        line-height: 1.5;
     }
 
     .actions {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
-        align-items: center;
+        gap: 0.75rem;
+        align-items: stretch;
+        width: 100%;
+    }
+
+    .actions :global(button) {
+        width: 100%;
+        max-width: none;
     }
 
     .back-link {
@@ -275,6 +292,7 @@
         transition: all 0.2s ease;
         padding: 0.5rem 1rem;
         border-radius: 6px;
+        text-align: left;
     }
 
     .back-link:hover {
@@ -284,27 +302,342 @@
     }
 
     /* Responsive Design */
+    @media (max-width: 768px) {
+        :global(main) {
+            padding: 0;
+            align-items: stretch;
+            min-height: 100vh;
+        }
+
+        :global(.container) {
+            max-width: 100% !important;
+            width: 100%;
+            height: 100vh;
+            border-radius: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-top: 2rem;
+        }
+
+        .header {
+            margin-bottom: 1.5rem;
+        }
+
+        .header h1 {
+            font-size: 1.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+        }
+
+        .success-container h1 {
+            font-size: 1.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .button-group {
+            margin-top: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .button-group :global(button) {
+            width: 100%;
+            max-width: none;
+        }
+
+        .back-to-login {
+            margin-top: 1rem;
+        }
+
+        .back-to-login a {
+            font-size: 0.95rem;
+            padding: 0.75rem;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-start;
+            width: auto;
+            max-width: none;
+            margin: 0;
+        }
+
+        .actions :global(button) {
+            width: 100%;
+            max-width: none;
+        }
+    }
+
     @media (max-width: 640px) {
         :global(main) {
-            padding: 1rem;
+            padding: 0;
+        }
+
+        :global(.container) {
+            padding: 1.5rem 1.25rem 2rem 1.25rem;
+            justify-content: flex-start;
+            padding-top: 1.5rem;
+        }
+
+        .header {
+            margin-bottom: 1.5rem;
         }
 
         .header h1 {
             font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
         }
 
         .success-container h1 {
             font-size: 1.75rem;
+            margin-bottom: 0.5rem;
         }
 
         .success-icon {
             width: 60px;
             height: 60px;
             font-size: 2rem;
+            margin-bottom: 1.25rem;
         }
 
         .actions {
-            gap: 0.75rem;
+            gap: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .button-group {
+            margin-top: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .button-group :global(button) {
+            width: 100%;
+            max-width: none;
+        }
+
+        .back-to-login {
+            margin-top: 0.75rem;
+        }
+
+        .back-to-login a {
+            font-size: 0.95rem;
+            padding: 0.75rem;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-start;
+            width: auto;
+            max-width: none;
+            margin: 0;
+        }
+
+        .actions :global(button) {
+            width: 100%;
+            max-width: none;
+        }
+    }
+
+    @media (max-width: 480px) {
+        :global(main) {
+            padding: 0;
+        }
+
+        :global(.container) {
+            padding: 1.25rem 1rem 1.5rem 1rem;
+            justify-content: flex-start;
+            padding-top: 1rem;
+        }
+
+        .header {
+            margin-bottom: 1.25rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 0.875rem;
+        }
+
+        .success-container h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .success-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .success-message {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .instructions {
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 0.875rem;
+        }
+
+        .button-group {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .button-group :global(button) {
+            max-width: none;
+        }
+
+        .back-to-login {
+            margin-top: 0.75rem;
+        }
+
+        .back-to-login a {
+            font-size: 0.9rem;
+            max-width: none;
+        }
+
+        .actions :global(button) {
+            max-width: none;
+        }
+    }
+
+    @media (max-width: 360px) {
+        :global(main) {
+            padding: 0;
+        }
+
+        :global(.container) {
+            padding: 1rem 0.75rem 1rem 0.75rem;
+            justify-content: flex-start;
+            padding-top: 0.75rem;
+        }
+
+        .header {
+            margin-bottom: 1rem;
+        }
+
+        .header h1 {
+            font-size: 1.375rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .success-container h1 {
+            font-size: 1.375rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 0.75rem;
+        }
+
+        .button-group {
+            margin-top: 0.875rem;
+            margin-bottom: 0.875rem;
+        }
+
+        .back-to-login {
+            margin-top: 0.5rem;
+        }
+    }
+
+    /* Landscape phones */
+    @media (max-height: 640px) and (orientation: landscape) {
+        :global(main) {
+            align-items: stretch;
+            padding: 0;
+        }
+
+        :global(.container) {
+            height: 100vh;
+            border-radius: 0;
+            justify-content: flex-start;
+            padding-top: 1rem;
+        }
+
+        .header {
+            margin-bottom: 1rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 0.75rem;
+        }
+
+        .button-group {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .back-to-login {
+            margin-top: 0.5rem;
+        }
+
+        .success-container {
+            padding: 0.25rem;
+        }
+
+        .success-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 1.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .instructions {
+            margin-bottom: 1rem;
+        }
+    }
+
+    /* Very small screens / older phones */
+    @media (max-width: 320px) {
+        :global(.container) {
+            padding: 0.75rem 0.5rem 0.75rem 0.5rem;
+            padding-top: 0.5rem;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .success-container h1 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle, .success-message, .instructions {
+            font-size: 0.825rem;
+        }
+
+        .back-to-login a {
+            font-size: 0.85rem;
         }
     }
 </style>

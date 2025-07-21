@@ -190,6 +190,43 @@
         box-sizing: border-box;
     }
 
+    /* Responsive adjustments for mobile */
+    @media (max-width: 768px) {
+        .page-wrapper {
+            padding: 1rem 0.5rem;
+        }
+
+        .header {
+            margin-bottom: 1.5rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .page-wrapper {
+            padding: 0.5rem 0.25rem;
+        }
+
+        .header {
+            margin-bottom: 1rem;
+        }
+
+        .header h1 {
+            font-size: 1.75rem;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+        }
+    }
+
     .header {
         text-align: center;
         margin-bottom: 2.5rem;

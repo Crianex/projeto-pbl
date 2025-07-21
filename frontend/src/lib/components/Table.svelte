@@ -1,6 +1,34 @@
+<!--
+  Table Component - Responsive Table with Mobile Card View
+  
+  Features:
+  - Desktop: Traditional table layout
+  - Mobile (≤768px): Card-based layout with all row data displayed as fields
+  - Selection support with checkboxes
+  - Custom column rendering
+  - User avatar support
+  - Badge support
+  - Action buttons
+  
+  Usage:
+  <Table 
+    columns={columns} 
+    rows={rows} 
+    enableSelection={true} 
+    onRowSelect={handleSelection} 
+  />
+  
+  Mobile Behavior:
+  - Automatically switches to card view on screens ≤768px
+  - Each row becomes a card with labeled fields
+  - Actions are moved to bottom of card
+  - Selection checkboxes appear in card header
+-->
+
 <script lang="ts">
     import type { Column } from "../interfaces/column";
     import TableRow from "./TableRow.svelte";
+    import Button from "./Button.svelte";
 
     export let columns: Column[] = [
         { key: "select", label: "", width: "40px" },
@@ -97,7 +125,8 @@
         }));
 </script>
 
-<div class="table-container">
+<!-- Desktop Table View -->
+<div class="table-container desktop-view">
     <table>
         <thead>
             <tr>
@@ -187,6 +216,95 @@
     </table>
 </div>
 
+<!-- Mobile Card View -->
+<div class="mobile-view">
+    {#each rows as row}
+        <div class="card-item">
+            {#if enableSelection}
+                <div class="card-header">
+                    <input
+                        type="checkbox"
+                        checked={selected.has(row.id)}
+                        on:change={() => toggleSelectRow(row.id)}
+                        aria-label="Select row"
+                    />
+                </div>
+            {/if}
+            
+            <div class="card-content">
+                {#each displayColumns as col}
+                    {#if col.key !== "select" && col.key !== "actions"}
+                        <div class="card-field">
+                            <div class="field-label">{col.label}</div>
+                            <div class="field-value">
+                                {#if col.key === "user"}
+                                    <div class="user-cell">
+                                        <img
+                                            class="avatar"
+                                            src={row.user?.avatar ||
+                                                `https://ui-avatars.com/api/?name=${encodeURIComponent(row.user?.name || "User")}&background=random`}
+                                            alt={row.user?.name || "User"}
+                                        />
+                                        <div class="user-info">
+                                            <span class="user-name">{row.user?.name || ""}</span>
+                                            <span class="user-role">{row.user?.role || ""}</span>
+                                        </div>
+                                    </div>
+                                {:else if col.key === "badge"}
+                                    <span class="badge">{row.badge || ""}</span>
+                                {:else if col.render}
+                                    {@html col.render(row)}
+                                {:else}
+                                    {row[col.key] || ""}
+                                {/if}
+                            </div>
+                        </div>
+                    {/if}
+                {/each}
+                
+                {#if displayColumns.find(col => col.key === "actions")}
+                    <div class="card-actions">
+                        {#each displayColumns as col}
+                            {#if col.key === "actions" && col.render}
+                                {#if col.render(row).component === "a"}
+                                    <Button
+                                        variant={col.render(row).props.variant || "primary"}
+                                        href={col.render(row).props.href}
+                                        class={col.render(row).props.class || ""}
+                                    >
+                                        {col.render(row).props.textContent ||
+                                            col.render(row).props.text ||
+                                            ""}
+                                    </Button>
+                                {:else if col.render(row).component === "button"}
+                                    <Button
+                                        variant={col.render(row).props.variant || "primary"}
+                                        class={col.render(row).props.class || ""}
+                                        on:click={() => {
+                                            if (col.render && typeof col.render === "function") {
+                                                const renderResult = col.render(row);
+                                                if (renderResult?.props?.onClick) {
+                                                    renderResult.props.onClick();
+                                                }
+                                            }
+                                        }}
+                                    >
+                                        {col.render(row).props.text || ""}
+                                    </Button>
+                                {:else if col.render(row).component === "span"}
+                                    <span class={col.render(row).props.class || ""}>
+                                        {col.render(row).props.text || ""}
+                                    </span>
+                                {/if}
+                            {/if}
+                        {/each}
+                    </div>
+                {/if}
+            </div>
+        </div>
+    {/each}
+</div>
+
 <style>
     .table-container {
         border: 1px solid #e0e3e8;
@@ -259,101 +377,115 @@
         color: #697077;
     }
 
-    /* Skeleton Loading Styles */
-    .skeleton-row {
-        height: 64px;
+    /* Mobile Card Styles */
+    .mobile-view {
+        display: none;
     }
 
-    .skeleton-cell {
+    .card-item {
+        background: #fff;
+        border: 1px solid #e0e3e8;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header {
         padding: 12px 16px;
+        background: #f6f8fa;
         border-bottom: 1px solid #e0e3e8;
-        vertical-align: middle;
+        display: flex;
+        align-items: center;
     }
 
-    .skeleton-text {
-        height: 16px;
-        background: linear-gradient(
-            90deg,
-            #f0f0f0 25%,
-            #e0e0e0 50%,
-            #f0f0f0 75%
-        );
-        background-size: 200% 100%;
-        animation: skeleton-loading 1.5s infinite;
-        border-radius: 4px;
+    .card-content {
+        padding: 16px;
     }
 
-    .skeleton-name {
-        width: 120px;
+    .card-field {
+        margin-bottom: 16px;
+    }
+
+    .card-field:last-child {
+        margin-bottom: 0;
+    }
+
+    .field-label {
+        font-weight: 600;
+        color: #697077;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
         margin-bottom: 4px;
     }
 
-    .skeleton-role {
-        width: 80px;
-        height: 12px;
+    .field-value {
+        color: #121619;
+        font-size: 14px;
+        line-height: 1.4;
     }
 
-    .skeleton-user {
+    .card-actions {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #e0e3e8;
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+    }
+
+    /* Mobile User Cell Styles */
+    .user-cell {
         display: flex;
         align-items: center;
         gap: 12px;
     }
 
-    .skeleton-avatar {
-        width: 32px;
-        height: 32px;
+    .avatar {
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
-        background: linear-gradient(
-            90deg,
-            #f0f0f0 25%,
-            #e0e0e0 50%,
-            #f0f0f0 75%
-        );
-        background-size: 200% 100%;
-        animation: skeleton-loading 1.5s infinite;
+        object-fit: cover;
+        border: 1.5px solid #dde1e6;
+        flex-shrink: 0;
     }
 
-    .skeleton-text-group {
-        flex: 1;
+    .user-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        line-height: 1.3;
     }
 
-    .skeleton-button {
-        width: 80px;
-        height: 32px;
-        background: linear-gradient(
-            90deg,
-            #f0f0f0 25%,
-            #e0e0e0 50%,
-            #f0f0f0 75%
-        );
-        background-size: 200% 100%;
-        animation: skeleton-loading 1.5s infinite;
-        border-radius: 6px;
-        margin-left: auto;
+    .user-name {
+        font-weight: 600;
+        color: #121619;
+        font-size: 16px;
+        margin: 0;
+        line-height: 1.2;
     }
 
-    .skeleton-checkbox {
-        width: 18px;
-        height: 18px;
-        background: linear-gradient(
-            90deg,
-            #f0f0f0 25%,
-            #e0e0e0 50%,
-            #f0f0f0 75%
-        );
-        background-size: 200% 100%;
-        animation: skeleton-loading 1.5s infinite;
-        border-radius: 2px;
-        margin: 0 auto;
+    .user-role {
+        color: #697077;
+        font-size: 14px;
+        margin: 2px 0 0 0;
+        line-height: 1.2;
     }
 
-    @keyframes skeleton-loading {
-        0% {
-            background-position: 200% 0;
-        }
-        100% {
-            background-position: -200% 0;
-        }
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #f2f4f8;
+        color: #697077;
+        font-size: 13px;
+        border-radius: 8px;
+        padding: 4px 12px;
+        font-weight: 500;
+        min-width: 48px;
+        height: 24px;
+        text-align: center;
     }
 
     /* Responsive Design */
@@ -369,55 +501,117 @@
     }
 
     @media (max-width: 768px) {
-        .table-container {
-            border-radius: 4px;
-            overflow-x: auto;
+        .desktop-view {
+            display: none;
         }
 
-        table {
-            min-width: 600px;
+        .mobile-view {
+            display: block;
+            margin: 0 -1rem; /* Remove margens laterais para ocupar toda a largura */
+            padding: 0 1rem; /* Adiciona padding interno para manter espaçamento do conteúdo */
         }
 
-        th {
-            padding: 8px 10px;
-            font-size: 13px;
+        .card-item {
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border-left: none;
+            border-right: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        th.select {
-            width: 35px;
-            padding-left: 6px;
-            padding-right: 6px;
+        .card-content {
+            padding: 16px 12px;
         }
 
-        th.actions {
-            padding: 6px 10px;
+        .card-field {
+            margin-bottom: 14px;
+        }
+
+        .field-label {
+            font-size: 11px;
+            margin-bottom: 6px;
+        }
+
+        .field-value {
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .user-name {
+            font-size: 16px;
+        }
+
+        .user-role {
+            font-size: 14px;
+        }
+
+        .avatar {
+            width: 44px;
+            height: 44px;
+        }
+
+        .card-actions {
+            margin-top: 14px;
+            padding-top: 14px;
+        }
+
+        .badge {
+            font-size: 14px;
+            padding: 6px 14px;
+            height: 28px;
         }
     }
 
     @media (max-width: 480px) {
-        .table-container {
-            border-radius: 0;
-            border-left: none;
-            border-right: none;
+        .mobile-view {
+            margin: 0 -0.5rem; /* Reduz margens negativas */
+            padding: 0 0.5rem; /* Reduz padding interno */
         }
 
-        table {
-            min-width: 500px;
+        .card-item {
+            margin-bottom: 6px;
+            border-radius: 4px;
         }
 
-        th {
-            padding: 6px 8px;
-            font-size: 12px;
+        .card-content {
+            padding: 14px 10px;
         }
 
-        th.select {
-            width: 30px;
-            padding-left: 4px;
-            padding-right: 4px;
+        .card-field {
+            margin-bottom: 12px;
         }
 
-        th.actions {
-            padding: 4px 8px;
+        .field-label {
+            font-size: 10px;
+            margin-bottom: 5px;
+        }
+
+        .field-value {
+            font-size: 14px;
+        }
+
+        .user-name {
+            font-size: 15px;
+        }
+
+        .user-role {
+            font-size: 13px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+        }
+
+        .card-actions {
+            margin-top: 12px;
+            padding-top: 12px;
+        }
+
+        .badge {
+            font-size: 13px;
+            padding: 5px 12px;
+            height: 26px;
         }
 
         input[type="checkbox"] {

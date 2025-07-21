@@ -123,7 +123,8 @@
     @media (max-width: 768px) {
         .lg,
         .xl {
-            max-width: 95%;
+            max-width: 100%;
+            margin: 0;
         }
 
         .rounded {
@@ -140,22 +141,24 @@
         .md,
         .lg,
         .xl {
-            padding-left: 0.75rem;
-            padding-right: 0.75rem;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+            max-width: 100%;
+            margin: 0;
         }
 
         .lg {
-            padding-top: 1rem;
-            padding-bottom: 1rem;
-        }
-
-        .md {
             padding-top: 0.75rem;
             padding-bottom: 0.75rem;
         }
 
+        .md {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+
         .rounded {
-            border-radius: 8px;
+            border-radius: 12px;
         }
 
         .glass {
