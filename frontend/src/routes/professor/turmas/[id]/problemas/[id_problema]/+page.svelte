@@ -20,6 +20,7 @@
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
     import Pagination from "$lib/components/Pagination.svelte";
     import { currentUser } from "$lib/utils/auth";
+    import { MediaCalculator } from "$lib/utils/utils";
 
     let problema: ProblemaModel | null = null;
     let turma: TurmaModel | null = null;
@@ -85,33 +86,37 @@
                   {
                       key: "aluno",
                       label: "Aluno",
-                      width: "25%",
+                      width: "20%",
                   },
                   ...criteriosList.map((criterio) => ({
                       key: criterio.nome_criterio.toLowerCase(),
                       label: criterio.nome_criterio.charAt(0),
                       tooltip: `${criterio.nome_criterio}\n\n${criterio.descricao_criterio}`,
-                      width: `${criteriosList.length > 0 ? 35 / criteriosList.length : 35}%`,
+                      width: `${criteriosList.length > 0 ? 30 / criteriosList.length : 30}%`,
                   })),
                   {
+                      key: "media",
+                      label: "Média",
+                      width: "10%",
+                  },
+                  {
                       key: "avaliar",
-                      label: "Avaliação",
-                      width: "20%",
+                      label: "Já avaliou?",
+                      width: "15%",
                       render: (row: any) => ({
-                          component: "button",
+                          component: "span",
                           props: {
-                              variant: row.hasEvaluation
-                                  ? "secondary"
-                                  : "primary",
-                              text: row.hasEvaluation ? "Editar" : "Avaliar",
-                              onClick: () => avaliarAluno(row.id),
+                              text: row.hasEvaluation ? "✓" : "-",
+                              style: row.hasEvaluation
+                                  ? "color: #22c55e; font-size: 1.2rem; font-weight: bold;"
+                                  : "color: #6b7280;",
                           },
                       }),
                   },
                   {
                       key: "actions",
-                      label: "Detalhes",
-                      width: "20%",
+                      label: "",
+                      width: "15%",
                       render: (row: any) => ({
                           component: "button",
                           props: {
@@ -188,7 +193,7 @@
             criteriosList,
         );
         alunos = turma.alunos.map((aluno) => {
-            const medias = calcularMediaPorCriterio(
+            const medias = MediaCalculator.calcularMediaPorCriterio(
                 avaliacoesData,
                 aluno.id,
                 criteriosList,
@@ -201,102 +206,6 @@
         logger.info(
             `Successfully processed ${alunos.length} alunos with ${criteriosList.length} criterios`,
         );
-    }
-
-    // Helper to calculate per-criterio average for an aluno
-    function calcularMediaPorCriterio(
-        avaliacoes: any[],
-        alunoId: number,
-        criteriosList: { nome_criterio: string }[],
-    ) {
-        // Filter avaliações where this aluno was evaluated
-        const avaliacoesRecebidas = avaliacoes.filter(
-            (av) => av.id_aluno_avaliado === alunoId,
-        );
-        if (!avaliacoesRecebidas.length) return null;
-
-        console.log(
-            "🔍 DEBUG - AvaliacoesRecebidas for aluno",
-            alunoId,
-            ":",
-            avaliacoesRecebidas,
-        );
-        console.log(
-            "🔍 DEBUG - CriteriosList:",
-            criteriosList.map((c) => c.nome_criterio),
-        );
-
-        // For each criterio, calculate the average
-        const medias: Record<string, number> = {};
-        criteriosList.forEach((criterio) => {
-            const criterioKey = criterio.nome_criterio.toLowerCase();
-            console.log(
-                `🔍 DEBUG - Looking for criterio key: "${criterioKey}"`,
-            );
-
-            let soma = 0;
-            let count = 0;
-            avaliacoesRecebidas.forEach((av) => {
-                try {
-                    const notas = JSON.parse(av.notas);
-                    console.log(
-                        "🔍 DEBUG - Parsed notas for avaliacao:",
-                        notas,
-                    );
-
-                    // notas: { [tag]: { [criterio]: number } }
-                    Object.entries(notas).forEach(
-                        ([tagName, categoria]: [string, any]) => {
-                            console.log(
-                                `🔍 DEBUG - Checking tag "${tagName}":`,
-                                categoria,
-                            );
-                            if (
-                                typeof categoria === "object" &&
-                                categoria !== null
-                            ) {
-                                console.log(
-                                    `🔍 DEBUG - Keys in categoria:`,
-                                    Object.keys(categoria),
-                                );
-                                if (criterioKey in categoria) {
-                                    const val = categoria[criterioKey];
-                                    console.log(
-                                        `🔍 DEBUG - Found "${criterioKey}" = ${val} in tag "${tagName}"`,
-                                    );
-                                    if (typeof val === "number") {
-                                        soma += val;
-                                        count++;
-                                    }
-                                } else {
-                                    console.log(
-                                        `🔍 DEBUG - Key "${criterioKey}" NOT found in tag "${tagName}"`,
-                                    );
-                                }
-                            }
-                        },
-                    );
-                } catch (error) {
-                    console.error(
-                        "🔍 DEBUG - Error parsing notas:",
-                        av.notas,
-                        error,
-                    );
-                }
-            });
-
-            if (count > 0) {
-                medias[criterioKey] = Number((soma / count).toFixed(2));
-                console.log(
-                    `🔍 DEBUG - Final media for "${criterioKey}": ${medias[criterioKey]} (soma=${soma}, count=${count})`,
-                );
-            } else {
-                console.log(`🔍 DEBUG - No values found for "${criterioKey}"`);
-            }
-        });
-
-        console.log("🔍 DEBUG - Final medias object:", medias);
-        return medias;
     }
 
     function verDetalhes(id_aluno: string) {
@@ -339,6 +248,8 @@
             avaliar: "",
             actions: "",
         };
+
+        // Add individual criteria scores
         criteriosList.forEach((criterio) => {
             const key = criterio.nome_criterio.toLowerCase();
             row[key] =
@@ -346,6 +257,10 @@
                     ? aluno.medias[key]
                     : "Não avaliado";
         });
+
+        // Calculate overall media from individual criteria
+        row.media = MediaCalculator.calculateOverallMedia(aluno.medias);
+
         return row;
     });
 </script>

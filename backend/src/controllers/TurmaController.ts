@@ -140,17 +140,103 @@ export const TurmaController: EndpointController = {
 
         'remove-aluno': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
             const { id_turma, id_aluno } = req.query;
-            const { error } = await supabase
-                .from('alunos')
-                .update({ id_turma: null })
-                .eq('id_aluno', id_aluno);
 
-            if (error) {
-                logger.error(`Error removing aluno ${id_aluno} from turma ${id_turma}: ${error.message}`);
-                return res.status(500).json({ error: error.message });
+            try {
+                // First, get all problems in this turma
+                const { data: problemas, error: problemasError } = await supabase
+                    .from('problemas')
+                    .select('id_problema')
+                    .eq('id_turma', id_turma);
+
+                if (problemasError) {
+                    logger.error(`Error fetching problemas for turma ${id_turma}: ${problemasError.message}`);
+                    return res.status(500).json({ error: problemasError.message });
+                }
+
+                // Delete all evaluations where this student was involved in problems of this turma
+                if (problemas && problemas.length > 0) {
+                    const problemaIds = problemas.map(p => p.id_problema);
+
+                    // Delete evaluations where the student was the evaluator
+                    const { error: deleteEvaluatorError } = await supabase
+                        .from('avaliacoes')
+                        .delete()
+                        .eq('id_aluno_avaliador', id_aluno)
+                        .in('id_problema', problemaIds);
+
+                    if (deleteEvaluatorError) {
+                        logger.error(`Error deleting evaluations where aluno ${id_aluno} was evaluator: ${deleteEvaluatorError.message}`);
+                        return res.status(500).json({ error: deleteEvaluatorError.message });
+                    }
+
+                    // Delete evaluations where the student was evaluated
+                    const { error: deleteEvaluatedError } = await supabase
+                        .from('avaliacoes')
+                        .delete()
+                        .eq('id_aluno_avaliado', id_aluno)
+                        .in('id_problema', problemaIds);
+
+                    if (deleteEvaluatedError) {
+                        logger.error(`Error deleting evaluations where aluno ${id_aluno} was evaluated: ${deleteEvaluatedError.message}`);
+                        return res.status(500).json({ error: deleteEvaluatedError.message });
+                    }
+
+                    logger.info(`Deleted all evaluations for aluno ${id_aluno} in problemas of turma ${id_turma}`);
+
+                    // Update media_geral for all affected problems
+                    for (const problema of problemas) {
+                        const { data: remainingAvaliacoes, error: avaliacoesError } = await supabase
+                            .from('avaliacoes')
+                            .select('notas')
+                            .eq('id_problema', problema.id_problema);
+
+                        if (!avaliacoesError && remainingAvaliacoes) {
+                            // Calculate new average if there are remaining evaluations
+                            if (remainingAvaliacoes.length > 0) {
+                                const notas = remainingAvaliacoes.map(a => {
+                                    try {
+                                        const notasObj = JSON.parse(a.notas);
+                                        const values = Object.values(notasObj).filter(v => typeof v === 'number') as number[];
+                                        return values.length > 0 ? values.reduce((sum, val) => sum + val, 0) / values.length : 0;
+                                    } catch {
+                                        return 0;
+                                    }
+                                });
+                                const media = notas.reduce((sum, nota) => sum + nota, 0) / notas.length;
+
+                                await supabase
+                                    .from('problemas')
+                                    .update({ media_geral: media })
+                                    .eq('id_problema', problema.id_problema);
+                            } else {
+                                // No evaluations left, set media_geral to 0
+                                await supabase
+                                    .from('problemas')
+                                    .update({ media_geral: 0 })
+                                    .eq('id_problema', problema.id_problema);
+                            }
+                        }
+                    }
+                }
+
+                // Finally, remove the student from the turma
+                const { error } = await supabase
+                    .from('alunos')
+                    .update({ id_turma: null })
+                    .eq('id_aluno', id_aluno);
+
+                if (error) {
+                    logger.error(`Error removing aluno ${id_aluno} from turma ${id_turma}: ${error.message}`);
+                    return res.status(500).json({ error: error.message });
+                }
+
+                logger.info(`Successfully removed aluno ${id_aluno} from turma ${id_turma} and deleted all related evaluations`);
+                return res.status(204).send();
+
+            } catch (error) {
+                logger.error(`Unexpected error removing aluno ${id_aluno} from turma ${id_turma}: ${error}`);
+                return res.status(500).json({ error: 'Unexpected error occurred' });
             }
-
-            return res.status(204).send();
         })
     }
 }; 

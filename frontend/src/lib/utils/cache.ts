@@ -1,5 +1,5 @@
 import { writable, derived, get } from 'svelte/store';
-import type { ProblemaModel, TurmaModel, AlunoModel, AvaliacaoModel } from '$lib/interfaces/interfaces';
+import type { ProblemaModel, TurmaModel, AlunoModel, AvaliacaoModel, ProfessorModel } from '$lib/interfaces/interfaces';
 
 // Cache configuration
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -104,6 +104,7 @@ export const problemasCache = createCacheStore<ProblemaModel[]>();
 export const problemaCache = createCacheStore<ProblemaModel>();
 export const alunosCache = createCacheStore<AlunoModel[]>();
 export const alunoCache = createCacheStore<AlunoModel>();
+export const professorCache = createCacheStore<ProfessorModel>();
 export const avaliacoesCache = createCacheStore<AvaliacaoModel[]>();
 
 // Cache invalidation helpers
@@ -141,7 +142,7 @@ export const cacheInvalidation = {
 
 // Derived stores for loading states
 export const isAnyLoading = derived(
-    [turmasCache, turmaCache, problemasCache, problemaCache, alunosCache, alunoCache, avaliacoesCache],
+    [turmasCache, turmaCache, problemasCache, problemaCache, alunosCache, alunoCache, professorCache, avaliacoesCache],
     (stores) => {
         return stores.some(store =>
             Object.values(store).some(entry => entry.loading)

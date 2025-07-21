@@ -19,12 +19,12 @@
         id_professor: "",
     };
     let alunosMatriculados: Array<{
-        id_aluno: number;
+        id: number;
         nome_completo: string;
         email: string;
     }> = [];
     let originalAlunosMatriculados: Array<{
-        id_aluno: number;
+        id: number;
         nome_completo: string;
         email: string;
     }> = [];
@@ -48,6 +48,9 @@
             originalTurma = { ...turma };
             // Extract alunos from the nested structure
             alunosMatriculados = data.alunos?.map((item: any) => item) || [];
+            console.log(
+                `Alunos matriculados: ${JSON.stringify(alunosMatriculados)}`,
+            );
             originalAlunosMatriculados = [...alunosMatriculados];
         } catch (err) {
             error =
@@ -64,13 +67,13 @@
             removedAlunos: originalAlunosMatriculados.filter(
                 (original) =>
                     !alunosMatriculados.some(
-                        (current) => current.id_aluno === original.id_aluno,
+                        (current) => current.id === original.id,
                     ),
             ),
             addedAlunos: alunosMatriculados.filter(
                 (current) =>
                     !originalAlunosMatriculados.some(
-                        (original) => original.id_aluno === current.id_aluno,
+                        (original) => original.id === current.id,
                     ),
             ),
         };
@@ -91,11 +94,11 @@
             // Get current enrolled students to compare
             const currentData = await TurmasService.getById(turmaId, true); // Force refresh
             const currentAlunos =
-                currentData.alunos?.map((item: any) => item.id_aluno) || [];
+                currentData.alunos?.map((item: any) => item.id) || [];
 
             // Remove students that are no longer in the list
             for (const alunoId of currentAlunos) {
-                if (!alunosMatriculados.some((a) => a.id_aluno === alunoId)) {
+                if (!alunosMatriculados.some((a) => a.id === alunoId)) {
                     await api.delete(
                         `/turmas/remove-aluno?id_turma=${turmaId}&id_aluno=${alunoId}`,
                     );
@@ -104,10 +107,10 @@
 
             // Add new students
             for (const aluno of alunosMatriculados) {
-                if (!currentAlunos.includes(aluno.id_aluno)) {
+                if (!currentAlunos.includes(aluno.id)) {
                     await api.post("/turmas/add-aluno", {
                         id_turma: turmaId,
-                        id_aluno: aluno.id_aluno,
+                        id_aluno: aluno.id,
                     });
                 }
             }
@@ -145,7 +148,7 @@
 
             // Remove students that are no longer in the list
             for (const alunoId of currentAlunos) {
-                if (!alunosMatriculados.some((a) => a.id_aluno === alunoId)) {
+                if (!alunosMatriculados.some((a) => a.id === alunoId)) {
                     await api.delete(
                         `/turmas/remove-aluno?id_turma=${turmaId}&id_aluno=${alunoId}`,
                     );
@@ -154,10 +157,10 @@
 
             // Add new students
             for (const aluno of alunosMatriculados) {
-                if (!currentAlunos.includes(aluno.id_aluno)) {
+                if (!currentAlunos.includes(aluno.id)) {
                     await api.post("/turmas/add-aluno", {
                         id_turma: turmaId,
-                        id_aluno: aluno.id_aluno,
+                        id_aluno: aluno.id,
                     });
                 }
             }
@@ -185,17 +188,21 @@
         }>,
     ) {
         const aluno = event.detail;
+        // Map id_aluno to id for interface consistency
+        const alunoFormatted = {
+            id: aluno.id_aluno,
+            nome_completo: aluno.nome_completo,
+            email: aluno.email,
+        };
         // Check if student is already added
-        if (!alunosMatriculados.some((a) => a.id_aluno === aluno.id_aluno)) {
-            alunosMatriculados = [...alunosMatriculados, aluno];
+        if (!alunosMatriculados.some((a) => a.id === alunoFormatted.id)) {
+            alunosMatriculados = [...alunosMatriculados, alunoFormatted];
             hasUnsavedChanges = true;
         }
     }
 
     function handleRemoveAluno(alunoId: number) {
-        alunosMatriculados = alunosMatriculados.filter(
-            (a) => a.id_aluno !== alunoId,
-        );
+        alunosMatriculados = alunosMatriculados.filter((a) => a.id !== alunoId);
         hasUnsavedChanges = true;
     }
 
@@ -241,7 +248,7 @@
 
             await api.post("/turmas/add-aluno", {
                 id_turma: turmaId,
-                id_aluno: aluno.id_aluno,
+                id_aluno: aluno.id,
             });
 
             alunosMatriculados = [...alunosMatriculados, aluno];
@@ -272,11 +279,11 @@
             error = null;
 
             await api.delete(
-                `/turmas/remove-aluno?id_turma=${turmaId}&id_aluno=${aluno.id_aluno}`,
+                `/turmas/remove-aluno?id_turma=${turmaId}&id_aluno=${aluno.id}`,
             );
 
             alunosMatriculados = alunosMatriculados.filter(
-                (a) => a.id_aluno !== aluno.id_aluno,
+                (a) => a.id !== aluno.id,
             );
 
             const changes = getChangesSummary();
@@ -353,8 +360,7 @@
                                     variant="danger"
                                     size="icon"
                                     type="button"
-                                    on:click={() =>
-                                        handleRemoveAluno(aluno.id_aluno)}
+                                    on:click={() => handleRemoveAluno(aluno.id)}
                                     title="Remover aluno"
                                 >
                                     <svg
@@ -414,7 +420,11 @@
     exclude_turma_id={turmaId}
 />
 
-<Dialog open={changesSummaryOpen} on:close={() => goto("/professor/turmas")}>
+<Dialog
+    open={changesSummaryOpen}
+    closeOnClickOutside={false}
+    on:close={() => goto("/professor/turmas")}
+>
     <svelte:fragment slot="header">
         <h2>Alterações realizadas</h2>
     </svelte:fragment>
@@ -664,36 +674,49 @@
     }
 
     .changes-summary-content {
-        padding: 1rem;
+        padding: 1.5rem;
     }
 
     .change-item {
-        margin-bottom: 1.5rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #f1f3f4;
+    }
+
+    .change-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
     }
 
     .change-title {
         font-weight: 500;
         color: #1a1a1a;
         display: block;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
+        font-size: 1rem;
     }
 
     .change-detail {
         color: #4a5568;
         font-size: 0.875rem;
-        margin: 0.25rem 0;
+        margin: 0.5rem 0;
+        line-height: 1.4;
     }
 
     .change-list {
         list-style: none;
         padding: 0;
-        margin: 0.25rem 0;
+        margin: 0.75rem 0 0 0;
     }
 
     .change-list li {
         color: #4a5568;
         font-size: 0.875rem;
-        padding: 0.25rem 0;
+        margin-bottom: 0.75rem;
+    }
+
+    .change-list li:last-child {
+        margin-bottom: 0;
     }
 
     .dialog-actions {
@@ -701,30 +724,40 @@
         justify-content: flex-end;
         gap: 1rem;
         margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f1f3f4;
     }
 
     .change-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
     }
 
     .change-list-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.5rem 0;
+        padding: 0.75rem 1rem;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        margin-bottom: 0.75rem;
+    }
+
+    .change-list-item:last-child {
+        margin-bottom: 0;
     }
 
     .error-message {
         background-color: #fee2e2;
         border: 1px solid #ef4444;
         color: #dc2626;
-        padding: 0.75rem;
-        border-radius: 4px;
-        margin-bottom: 1rem;
+        padding: 1rem;
+        border-radius: 6px;
+        margin-bottom: 1.5rem;
         font-size: 0.875rem;
+        line-height: 1.4;
     }
 
     :global(.change-list-item .button),

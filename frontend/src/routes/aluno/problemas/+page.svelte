@@ -41,10 +41,10 @@
         },
         {
             key: "media_geral",
-            label: "Média Geral",
+            label: "Minha Média",
             sortable: true,
             render: (row: ProblemaModel) =>
-                row.media_geral ? row.media_geral.toFixed(2) : "0.00",
+                row.media_geral ? row.media_geral.toFixed(2) : "Não avaliado",
         },
         {
             key: "actions",
@@ -72,7 +72,9 @@
 
             problems = await api.get(
                 "/problemas/list-by-turma?id_turma=" +
-                    ($currentUser as AlunoModel).id_turma,
+                    ($currentUser as AlunoModel).id_turma +
+                    "&id_aluno=" +
+                    ($currentUser as AlunoModel).id,
             );
 
             problems = Parsers.parseProblemas(problems);
