@@ -113,10 +113,13 @@
     async function fetchAvaliacoes(problemaId: number) {
         try {
             loading = true;
+            console.log(`Fetching avaliacoes for problema: ${problemaId}`);
             const data = await api.get(
                 `/avaliacoes/list?id_problema=${problemaId}`,
             );
-            avaliacoes = data;
+            console.log(`Received ${data?.length || 0} avaliacoes:`, data);
+            avaliacoes = data || [];
+            console.log("About to build evaluation matrix...");
             buildEvaluationMatrix();
         } catch (err) {
             error =
@@ -131,11 +134,20 @@
 
     function buildEvaluationMatrix() {
         if (!selectedTurma || !avaliacoes) {
+            console.log("Cannot build matrix - missing data:", {
+                selectedTurma: !!selectedTurma,
+                avaliacoes: avaliacoes?.length,
+            });
             return;
         }
 
         alunos = selectedTurma.alunos || [];
         evaluationMatrix = {};
+
+        console.log("Building matrix with:", {
+            alunosCount: alunos.length,
+            avaliacoesCount: avaliacoes.length,
+        });
 
         // Initialize matrix
         alunos.forEach((evaluator) => {
@@ -146,16 +158,34 @@
         });
 
         // Fill matrix with evaluation data
-        avaliacoes.forEach((avaliacao) => {
+        avaliacoes.forEach((avaliacao, index) => {
             if (avaliacao.id_aluno_avaliador && avaliacao.id_aluno_avaliado) {
                 const average = MediaCalculator.calculateSimpleMedia(
                     avaliacao.notas,
                 );
-                evaluationMatrix[avaliacao.id_aluno_avaliador][
-                    avaliacao.id_aluno_avaliado
-                ] = average;
+                console.log(
+                    `Evaluation ${index}: ${avaliacao.id_aluno_avaliador} -> ${avaliacao.id_aluno_avaliado} = ${average}`,
+                );
+
+                // Check if student IDs exist in matrix
+                if (
+                    evaluationMatrix[avaliacao.id_aluno_avaliador] &&
+                    evaluationMatrix[avaliacao.id_aluno_avaliador][
+                        avaliacao.id_aluno_avaliado
+                    ] !== undefined
+                ) {
+                    evaluationMatrix[avaliacao.id_aluno_avaliador][
+                        avaliacao.id_aluno_avaliado
+                    ] = average;
+                } else {
+                    console.warn(
+                        `Student IDs not found in matrix: evaluator=${avaliacao.id_aluno_avaliador}, evaluated=${avaliacao.id_aluno_avaliado}`,
+                    );
+                }
             }
         });
+
+        console.log("Final evaluation matrix:", evaluationMatrix);
     }
 
     async function handleTurmaSelect(event: Event) {
@@ -191,6 +221,13 @@
     }
 
     onMount(() => {
+        // Test MediaCalculator with sample data
+        console.log("Testing MediaCalculator:");
+        const testNota =
+            '{"categoria1": {"criterio1": 8, "criterio2": 9}, "categoria2": {"criterio3": 7}}';
+        const testResult = MediaCalculator.calculateSimpleMedia(testNota);
+        console.log(`Test: ${testNota} -> ${testResult}`);
+
         let hasLoaded = false;
         const unsubscribe = currentUser.subscribe((user) => {
             if (user !== undefined && !hasLoaded) {
@@ -222,10 +259,14 @@
             : 0;
     }
 
-    function getMatrixStatistics() {
-        if (!evaluationMatrix || Object.keys(evaluationMatrix).length === 0) {
+    function getMatrixStatistics(matrix = evaluationMatrix, students = alunos) {
+        console.log("Getting statistics for matrix:", matrix);
+        console.log("Alunos:", students);
+
+        if (!matrix || Object.keys(matrix).length === 0) {
+            console.log("No evaluation matrix data");
             return {
-                totalAlunos: 0,
+                totalAlunos: students?.length || 0,
                 maiorNota: 0,
                 mediaGeral: 0,
                 menorNota: 0,
@@ -235,27 +276,27 @@
         const allGrades: number[] = [];
 
         // Collect all non-zero grades (excluding self-evaluations)
-        Object.keys(evaluationMatrix).forEach((evaluatorId) => {
-            Object.keys(evaluationMatrix[Number(evaluatorId)]).forEach(
-                (evaluatedId) => {
-                    const grade =
-                        evaluationMatrix[Number(evaluatorId)][
-                            Number(evaluatedId)
-                        ];
-                    // Only include grades that are not self-evaluations and are greater than 0
-                    if (
-                        Number(evaluatorId) !== Number(evaluatedId) &&
-                        grade > 0
-                    ) {
+        // Use the same access pattern as the template
+        students.forEach((evaluator) => {
+            students.forEach((evaluated) => {
+                if (evaluator.id !== evaluated.id) {
+                    const grade = matrix[evaluator.id]?.[evaluated.id];
+                    console.log(
+                        `Checking grade: ${evaluator.id} -> ${evaluated.id} = ${grade}`,
+                    );
+                    if (grade && grade > 0) {
                         allGrades.push(grade);
                     }
-                },
-            );
+                }
+            });
         });
 
+        console.log("All grades collected:", allGrades);
+
         if (allGrades.length === 0) {
+            console.log("No valid grades found");
             return {
-                totalAlunos: alunos.length,
+                totalAlunos: students?.length || 0,
                 maiorNota: 0,
                 mediaGeral: 0,
                 menorNota: 0,
@@ -270,15 +311,26 @@
             ),
         );
 
-        return {
-            totalAlunos: alunos.length,
+        const result = {
+            totalAlunos: students?.length || 0,
             maiorNota: Number(maiorNota.toFixed(2)),
             mediaGeral,
             menorNota: Number(menorNota.toFixed(2)),
         };
+
+        console.log("Statistics result:", result);
+        return result;
     }
 
-    $: statistics = getMatrixStatistics();
+    // Force reactive updates when matrix or alunos change
+    $: if (evaluationMatrix && alunos) {
+        console.log("Reactive update triggered - matrix and alunos changed");
+        console.log("Current matrix:", evaluationMatrix);
+        console.log("Current alunos:", alunos);
+    }
+
+    // Make statistics reactive to evaluationMatrix and alunos changes
+    $: statistics = getMatrixStatistics(evaluationMatrix, alunos);
 </script>
 
 <div class="relatorios-container">
@@ -341,6 +393,60 @@
                 </select>
             </div>
         </div>
+
+        <!--  {#if selectedProblema}
+            <div class="debug-section">
+                <h3>Debug Info</h3>
+                <p>
+                    <strong>Selected Turma:</strong>
+                    {selectedTurma?.nome_turma || "None"}
+                </p>
+                <p>
+                    <strong>Selected Problema:</strong>
+                    {selectedProblema?.nome_problema || "None"}
+                </p>
+                <p><strong>Alunos Count:</strong> {alunos?.length || 0}</p>
+                <p>
+                    <strong>Avaliacoes Count:</strong>
+                    {avaliacoes?.length || 0}
+                </p>
+                <p>
+                    <strong>Matrix Keys:</strong>
+                    {Object.keys(evaluationMatrix || {}).length}
+                </p>
+                <p>
+                    <strong>Sample Matrix Value:</strong>
+                    {#if alunos?.length >= 2}
+                        {evaluationMatrix?.[alunos[0]?.id]?.[alunos[1]?.id] ||
+                            "undefined"}
+                    {:else}
+                        N/A
+                    {/if}
+                </p>
+                <p>
+                    <strong>Matrix Structure:</strong>
+                    {#if Object.keys(evaluationMatrix || {}).length > 0}
+                        {JSON.stringify(Object.keys(evaluationMatrix)).slice(
+                            0,
+                            100,
+                        )}...
+                    {:else}
+                        Empty
+                    {/if}
+                </p>
+                <p>
+                    <strong>First Student Matrix:</strong>
+                    {#if alunos?.length > 0 && evaluationMatrix?.[alunos[0]?.id]}
+                        {JSON.stringify(evaluationMatrix[alunos[0].id]).slice(
+                            0,
+                            100,
+                        )}...
+                    {:else}
+                        Empty
+                    {/if}
+                </p>
+            </div>
+        {/if} -->
 
         <!-- Evaluation Matrix -->
         {#if selectedProblema && alunos.length > 0}
@@ -422,10 +528,12 @@
                                             >
                                                 {#if evaluator.id === evaluated.id}
                                                     X
-                                                {:else}
+                                                {:else if evaluationMatrix[evaluator.id]?.[evaluated.id]}
                                                     {evaluationMatrix[
                                                         evaluator.id
-                                                    ]?.[evaluated.id] || "-"}
+                                                    ][evaluated.id]}
+                                                {:else}
+                                                    -
                                                 {/if}
                                             </td>
                                         {/each}
@@ -769,6 +877,26 @@
 
     .matrix-legend li:last-child {
         margin-bottom: 0;
+    }
+
+    .debug-section {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        font-family: monospace;
+        font-size: 0.9rem;
+    }
+
+    .debug-section h3 {
+        margin: 0 0 1rem 0;
+        color: #856404;
+    }
+
+    .debug-section p {
+        margin: 0.5rem 0;
+        color: #856404;
     }
 
     .empty-state {

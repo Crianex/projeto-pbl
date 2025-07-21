@@ -2,11 +2,14 @@ import type { AlunoDB, AlunoModel, AvaliacaoDB, AvaliacaoModel, AvaliacaoNota, P
 import { Parsers } from "$lib/interfaces/parsers";
 import { api } from "$lib/utils/api";
 import { logger } from "$lib/utils/logger";
-import { avaliacoesCache } from "$lib/utils/cache";
+import { avaliacoesCache, autoInvalidate, triggerPageRefresh } from "$lib/utils/cache";
 
 export const AvaliacoesService = {
     getAvaliacoes,
     getByProblema,
+    create,
+    update,
+    delete: deleteAvaliacao,
     invalidateCache,
 }
 
@@ -65,6 +68,70 @@ async function getByProblema(problemaId: string, forceRefresh = false): Promise<
     } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Failed to fetch avaliacoes';
         avaliacoesCache.setError(cacheKey, errorMsg);
+        throw error;
+    }
+}
+
+async function create(avaliacaoData: {
+    id_problema: number;
+    id_aluno_avaliador?: number;
+    id_professor?: number;
+    id_aluno_avaliado: number;
+    notas: string;
+}): Promise<void> {
+    try {
+        logger.info('Creating new avaliacao', avaliacaoData);
+
+        if (avaliacaoData.id_professor) {
+            // Professor evaluation
+            await api.post('/avaliacoes/create', avaliacaoData);
+        } else {
+            // Student evaluation
+            await api.post('/problemas/add-avaliacao', avaliacaoData);
+        }
+
+        // Auto-invalidate related caches
+        await autoInvalidate.avaliacaoCreated(avaliacaoData.id_problema.toString());
+        triggerPageRefresh.avaliacoes();
+
+        logger.info('Avaliacao created successfully', { problemaId: avaliacaoData.id_problema });
+    } catch (error) {
+        logger.error('Failed to create avaliacao', error);
+        throw error;
+    }
+}
+
+async function update(id: string, avaliacaoData: {
+    id_problema: number;
+    notas: string;
+}): Promise<void> {
+    try {
+        logger.info(`Updating avaliacao ${id}`, avaliacaoData);
+        await api.put(`/avaliacoes/update?id_avaliacao=${id}`, avaliacaoData);
+
+        // Auto-invalidate related caches
+        await autoInvalidate.avaliacaoUpdated(avaliacaoData.id_problema.toString());
+        triggerPageRefresh.avaliacoes();
+
+        logger.info('Avaliacao updated successfully', { id });
+    } catch (error) {
+        logger.error('Failed to update avaliacao', error);
+        throw error;
+    }
+}
+
+async function deleteAvaliacao(id: string, problemaId: string): Promise<void> {
+    try {
+        logger.info(`Deleting avaliacao ${id}`);
+        await api.delete(`/avaliacoes/delete?id_avaliacao=${id}`);
+
+        // Auto-invalidate related caches
+        await autoInvalidate.avaliacaoDeleted(problemaId);
+        triggerPageRefresh.avaliacoes();
+
+        logger.info('Avaliacao deleted successfully', { id });
+    } catch (error) {
+        logger.error('Failed to delete avaliacao', error);
         throw error;
     }
 }

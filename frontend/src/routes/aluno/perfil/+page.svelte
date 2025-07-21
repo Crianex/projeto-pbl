@@ -72,7 +72,7 @@
                 }
             }
 
-            // atualizar o perfil no banco de dados
+            // atualizar o perfil no banco de dados (will auto-invalidate caches)
             await AlunosService.update(get(currentUser) as AlunoModel);
 
             isEditing = false;

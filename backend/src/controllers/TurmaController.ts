@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { Pair } from '../config/utils';
 import { supabase } from '../config/supabase_wrapper';
 import { createControllerLogger } from '../utils/controller_logger';
+import { MediaCalculator } from '../utils/utils';
 
 const logger = createControllerLogger('Turma', 'Controller');
 
@@ -193,15 +194,7 @@ export const TurmaController: EndpointController = {
                         if (!avaliacoesError && remainingAvaliacoes) {
                             // Calculate new average if there are remaining evaluations
                             if (remainingAvaliacoes.length > 0) {
-                                const notas = remainingAvaliacoes.map(a => {
-                                    try {
-                                        const notasObj = JSON.parse(a.notas);
-                                        const values = Object.values(notasObj).filter(v => typeof v === 'number') as number[];
-                                        return values.length > 0 ? values.reduce((sum, val) => sum + val, 0) / values.length : 0;
-                                    } catch {
-                                        return 0;
-                                    }
-                                });
+                                const notas = remainingAvaliacoes.map(a => MediaCalculator.calculateSimpleMedia(a.notas));
                                 const media = notas.reduce((sum, nota) => sum + nota, 0) / notas.length;
 
                                 await supabase

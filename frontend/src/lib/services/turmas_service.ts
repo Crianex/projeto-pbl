@@ -2,11 +2,16 @@ import type { TurmaModel } from "$lib/interfaces/interfaces";
 import { api } from "$lib/utils/api";
 import { Parsers } from "$lib/interfaces/parsers";
 import { logger } from "$lib/utils/logger";
-import { turmasCache, turmaCache } from "$lib/utils/cache";
+import { turmasCache, turmaCache, autoInvalidate, triggerPageRefresh } from "$lib/utils/cache";
 
 export const TurmasService = {
     getAll,
     getById,
+    create,
+    update,
+    delete: deleteTurma,
+    addAluno,
+    removeAluno,
     invalidateCache,
 };
 
@@ -84,6 +89,93 @@ async function getById(id: string, forceRefresh = false): Promise<TurmaModel> {
     } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Failed to fetch turma';
         turmaCache.setError(cacheKey, errorMsg);
+        throw error;
+    }
+}
+
+async function create(turmaData: { nome_turma: string; id_professor: number }): Promise<TurmaModel> {
+    try {
+        logger.info('Creating new turma', turmaData);
+        const response = await api.post('/turmas/create', turmaData);
+        const createdTurma = Parsers.parseTurma(response);
+
+        // Auto-invalidate related caches
+        await autoInvalidate.turmaCreated(createdTurma);
+        triggerPageRefresh.turmas();
+
+        logger.info('Turma created successfully', { id: createdTurma.id_turma });
+        return createdTurma;
+    } catch (error) {
+        logger.error('Failed to create turma', error);
+        throw error;
+    }
+}
+
+async function update(id: string, turmaData: { nome_turma: string }): Promise<TurmaModel> {
+    try {
+        logger.info(`Updating turma ${id}`, turmaData);
+        const response = await api.put(`/turmas/update?id_turma=${id}`, turmaData);
+        const updatedTurma = Parsers.parseTurma(response);
+
+        // Auto-invalidate related caches
+        await autoInvalidate.turmaUpdated(id, updatedTurma);
+        triggerPageRefresh.turmas();
+
+        logger.info('Turma updated successfully', { id });
+        return updatedTurma;
+    } catch (error) {
+        logger.error('Failed to update turma', error);
+        throw error;
+    }
+}
+
+async function deleteTurma(id: string): Promise<void> {
+    try {
+        logger.info(`Deleting turma ${id}`);
+        await api.delete(`/turmas/delete?id_turma=${id}`);
+
+        // Auto-invalidate related caches
+        await autoInvalidate.turmaDeleted(id);
+        triggerPageRefresh.turmas();
+
+        logger.info('Turma deleted successfully', { id });
+    } catch (error) {
+        logger.error('Failed to delete turma', error);
+        throw error;
+    }
+}
+
+async function addAluno(turmaId: string, alunoId: number): Promise<void> {
+    try {
+        logger.info(`Adding aluno ${alunoId} to turma ${turmaId}`);
+        await api.post('/turmas/add-aluno', {
+            id_turma: turmaId,
+            id_aluno: alunoId,
+        });
+
+        // Auto-invalidate related caches
+        await autoInvalidate.turmaAlunoAdded(turmaId);
+        triggerPageRefresh.turmas();
+
+        logger.info('Aluno added to turma successfully', { turmaId, alunoId });
+    } catch (error) {
+        logger.error('Failed to add aluno to turma', error);
+        throw error;
+    }
+}
+
+async function removeAluno(turmaId: string, alunoId: number): Promise<void> {
+    try {
+        logger.info(`Removing aluno ${alunoId} from turma ${turmaId}`);
+        await api.delete(`/turmas/remove-aluno?id_turma=${turmaId}&id_aluno=${alunoId}`);
+
+        // Auto-invalidate related caches
+        await autoInvalidate.turmaAlunoRemoved(turmaId);
+        triggerPageRefresh.turmas();
+
+        logger.info('Aluno removed from turma successfully', { turmaId, alunoId });
+    } catch (error) {
+        logger.error('Failed to remove aluno from turma', error);
         throw error;
     }
 }

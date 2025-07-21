@@ -160,14 +160,11 @@
                 criterios: JSON.stringify(formData.criterios),
             };
 
-            const response = await api.post("/problemas/create", payload);
+            // Use the service instead of raw API call
+            const newProblema = await ProblemasService.create(payload);
 
-            // Parse the response and add to store
-            const newProblema = Parsers.parseProblema(response);
+            // Add to store (cache will be automatically invalidated by service)
             problemaStore.update((problemas) => [...problemas, newProblema]);
-
-            // Invalidate cache for this turma's problemas
-            ProblemasService.invalidateCache(undefined, turmaId);
 
             await goto(`/professor/turmas/${turmaId}/problemas`);
         } catch (err) {

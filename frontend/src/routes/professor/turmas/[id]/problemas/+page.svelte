@@ -63,14 +63,12 @@
 
         try {
             loading = true;
-            await api.delete(
-                `/problemas/delete?id_problema=${problemaToDelete.id_problema}`,
-            );
-            // Invalidate cache after deletion
-            ProblemasService.invalidateCache(
+            // Use the service instead of raw API call
+            await ProblemasService.delete(
                 problemaToDelete.id_problema.toString(),
                 turmaId,
             );
+            // Cache will be automatically invalidated by service
             problemaStore.update((ps) =>
                 ps.filter(
                     (p) => p.id_problema !== problemaToDelete.id_problema,

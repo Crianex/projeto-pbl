@@ -12,6 +12,7 @@
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
     import { ProblemasService } from "$lib/services/problemas_service";
     import Pagination from "$lib/components/Pagination.svelte";
+    import { MediaCalculator } from "$lib/utils/utils";
 
     interface Avaliacao {
         id_avaliacao: number;
@@ -78,15 +79,6 @@
                             class: "grade",
                         },
                     };
-                } else if (row.isCurrentUser) {
-                    return {
-                        component: "Button",
-                        props: {
-                            variant: "primary",
-                            text: "Avaliar",
-                            onClick: () => handleSelfEvaluation(),
-                        },
-                    };
                 } else {
                     return {
                         component: "Button",
@@ -123,31 +115,21 @@
             // Transform the data to match our interface
             avaliacoes = filteredAvaliacoesData.map((avaliacao) => {
                 const media = avaliacao.notas
-                    ? Object.values(avaliacao.notas)
-                          .map((criterios) =>
-                              Object.values(criterios).reduce(
-                                  (sum, nota) => sum + nota,
-                                  0,
-                              ),
-                          )
-                          .reduce((sum, tagSum) => sum + tagSum, 0) /
-                      Object.keys(avaliacao.notas).length
+                    ? MediaCalculator.calculateSimpleMedia(
+                          JSON.stringify(avaliacao.notas),
+                      )
                     : undefined;
 
-                const isSelfEvaluation =
-                    avaliacao.aluno_avaliado?.id === currentUserId;
                 return {
                     id_avaliacao: avaliacao.id_avaliacao,
                     aluno: {
                         id: avaliacao.aluno_avaliado?.id || 0,
-                        nome: isSelfEvaluation
-                            ? `${avaliacao.aluno_avaliado?.nome_completo || ""} (auto avaliação)`
-                            : avaliacao.aluno_avaliado?.nome_completo || "",
+                        nome: avaliacao.aluno_avaliado?.nome_completo || "",
                         avatar: "/avatars/default.png",
                     },
                     nota: media,
                     enviada: true,
-                    isCurrentUser: isSelfEvaluation,
+                    isCurrentUser: false,
                 };
             });
 
@@ -158,21 +140,21 @@
                 );
 
                 // Only add students that the current user hasn't evaluated yet
-                // Include the current user so they can self-evaluate
+                // Exclude the current user since self-evaluation is not allowed
                 problema.turma.alunos.forEach((aluno) => {
-                    if (!avaliacoesMap.has(aluno.id)) {
-                        const isCurrentUser = aluno.id === currentUserId;
+                    if (
+                        !avaliacoesMap.has(aluno.id) &&
+                        aluno.id !== currentUserId
+                    ) {
                         avaliacoes.push({
                             id_avaliacao: 0,
                             aluno: {
                                 id: aluno.id,
-                                nome: isCurrentUser
-                                    ? `${aluno.nome_completo || ""} (auto avaliação)`
-                                    : aluno.nome_completo || "",
+                                nome: aluno.nome_completo || "",
                                 avatar: "/avatars/default.png",
                             },
                             enviada: false,
-                            isCurrentUser: isCurrentUser,
+                            isCurrentUser: false,
                         });
                     }
                 });
@@ -183,14 +165,6 @@
         } finally {
             loading = false;
         }
-    }
-
-    function handleSelfEvaluation() {
-        const id_problema = $page.params.id_problema;
-        // Navigate to unified evaluation page for self-evaluation
-        goto(
-            `/avaliacao?id_problema=${id_problema}&id_aluno_avaliador=${$currentUser?.id}&id_aluno_avaliado=${$currentUser?.id}`,
-        );
     }
 
     function handleEvaluation(alunoId: number) {

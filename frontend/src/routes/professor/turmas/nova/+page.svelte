@@ -4,6 +4,7 @@
     import Button from "$lib/components/Button.svelte";
     import SearchAlunoDialog from "../SearchAlunoDialog.svelte";
     import { currentUser } from "$lib/utils/auth";
+    import { TurmasService } from "$lib/services/turmas_service";
 
     let nomeTurma = "";
     let alunosMatriculados: Array<{
@@ -25,18 +26,18 @@
             saving = true;
             error = null;
 
-            // First create the turma
-            const turmaResponse = await api.post("/turmas/create", {
+            // First create the turma using the service
+            const turmaResponse = await TurmasService.create({
                 nome_turma: nomeTurma,
-                id_professor: $currentUser?.id,
+                id_professor: $currentUser?.id!,
             });
 
-            // Then add all students
+            // Then add all students using the service
             for (const aluno of alunosMatriculados) {
-                await api.post("/turmas/add-aluno", {
-                    id_turma: turmaResponse.id_turma,
-                    id_aluno: aluno.id_aluno,
-                });
+                await TurmasService.addAluno(
+                    turmaResponse.id_turma.toString(),
+                    aluno.id_aluno,
+                );
             }
 
             goto("/professor/turmas");
