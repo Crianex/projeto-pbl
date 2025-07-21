@@ -3,8 +3,8 @@
 	<meta name="description" content="About this app" />
 </svelte:head>
 
-<div class="text-column">
-	<h1>About this app</h1>
+<div class="responsive-container text-column">
+	<h1 class="responsive-title">About this app</h1>
 
 	<p>
 		This is a <a href="https://svelte.dev/docs/kit">SvelteKit</a> app. You can make your own by typing

@@ -7,6 +7,7 @@
     import SearchAlunoDialog from "../SearchAlunoDialog.svelte";
     import Dialog from "$lib/components/Dialog.svelte";
     import { TurmasService } from "$lib/services/turmas_service";
+    import Container from "$lib/components/Container.svelte";
 
     const turmaId = $page.params.id;
 
@@ -302,7 +303,7 @@
     onMount(fetchTurma);
 </script>
 
-<div class="container">
+<Container class="responsive-container" maxWidth="xl" glass={true} shadow={true}>
     <div class="header">
         <h1>Editar Turma</h1>
     </div>
@@ -405,7 +406,7 @@
             </div>
         </form>
     {/if}
-</div>
+</Container>
 
 <SearchAlunoDialog
     open={searchDialogOpen}
@@ -504,232 +505,6 @@
 </Dialog>
 
 <style>
-    .container {
-        height: 100%;
-        width: 100%;
-        margin: 0 auto;
-        padding: 2rem;
-    }
-
-    .header {
-        margin-bottom: 2rem;
-    }
-
-    .header h1 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin: 0;
-    }
-
-    .form {
-        background: white;
-        padding: 2rem;
-        border-radius: 8px;
-        border: 1px solid #e9ecef;
-    }
-
-    .form-group {
-        margin-bottom: 2rem;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: 500;
-        color: #212529;
-    }
-
-    .form-group input {
-        width: 100%;
-        padding: 0.75rem;
-        border: 1px solid #dee2e6;
-        border-radius: 4px;
-        font-size: 1rem;
-    }
-
-    .form-group input:focus {
-        outline: none;
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
-    }
-
-    .alunos-section {
-        margin-bottom: 2rem;
-    }
-
-    .alunos-section h2 {
-        font-size: 1rem;
-        font-weight: 500;
-        margin-bottom: 1rem;
-    }
-
-    .alunos-list {
-        margin-bottom: 1rem;
-    }
-
-    .aluno-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.75rem;
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .aluno-item:last-child {
-        border-bottom: none;
-    }
-
-    .aluno-info {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .aluno-details {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .aluno-details .nome {
-        font-weight: 500;
-    }
-
-    .aluno-details .email {
-        font-size: 0.875rem;
-        color: #6c757d;
-    }
-
-    .avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-    }
-
-    .more-options {
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 0.5rem;
-        color: #dc3545;
-        border-radius: 4px;
-    }
-
-    .more-options:hover {
-        background-color: #f8f9fa;
-    }
-
-    .actions {
-        display: flex;
-        gap: 1rem;
-        justify-content: flex-end;
-        margin-top: 2rem;
-    }
-
-    .loading,
-    .error {
-        text-align: center;
-        padding: 2rem;
-        background: white;
-        border: 1px solid #e9ecef;
-        border-radius: 8px;
-    }
-
-    .error {
-        color: #dc3545;
-    }
-
-    .error button {
-        margin-top: 1rem;
-    }
-
-    .delete-confirm-content {
-        padding: 1rem;
-    }
-
-    .delete-confirm-content p {
-        margin-bottom: 1rem;
-    }
-
-    .delete-confirm-content .warning {
-        color: #dc3545;
-        font-size: 0.875rem;
-    }
-
-    .dialog-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 1rem;
-        margin-top: 2rem;
-    }
-
-    .changes-summary-content {
-        padding: 1rem;
-    }
-
-    .change-item {
-        margin-bottom: 1.5rem;
-    }
-
-    .change-title {
-        font-weight: 500;
-        color: #1a1a1a;
-        display: block;
-        margin-bottom: 0.5rem;
-    }
-
-    .change-detail {
-        color: #4a5568;
-        font-size: 0.875rem;
-        margin: 0.25rem 0;
-    }
-
-    .change-list {
-        list-style: none;
-        padding: 0;
-        margin: 0.25rem 0;
-    }
-
-    .change-list li {
-        color: #4a5568;
-        font-size: 0.875rem;
-        padding: 0.25rem 0;
-    }
-
-    .dialog-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 1rem;
-        margin-top: 2rem;
-    }
-
-    .change-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.5rem;
-    }
-
-    .change-list-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.5rem 0;
-    }
-
-    .error-message {
-        background-color: #fee2e2;
-        border: 1px solid #ef4444;
-        color: #dc2626;
-        padding: 0.75rem;
-        border-radius: 4px;
-        margin-bottom: 1rem;
-        font-size: 0.875rem;
-    }
-
-    :global(.change-list-item .button),
-    :global(.change-header .button) {
-        padding: 0.25rem 0.75rem;
-        font-size: 0.875rem;
-    }
+    /* Remover estilos de responsividade duplicados já cobertos pelo global */
+    /* Manter apenas estilos específicos que não estão no global */
 </style>

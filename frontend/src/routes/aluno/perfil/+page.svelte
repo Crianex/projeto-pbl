@@ -106,7 +106,7 @@
     }
 </script>
 
-<Container>
+<Container class="responsive-container">
     <div>
         {#if !isEditing}
             <ProfileView onEdit={handleEditClick} />
@@ -132,49 +132,6 @@
 {/if}
 
 <style>
-    @media (max-width: 768px) {
-        :global(.profile-view) {
-            padding: 1.5rem;
-        }
-
-        :global(.profile-header) {
-            flex-direction: column;
-            text-align: center;
-            gap: 1.5rem;
-        }
-
-        :global(.user-details) {
-            align-items: center;
-        }
-
-        :global(.profile-info h1) {
-            font-size: 1.5rem;
-        }
-
-        :global(.email) {
-            font-size: 0.9rem;
-        }
-    }
-
-    @media (max-width: 480px) {
-        :global(.profile-view) {
-            padding: 1rem;
-        }
-
-        :global(.profile-header) {
-            gap: 1rem;
-        }
-
-        :global(.profile-info h1) {
-            font-size: 1.25rem;
-        }
-
-        :global(.email) {
-            font-size: 0.85rem;
-        }
-
-        :global(.profile-actions) {
-            margin-top: 1rem;
-        }
-    }
+    /* Remover estilos de responsividade duplicados já cobertos pelo global */
+    /* Manter apenas estilos específicos que não estão no global */
 </style>

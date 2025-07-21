@@ -4,6 +4,7 @@
     import Button from "$lib/components/Button.svelte";
     import SearchAlunoDialog from "../SearchAlunoDialog.svelte";
     import { currentUser } from "$lib/utils/auth";
+    import Container from "$lib/components/Container.svelte";
 
     let nomeTurma = "";
     let alunosMatriculados: Array<{
@@ -73,9 +74,9 @@
     }
 </script>
 
-<div class="container">
+<Container class="responsive-container" maxWidth="xl" glass={true} shadow={true}>
     <div class="header">
-        <h1>Nova Turma</h1>
+        <h1 class="responsive-title">Nova Turma</h1>
     </div>
 
     {#if error}
@@ -171,7 +172,7 @@
             </div>
         </form>
     {/if}
-</div>
+</Container>
 
 <SearchAlunoDialog
     open={searchDialogOpen}
@@ -181,23 +182,8 @@
 />
 
 <style>
-    .container {
-        height: 100%;
-        width: 100%;
-        margin: 0 auto;
-        padding: 2rem;
-    }
-
-    .header {
-        margin-bottom: 2rem;
-    }
-
-    .header h1 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin: 0;
-    }
-
+    /* Remover estilos de responsividade duplicados já cobertos pelo global */
+    /* Manter apenas estilos específicos que não estão no global */
     .form {
         background: white;
         padding: 2rem;

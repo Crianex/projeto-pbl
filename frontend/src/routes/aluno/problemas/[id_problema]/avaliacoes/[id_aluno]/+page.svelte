@@ -301,7 +301,7 @@
     });
 </script>
 
-<Container maxWidth="lg" glass={true} shadow={true} center={true}>
+<Container class="responsive-container" maxWidth="xl" glass={true} shadow={true}>
     <div class="evaluation-container">
         <div class="back-section">
             <BackButton text="Voltar" on:click={() => history.back()} />
@@ -764,54 +764,5 @@
         margin: 0;
         color: #495057;
         line-height: 1.6;
-    }
-
-    @media (max-width: 768px) {
-        .container {
-            padding: 1rem;
-            padding-top: 2rem;
-        }
-
-        .student-info {
-            flex-direction: column;
-            text-align: center;
-            padding: 1rem;
-        }
-
-        .avatar {
-            width: 64px;
-            height: 64px;
-        }
-
-        .evaluation-grid {
-            grid-template-columns: 1fr;
-            gap: 1rem;
-        }
-
-        .evaluation-section {
-            padding: 1rem;
-        }
-
-        .input-wrapper {
-            flex-direction: column;
-        }
-
-        .criteria-btn {
-            padding: 0.5rem 1rem;
-        }
-    }
-
-    @media (max-width: 480px) {
-        h1 {
-            font-size: 1.5rem;
-        }
-
-        .student-info p {
-            font-size: 1rem;
-        }
-
-        .criteria-content {
-            padding: 1.5rem;
-        }
     }
 </style>

@@ -54,30 +54,10 @@
     <meta name="description" content="Página de recuperação de senha" />
 </svelte:head>
 
-{#if emailSent}
-    <Container maxWidth="md" glass={true} shadow={true}>
-        <div class="success-container">
-            <div class="success-icon">✓</div>
-            <h1>E-mail Enviado!</h1>
-            <p class="success-message">
-                Enviamos um link de recuperação para <strong>{email}</strong>
-            </p>
-            <p class="instructions">
-                Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
-            </p>
-            
-            <div class="actions">
-                <Button variant="secondary" on:click={() => emailSent = false}>
-                    Enviar para outro e-mail
-                </Button>
-                <a href="/login" class="back-link">Voltar para o login</a>
-            </div>
-        </div>
-    </Container>
-{:else}
-    <Container maxWidth="md" glass={true} shadow={true}>
+<main>
+    <div class="responsive-container forgot-container">
         <div class="header">
-            <h1>Recuperar Senha</h1>
+            <h1 class="responsive-title">Recuperar Senha</h1>
             <p class="subtitle">
                 Digite seu e-mail para receber um link de recuperação
             </p>
@@ -113,8 +93,8 @@
         <div class="back-to-login">
             <a href="/login">Voltar para o login</a>
         </div>
-    </Container>
-{/if}
+    </div>
+</main>
 
 {#if loading}
     <LoadingSpinner overlay={true} text="Enviando e-mail de recuperação..." />

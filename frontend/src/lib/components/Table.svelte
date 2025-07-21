@@ -408,4 +408,13 @@
             height: 16px;
         }
     }
+
+    @media (max-width: 640px) {
+        .table-container {
+            width: 100vw !important;
+            max-width: 100vw !important;
+            overflow-x: auto !important;
+            border-radius: 0 !important;
+        }
+    }
 </style>

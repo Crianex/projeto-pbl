@@ -198,7 +198,7 @@
     onMount(fetchAvaliacoes);
 </script>
 
-<Container maxWidth="lg" glass={true} shadow={true} center={true}>
+<Container class="responsive-container" maxWidth="xl" glass={true} shadow={true}>
     <div class="evaluations-container">
         {#if loading && !problema}
             <div class="loading-container">
@@ -211,7 +211,7 @@
             </div>
         {:else}
             <div class="header" in:fade={{ duration: 300, delay: 50 }}>
-                <h1>
+                <h1 class="responsive-title">
                     Avaliações - {problema?.nome_problema || "Carregando..."}
                 </h1>
                 <button class="close-btn" on:click={() => history.back()}>
@@ -253,129 +253,6 @@
 </Container>
 
 <style>
-    .evaluations-container {
-        position: relative;
-        min-height: 100%;
-        height: fit-content;
-    }
-
-    .loading-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 300px;
-        gap: 1rem;
-    }
-
-    .loading-container p {
-        color: #666;
-        font-size: 0.9rem;
-    }
-
-    .error-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 300px;
-    }
-
-    .error-message {
-        color: #dc3545;
-        text-align: center;
-        font-size: 0.9rem;
-        padding: 1rem;
-        background: rgba(220, 53, 69, 0.1);
-        border-radius: 8px;
-    }
-
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        padding: 1rem 0;
-    }
-
-    h1 {
-        font-size: 1.75rem;
-        font-weight: 600;
-        color: #1a1a1a;
-        margin: 0;
-    }
-
-    .close-btn {
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        color: #666;
-        cursor: pointer;
-        padding: 0.75rem;
-        border-radius: 50%;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow:
-            0 2px 6px rgba(0, 0, 0, 0.05),
-            inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    }
-
-    .close-btn:hover {
-        background: rgba(255, 255, 255, 0.95);
-        color: #333;
-        transform: translateY(-2px) scale(1.05);
-        box-shadow:
-            0 4px 12px rgba(0, 0, 0, 0.08),
-            inset 0 1px 0 rgba(255, 255, 255, 0.9);
-    }
-
-    /* Estilo para o badge de nota */
-    :global(.grade) {
-        display: inline-block;
-        padding: 0.5rem 1rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        font-weight: 600;
-        border-radius: 12px;
-        font-size: 0.9rem;
-        box-shadow:
-            0 4px 12px rgba(102, 126, 234, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        transition: all 0.3s ease;
-    }
-
-    :global(.grade:hover) {
-        transform: translateY(-2px);
-        box-shadow:
-            0 6px 16px rgba(102, 126, 234, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    }
-
-    /* Responsividade aprimorada */
-    @media (max-width: 768px) {
-        .header {
-            margin-bottom: 1rem;
-            padding: 0.75rem 0;
-        }
-
-        h1 {
-            font-size: 1.5rem;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .header {
-            margin-bottom: 0.75rem;
-            padding: 0.5rem 0;
-        }
-
-        h1 {
-            font-size: 1.25rem;
-        }
-
-        .close-btn {
-            padding: 0.375rem;
-        }
-    }
+    /* Remover estilos de responsividade duplicados já cobertos pelo global */
+    /* Manter apenas estilos específicos que não estão no global */
 </style>

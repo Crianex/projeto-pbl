@@ -197,10 +197,10 @@
         </div>
     </Container>
 {:else}
-    <Container maxWidth="md" glass={true} shadow={true}>
+    <Container class="responsive-container callback-container" maxWidth="md" glass={true} shadow={true}>
         <div class="success-container">
             <div class="success-icon">✓</div>
-            <h1>Login Realizado!</h1>
+            <h1 class="responsive-title">Login Realizado!</h1>
             <p>Redirecionando você agora...</p>
         </div>
     </Container>
