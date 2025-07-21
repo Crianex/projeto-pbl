@@ -47,7 +47,7 @@
                 </div>
             {:else if col.key === "badge"}
                 <span class="badge">{row.badge || ""}</span>
-            {:else if col.key === "actions" && col.render}
+            {:else if col.render}
                 {#if col.render(row).component === "a"}
                     <Button
                         variant={col.render(row).props.variant || "primary"}
@@ -70,11 +70,11 @@
                     <span class={col.render(row).props.class || ""}>
                         {col.render(row).props.text || ""}
                     </span>
+                {:else}
+                    {@html col.render(row)}
                 {/if}
             {:else if col.key === "actions"}
                 <span class="ellipsis" title="Actions">&#x22EE;</span>
-            {:else if col.render}
-                {@html col.render(row)}
             {:else}
                 {row[col.key] || ""}
             {/if}

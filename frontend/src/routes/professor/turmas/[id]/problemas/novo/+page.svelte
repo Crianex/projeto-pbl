@@ -7,6 +7,7 @@
     import { Parsers } from "$lib/interfaces/parsers";
     import type { CriteriosGroup } from "$lib/interfaces/interfaces";
     import { currentUser } from "$lib/utils/auth";
+    import { ProblemasService } from "$lib/services/problemas_service";
 
     const turmaId = $page.params.id;
 
@@ -164,6 +165,9 @@
             // Parse the response and add to store
             const newProblema = Parsers.parseProblema(response);
             problemaStore.update((problemas) => [...problemas, newProblema]);
+
+            // Invalidate cache for this turma's problemas
+            ProblemasService.invalidateCache(undefined, turmaId);
 
             await goto(`/professor/turmas/${turmaId}/problemas`);
         } catch (err) {

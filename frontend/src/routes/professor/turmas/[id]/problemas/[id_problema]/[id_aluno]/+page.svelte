@@ -3,14 +3,14 @@
     import { page } from "$app/stores";
     import { api } from "$lib/utils/api";
     import { logger } from "$lib/utils/logger";
+    import { goto } from "$app/navigation";
+    import { currentUser } from "$lib/utils/auth";
+    ("");
     import type {
         ProblemaModel,
         AlunoModel,
         TurmaModel,
     } from "$lib/interfaces/interfaces";
-    import type { Column } from "$lib/interfaces/column";
-    import { Parsers } from "$lib/interfaces/parsers";
-    import Button from "$lib/components/Button.svelte";
     import Container from "$lib/components/Container.svelte";
     import Table from "$lib/components/Table.svelte";
     import BackButton from "$lib/components/BackButton.svelte";
@@ -29,28 +29,58 @@
     let currentPage = 1;
     let itemsPerPage = 10;
 
+    let criteriosList: { nome_criterio: string; descricao_criterio: string }[] =
+        [];
+
+    $: if (problema && problema.criterios) {
+        // Flatten all criterios from all groups and deduplicate by nome_criterio
+        const criteriosMap = new Map<string, string>();
+        Object.values(problema.criterios).forEach((criteriosArr) => {
+            criteriosArr.forEach((criterio) => {
+                if (!criteriosMap.has(criterio.nome_criterio)) {
+                    criteriosMap.set(
+                        criterio.nome_criterio,
+                        criterio.descricao_criterio,
+                    );
+                }
+            });
+        });
+        criteriosList = Array.from(criteriosMap.entries()).map(
+            ([nome_criterio, descricao_criterio]) => ({
+                nome_criterio,
+                descricao_criterio,
+            }),
+        );
+    }
+
     // Table configuration
-    let columns: Column[] = [
+    $: columns = [
         {
             key: "aluno",
             label: "Aluno Avaliado",
-            width: "50%",
+            width: "40%",
         },
-        {
-            key: "notas",
-            label: "Notas (C/H/A)",
-            width: "25%",
-        },
+        ...criteriosList.map((criterio) => ({
+            key: criterio.nome_criterio.toLowerCase(),
+            label: criterio.nome_criterio.charAt(0),
+            tooltip: `${criterio.nome_criterio}\n\n${criterio.descricao_criterio}`,
+            width: `${criteriosList.length > 0 ? 40 / criteriosList.length : 40}%`,
+        })),
         {
             key: "actions",
             label: "Ações",
-            width: "25%",
+            width: "20%",
             render: (row: any) => ({
                 component: "button",
                 props: {
                     variant: row.isEvaluated ? "secondary" : "primary",
                     text: row.isEvaluated ? "Editar Avaliação" : "Avaliar",
-                    onClick: () => handleAvaliarAluno(row.id),
+                    onClick: () =>
+                        handleAvaliarAluno(
+                            row.id,
+                            aluno?.id || 0,
+                            problema?.id_problema || 0,
+                        ),
                 },
             }),
         },
@@ -161,9 +191,17 @@
         }
     }
 
-    async function handleAvaliarAluno(id_aluno_avaliado: number) {
+    async function handleAvaliarAluno(
+        id_aluno_avaliado: number,
+        id_aluno_avaliador: number,
+        id_problema: number,
+    ) {
         // This will be implemented in another task
         console.log("Avaliar aluno clicked", id_aluno_avaliado);
+
+        goto(
+            `/avaliacao?id_problema=${id_problema}&id_aluno_avaliado=${id_aluno_avaliado}&id_aluno_avaliador=${id_aluno_avaliador}`,
+        );
     }
 
     // Show all students in the turma, with evaluation status
@@ -187,24 +225,103 @@
         const isSelfEvaluation =
             alunoAvaliado.id === Number($page.params.id_aluno);
         const isEvaluated = avaliacoesMap.has(alunoAvaliado.id);
-        const notas = formatNotas(
-            avaliacoesMap.get(alunoAvaliado.id)?.notas || null,
-        );
-
-        return {
+        const notasString = avaliacoesMap.get(alunoAvaliado.id)?.notas || null;
+        const medias = calcularMediaPorCriterio(notasString, criteriosList);
+        const row: any = {
             id: alunoAvaliado.id,
             aluno: isSelfEvaluation
                 ? `${alunoAvaliado.nome_completo || "Nome não disponível"} (Auto-avaliação)`
                 : alunoAvaliado.nome_completo || "Nome não disponível",
-            notas: notas,
-            notasClass: !isEvaluated ? "nao-avaliado" : "",
-            isEvaluated: isEvaluated,
-            isSelfEvaluation: isSelfEvaluation,
-            rowClass: isSelfEvaluation ? "self-evaluation" : "",
-            // For actions column - will be handled by custom rendering
             actions: "",
+            isEvaluated,
+            isSelfEvaluation,
+            rowClass: isSelfEvaluation ? "self-evaluation" : "",
         };
+        criteriosList.forEach((criterio) => {
+            const key = criterio.nome_criterio.toLowerCase();
+            row[key] = medias && key in medias ? medias[key] : "Não avaliado";
+        });
+        return row;
     });
+
+    // Helper to calculate per-criterio average for an aluno
+    function calcularMediaPorCriterio(
+        notasString: string | null,
+        criteriosList: { nome_criterio: string }[],
+    ) {
+        if (!notasString) return null;
+        try {
+            const notasObj = JSON.parse(notasString);
+            console.log("🔍 DEBUG - Parsed notasObj:", notasObj);
+            console.log(
+                "🔍 DEBUG - CriteriosList:",
+                criteriosList.map((c) => c.nome_criterio),
+            );
+
+            const medias: Record<string, number> = {};
+            criteriosList.forEach((criterio) => {
+                const criterioKey = criterio.nome_criterio.toLowerCase();
+                console.log(
+                    `🔍 DEBUG - Looking for criterio key: "${criterioKey}"`,
+                );
+
+                let soma = 0;
+                let count = 0;
+                Object.entries(notasObj).forEach(
+                    ([tagName, categoria]: [string, any]) => {
+                        console.log(
+                            `🔍 DEBUG - Checking tag "${tagName}":`,
+                            categoria,
+                        );
+                        if (
+                            typeof categoria === "object" &&
+                            categoria !== null
+                        ) {
+                            console.log(
+                                `🔍 DEBUG - Keys in categoria:`,
+                                Object.keys(categoria),
+                            );
+                            if (criterioKey in categoria) {
+                                const val = categoria[criterioKey];
+                                console.log(
+                                    `🔍 DEBUG - Found "${criterioKey}" = ${val} in tag "${tagName}"`,
+                                );
+                                if (typeof val === "number") {
+                                    soma += val;
+                                    count++;
+                                }
+                            } else {
+                                console.log(
+                                    `🔍 DEBUG - Key "${criterioKey}" NOT found in tag "${tagName}"`,
+                                );
+                            }
+                        }
+                    },
+                );
+
+                if (count > 0) {
+                    medias[criterioKey] = Number((soma / count).toFixed(2));
+                    console.log(
+                        `🔍 DEBUG - Final media for "${criterioKey}": ${medias[criterioKey]} (soma=${soma}, count=${count})`,
+                    );
+                } else {
+                    console.log(
+                        `🔍 DEBUG - No values found for "${criterioKey}"`,
+                    );
+                }
+            });
+
+            console.log("🔍 DEBUG - Final medias object:", medias);
+            return medias;
+        } catch (error) {
+            console.error(
+                "🔍 DEBUG - Error parsing notasString:",
+                error,
+                notasString,
+            );
+            return null;
+        }
+    }
 </script>
 
 <Container>

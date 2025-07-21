@@ -20,6 +20,7 @@ export interface AvaliacaoDB {
     id_aluno_avaliador: number | null;
     id_aluno_avaliado: number | null;
     notas: string;
+    id_professor: number | null; // NEW: track professor evaluations
 }
 
 export interface ProblemaDB {
@@ -114,6 +115,7 @@ export interface AvaliacaoModel {
     aluno_avaliador: AlunoModel | null;
     aluno_avaliado: AlunoModel | null;
     notas: AvaliacaoNota;
+    id_professor?: number | null; // NEW: track professor evaluations
 }
 
 

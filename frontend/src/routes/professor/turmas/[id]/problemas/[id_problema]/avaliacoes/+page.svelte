@@ -7,10 +7,16 @@
     onMount(() => {
         // Redirect to the unified evaluation page
         const id_problema = $page.params.id_problema;
-        const id_aluno_avaliado = $page.params.id_aluno;
+        const id_aluno_avaliado = $page.url.searchParams.get("id_aluno");
 
-        // For student evaluations, the evaluator is the current user
-        const redirectUrl = `/avaliacao?id_problema=${id_problema}&id_aluno_avaliador=${$currentUser?.id}&id_aluno_avaliado=${id_aluno_avaliado}`;
+        if (!id_aluno_avaliado) {
+            // If no student specified, redirect back to the previous page
+            history.back();
+            return;
+        }
+
+        // For professor evaluations
+        const redirectUrl = `/avaliacao?id_problema=${id_problema}&id_aluno_avaliado=${id_aluno_avaliado}&id_professor=${$currentUser?.id}`;
 
         goto(redirectUrl, { replaceState: true });
     });

@@ -187,12 +187,18 @@
 
     function handleSelfEvaluation() {
         const id_problema = $page.params.id_problema;
-        goto(`/aluno/problemas/${id_problema}/avaliacoes/${$currentUser?.id}`);
+        // Navigate to unified evaluation page for self-evaluation
+        goto(
+            `/avaliacao?id_problema=${id_problema}&id_aluno_avaliador=${$currentUser?.id}&id_aluno_avaliado=${$currentUser?.id}`,
+        );
     }
 
     function handleEvaluation(alunoId: number) {
         const id_problema = $page.params.id_problema;
-        goto(`/aluno/problemas/${id_problema}/avaliacoes/${alunoId}`);
+        // Navigate to unified evaluation page for peer evaluation
+        goto(
+            `/avaliacao?id_problema=${id_problema}&id_aluno_avaliador=${$currentUser?.id}&id_aluno_avaliado=${alunoId}`,
+        );
     }
 
     onMount(fetchAvaliacoes);
