@@ -17,6 +17,11 @@
     }
 
     let nome = get(currentUser)?.nome_completo || "";
+    let email = get(currentUser)?.email || "";
+
+    function handleNomeChange(event: Event) {
+        $currentUser!.nome_completo = (event.target as HTMLInputElement).value;
+    }
 </script>
 
 <div class="profile-form">
@@ -39,6 +44,7 @@
                 type="text"
                 label="Nome"
                 bind:value={nome}
+                on:change={handleNomeChange}
                 id="nome"
                 required={true}
                 placeholder="Digite seu nome completo"

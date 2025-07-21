@@ -7,6 +7,7 @@ import { alunoCache } from "$lib/utils/cache";
 export const AlunosService = {
     getById,
     invalidateCache,
+    update,
 };
 
 async function getById(id: string, forceRefresh = false): Promise<AlunoModel> {
@@ -53,3 +54,10 @@ function invalidateCache(alunoId?: string) {
         alunoCache.clearAll();
     }
 } 
+
+function update(aluno: AlunoModel) {
+    return api.put(`/alunos/update?id_aluno=${aluno.id}`, {
+        nome_completo: aluno.nome_completo,
+        email: aluno.email,
+    });
+}

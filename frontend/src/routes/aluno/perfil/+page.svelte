@@ -8,6 +8,8 @@
     import { AvatarService } from "$lib/services/avatar_service";
     import { currentUser } from "$lib/utils/auth";
     import { get } from "svelte/store";
+    import { AlunosService } from "$lib/services/alunos_service";
+    import type { AlunoModel } from "$lib/interfaces/interfaces";
 
     let isEditing = false;
     let newAvatar: File | null = null;
@@ -71,11 +73,8 @@
                 }
             }
 
-            // TODO: Implementar atualização dos outros dados do perfil
-            console.log("Salvando perfil:", { ...get(currentUser) });
-
-            // Simular delay de salvamento
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            // atualizar o perfil no banco de dados
+            await AlunosService.update(get(currentUser) as AlunoModel);
 
             isEditing = false;
             showSuccessToast("Perfil atualizado com sucesso!");
@@ -110,7 +109,7 @@
 
 <Container>
     <div transition:fade={{ duration: 300 }}>
-        {#if !isEditing}
+        {#if !isEditing}    
             <ProfileView onEdit={handleEditClick} />
         {:else}
             <ProfileForm
