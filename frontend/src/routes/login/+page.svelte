@@ -214,6 +214,7 @@
         min-height: 100vh;
         padding: 2rem;
         box-sizing: border-box;
+        width: 100%;
     }
 
     .login-container {
@@ -314,8 +315,9 @@
     @media (max-width: 640px) {
         :global(main) {
             padding: 0;
-            align-items: stretch;
+            align-items: center;
             min-height: 100vh;
+            justify-content: center;
         }
 
         .login-container {

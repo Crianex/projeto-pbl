@@ -266,34 +266,30 @@
                     <div class="card-actions">
                         {#each displayColumns as col}
                             {#if col.key === "actions" && col.render}
-                                {#if col.render(row).component === "a"}
+                                {@const renderResult = col.render(row)}
+                                {#if renderResult.component === "a"}
                                     <Button
-                                        variant={col.render(row).props.variant || "primary"}
-                                        href={col.render(row).props.href}
-                                        class={col.render(row).props.class || ""}
+                                        variant={renderResult.props.variant || "primary"}
+                                        href={renderResult.props.href}
+                                        class={renderResult.props.class || ""}
                                     >
-                                        {col.render(row).props.textContent ||
-                                            col.render(row).props.text ||
-                                            ""}
+                                        {renderResult.props.textContent || renderResult.props.text || ""}
                                     </Button>
-                                {:else if col.render(row).component === "button"}
+                                {:else if renderResult.component === "button" || renderResult.component === "Button"}
                                     <Button
-                                        variant={col.render(row).props.variant || "primary"}
-                                        class={col.render(row).props.class || ""}
+                                        variant={renderResult.props.variant || "primary"}
+                                        class={renderResult.props.class || ""}
                                         on:click={() => {
-                                            if (col.render && typeof col.render === "function") {
-                                                const renderResult = col.render(row);
-                                                if (renderResult?.props?.onClick) {
-                                                    renderResult.props.onClick();
-                                                }
+                                            if (renderResult?.props?.onClick) {
+                                                renderResult.props.onClick();
                                             }
                                         }}
                                     >
-                                        {col.render(row).props.text || ""}
+                                        {typeof renderResult.props.text === 'string' ? renderResult.props.text : String(renderResult.props.text || "")}
                                     </Button>
-                                {:else if col.render(row).component === "span"}
-                                    <span class={col.render(row).props.class || ""}>
-                                        {col.render(row).props.text || ""}
+                                {:else if renderResult.component === "span"}
+                                    <span class={renderResult.props.class || ""}>
+                                        {typeof renderResult.props.text === 'string' ? renderResult.props.text : String(renderResult.props.text || "")}
                                     </span>
                                 {/if}
                             {/if}

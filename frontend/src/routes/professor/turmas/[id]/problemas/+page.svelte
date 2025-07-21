@@ -167,11 +167,11 @@
                                     problema.data_fim || new Date(),
                                 )}</span
                             >
-                            <span
+                            <!-- <span
                                 >Média geral: {problema.media_geral?.toFixed(
                                     2,
                                 ) || "0.00"}</span
-                            >
+                            > -->
                         </div>
                     </div>
                     <div class="actions">

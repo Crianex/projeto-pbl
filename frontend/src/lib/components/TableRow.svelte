@@ -48,30 +48,29 @@
             {:else if col.key === "badge"}
                 <span class="badge">{row.badge || ""}</span>
             {:else if col.render}
-                {#if col.render(row).component === "a"}
+                {@const renderResult = col.render(row)}
+                {#if renderResult.component === "a"}
                     <Button
-                        variant={col.render(row).props.variant || "primary"}
-                        href={col.render(row).props.href}
-                        class={col.render(row).props.class || ""}
+                        variant={renderResult.props.variant || "primary"}
+                        href={renderResult.props.href}
+                        class={renderResult.props.class || ""}
                     >
-                        {col.render(row).props.textContent ||
-                            col.render(row).props.text ||
-                            ""}
+                        {renderResult.props.textContent || renderResult.props.text || ""}
                     </Button>
-                {:else if col.render(row).component === "button"}
+                {:else if renderResult.component === "button" || renderResult.component === "Button"}
                     <Button
-                        variant={col.render(row).props.variant || "primary"}
-                        class={col.render(row).props.class || ""}
+                        variant={renderResult.props.variant || "primary"}
+                        class={renderResult.props.class || ""}
                         on:click={() => handleCellClick(col, row)}
                     >
-                        {col.render(row).props.text || ""}
+                        {typeof renderResult.props.text === 'string' ? renderResult.props.text : String(renderResult.props.text || "")}
                     </Button>
-                {:else if col.render(row).component === "span"}
-                    <span class={col.render(row).props.class || ""}>
-                        {col.render(row).props.text || ""}
+                {:else if renderResult.component === "span"}
+                    <span class={renderResult.props.class || ""}>
+                        {typeof renderResult.props.text === 'string' ? renderResult.props.text : String(renderResult.props.text || "")}
                     </span>
                 {:else}
-                    {@html col.render(row)}
+                    {@html renderResult}
                 {/if}
             {:else if col.key === "actions"}
                 <span class="ellipsis" title="Actions">&#x22EE;</span>
