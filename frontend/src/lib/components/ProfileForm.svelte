@@ -1,59 +1,33 @@
 <script lang="ts">
-    import Input from './Input.svelte';
-    import Button from './Button.svelte';
-    import Avatar from './Avatar.svelte';
-    
-    export let profile: {
-        nome: string;
-        email: string;
-        avatar: string;
-    };
-    
-    export let avatarPreview: string;
+    import Input from "./Input.svelte";
+    import Button from "./Button.svelte";
+    import Avatar from "./Avatar.svelte";
+    import { get } from "svelte/store";
+    import { currentUser } from "$lib/utils/auth";
+
     export let onSave: () => void;
     export let onCancel: () => void;
     export let onAvatarUpload: (file: File) => void;
     export let onAvatarRemove: () => void;
     export let loading = false;
-    
-    let senha = '';
-    let confirmarSenha = '';
-    let senhaError = '';
-    let confirmarSenhaError = '';
-    
-    function validatePasswords() {
-        senhaError = '';
-        confirmarSenhaError = '';
-        
-        if (senha && senha.length < 6) {
-            senhaError = 'A senha deve ter pelo menos 6 caracteres';
-            return false;
-        }
-        
-        if (senha && confirmarSenha && senha !== confirmarSenha) {
-            confirmarSenhaError = 'As senhas não coincidem';
-            return false;
-        }
-        
-        return true;
-    }
-    
+    export let avatarPreview: string | undefined;
+
     function handleSubmit() {
-        if (validatePasswords()) {
-            onSave();
-        }
+        onSave();
     }
+
+    let nome = get(currentUser)?.nome_completo || "";
 </script>
 
 <div class="profile-form">
     <h1>Editar Perfil</h1>
-    
+
     <form on:submit|preventDefault={handleSubmit}>
         <div class="avatar-section">
-            <Avatar 
-                src={avatarPreview} 
-                alt="Avatar do usuário" 
-                size="lg" 
+            <Avatar
+                src={avatarPreview || get(currentUser)?.link_avatar || ""}
+                alt="Avatar do usuário"
+                size="lg"
                 editable={true}
                 onUpload={onAvatarUpload}
                 onRemove={onAvatarRemove}
@@ -64,37 +38,33 @@
             <Input
                 type="text"
                 label="Nome"
-                bind:value={profile.nome}
+                bind:value={nome}
                 id="nome"
                 required={true}
                 placeholder="Digite seu nome completo"
             />
 
-            <Input
+            <!--   <Input
                 type="email"
                 label="E-mail"
                 bind:value={profile.email}
                 id="email"
                 required={true}
                 placeholder="Digite seu e-mail"
-            />
+            /> -->
         </div>
 
         <div class="form-actions">
-            <Button 
-                type="button" 
-                variant="secondary" 
+            <Button
+                type="button"
+                variant="secondary"
                 on:click={onCancel}
                 disabled={loading}
             >
                 Cancelar
             </Button>
-            
-            <Button 
-                type="submit" 
-                variant="primary"
-                loading={loading}
-            >
+
+            <Button type="submit" variant="primary" {loading}>
                 Salvar Alterações
             </Button>
         </div>
@@ -164,4 +134,4 @@
             font-size: 1.25rem;
         }
     }
-</style> 
+</style>

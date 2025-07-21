@@ -6,22 +6,12 @@
     import ProfileForm from "$lib/components/ProfileForm.svelte";
     import Toast from "$lib/components/Toast.svelte";
     import { AvatarService } from "$lib/services/avatar_service";
-
-    interface UserProfile {
-        nome: string;
-        email: string;
-        avatar: string;
-    }
-
-    let profile: UserProfile = {
-        nome: "Fulana da Silva",
-        email: "fulanadsilva@gmail.com",
-        avatar: "/avatars/default.png",
-    };
+    import { currentUser } from "$lib/utils/auth";
+    import { get } from "svelte/store";
 
     let isEditing = false;
     let newAvatar: File | null = null;
-    let avatarPreview = profile.avatar;
+    let avatarPreview: string | undefined;
     let loading = false;
     let showToast = false;
     let toastMessage = "";
@@ -34,7 +24,7 @@
     function handleCancelEdit() {
         isEditing = false;
         // Reset avatar preview
-        avatarPreview = profile.avatar;
+        avatarPreview = get(currentUser)?.link_avatar || "";
         newAvatar = null;
     }
 
@@ -59,18 +49,16 @@
             // Upload avatar se houver um novo
             if (newAvatar) {
                 try {
-                    // TODO: Obter o ID do aluno atual (pode vir do store de autenticação)
-                    const alunoId = 1; // Temporário - deve vir do contexto de autenticação
                     const uploadResult = await AvatarService.uploadAlunoAvatar(
-                        alunoId,
+                        get(currentUser)?.id || 0,
                         newAvatar,
                     );
 
                     // Atualizar o avatar com a URL retornada
-                    profile.avatar = AvatarService.getAvatarUrl(
+                    $currentUser!.link_avatar = AvatarService.getAvatarUrl(
                         uploadResult.avatar_url,
                     );
-                    avatarPreview = profile.avatar;
+                    avatarPreview = undefined;
                 } catch (uploadError) {
                     console.error(
                         "Erro ao fazer upload do avatar:",
@@ -84,7 +72,7 @@
             }
 
             // TODO: Implementar atualização dos outros dados do perfil
-            console.log("Salvando perfil:", { ...profile });
+            console.log("Salvando perfil:", { ...get(currentUser) });
 
             // Simular delay de salvamento
             await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -123,12 +111,11 @@
 <Container>
     <div transition:fade={{ duration: 300 }}>
         {#if !isEditing}
-            <ProfileView {profile} onEdit={handleEditClick} />
+            <ProfileView onEdit={handleEditClick} />
         {:else}
             <ProfileForm
-                {profile}
-                {avatarPreview}
                 {loading}
+                {avatarPreview}
                 onSave={handleSave}
                 onCancel={handleCancelEdit}
                 onAvatarUpload={handleAvatarUpload}

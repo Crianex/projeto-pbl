@@ -3,20 +3,37 @@
     export let disabled = false;
     export let type: "button" | "submit" | "reset" = "button";
     export let loading = false;
+    export let href: string | undefined = undefined;
 </script>
 
-<button
-    {type}
-    class="button {variant} {$$props.class || ''}"
-    {disabled}
-    class:loading
-    on:click
->
-    {#if loading}
-        <div class="loading-spinner"></div>
-    {/if}
-    <slot />
-</button>
+{#if href}
+    <a
+        {href}
+        class="button {variant} {$$props.class || ''}"
+        aria-disabled={disabled}
+        tabindex={disabled ? -1 : 0}
+        {...$$restProps}
+    >
+        {#if loading}
+            <div class="loading-spinner"></div>
+        {/if}
+        <slot />
+    </a>
+{:else}
+    <button
+        {type}
+        class="button {variant} {$$props.class || ''}"
+        {disabled}
+        class:loading
+        on:click
+        {...$$restProps}
+    >
+        {#if loading}
+            <div class="loading-spinner"></div>
+        {/if}
+        <slot />
+    </button>
+{/if}
 
 <style>
     .button {
