@@ -1,4 +1,4 @@
-import { type AlunoModel, type ProfessorModel, type ProblemaModel, type TurmaModel, parseToProfessorModel, parseToAlunoModel, type CriteriosGroup, type Criterio, type AvaliacaoModel } from '$lib/interfaces/interfaces';
+import { type AlunoModel, type ProfessorModel, type ProblemaModel, type TurmaModel, parseToProfessorModel, parseToAlunoModel, type CriteriosGroup, type Criterio, type AvaliacaoModel, type DefinicaoArquivoDeAvaliacao } from '$lib/interfaces/interfaces';
 
 /**
  * Parses raw Supabase data into strongly typed interfaces
@@ -23,6 +23,11 @@ function parseAluno(data: any): AlunoModel {
 }
 
 function parseProblema(data: any): ProblemaModel {
+
+    var definicao_arquivos_de_avaliacao_json = data.definicao_arquivos_de_avaliacao ? JSON.parse(data.definicao_arquivos_de_avaliacao) : [];
+
+    var definicao_arquivos_de_avaliacao = definicao_arquivos_de_avaliacao_json.map((arquivo: any) => parseDefinicaoArquivoDeAvaliacao(arquivo));
+
     return {
         id_problema: data.id_problema,
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
@@ -32,8 +37,17 @@ function parseProblema(data: any): ProblemaModel {
         id_turma: data.id_turma || null,
         media_geral: data.media_geral || null,
         turma: data.turma ? parseTurma(data.turma) : null,
-        criterios: data.criterios ? parseCriterios(data.criterios) : {}
+        criterios: data.criterios ? parseCriterios(data.criterios) : {},
+        definicao_arquivos_de_avaliacao: definicao_arquivos_de_avaliacao
     };
+}
+
+function parseDefinicaoArquivoDeAvaliacao(data: any): DefinicaoArquivoDeAvaliacao {
+    return {
+        nome_tipo: data.nome_tipo || null,
+        descricao_tipo: data.descricao_tipo || null,
+        tipos_de_arquivos_aceitos: data.tipos_de_arquivos_aceitos || []
+    }
 }
 
 function parseProfessor(data: any): ProfessorModel {
@@ -41,7 +55,6 @@ function parseProfessor(data: any): ProfessorModel {
 }
 
 function parseTurma(data: any): TurmaModel {
-    //console.log(`Parsing turma: ${JSON.stringify(data)}`);
     return {
         id_turma: data.id_turma,
         created_at: data.created_at ? new Date(data.created_at) : new Date(),

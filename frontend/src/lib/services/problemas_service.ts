@@ -93,6 +93,7 @@ async function create(problemaData: {
     data_fim: string;
     id_turma: number;
     criterios: string;
+    definicao_arquivos_de_avaliacao?: string;
 }): Promise<ProblemaModel> {
     try {
         logger.info('Creating new problema', problemaData);
@@ -117,6 +118,7 @@ async function update(id: string, problemaData: {
     data_fim: string;
     id_turma: number;
     criterios: string;
+    definicao_arquivos_de_avaliacao?: string;
 }): Promise<ProblemaModel> {
     try {
         logger.info(`Updating problema ${id}`, problemaData);

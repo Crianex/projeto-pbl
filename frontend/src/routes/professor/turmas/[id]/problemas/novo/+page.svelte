@@ -18,6 +18,7 @@
         data_inicio: "",
         data_fim: "",
         criterios: getDefaultCriterios(),
+        definicao_arquivos_de_avaliacao: getDefaultDefinicaoArquivos(),
     };
 
     // Add date validation
@@ -33,6 +34,30 @@
 
     // Get today's date in YYYY-MM-DD format
     const today = new Date().toISOString().split("T")[0];
+
+    function validateStartDate(event: Event) {
+        const target = event.target as HTMLInputElement;
+        const selectedDate = new Date(target.value);
+        const todayDate = new Date(today);
+
+        if (selectedDate < todayDate) {
+            target.value = today;
+            formData.data_inicio = today;
+            alert("A data de início não pode ser anterior a hoje.");
+        }
+    }
+
+    function validateEndDate(event: Event) {
+        const target = event.target as HTMLInputElement;
+        const selectedDate = new Date(target.value);
+        const startDate = new Date(formData.data_inicio);
+
+        if (selectedDate < startDate) {
+            target.value = formData.data_inicio;
+            formData.data_fim = formData.data_inicio;
+            alert("A data de fim não pode ser anterior à data de início.");
+        }
+    }
 
     function getDefaultCriterios(): CriteriosGroup {
         return {
@@ -149,6 +174,56 @@
         }
     }
 
+    function getDefaultDefinicaoArquivos() {
+        return [
+            {
+                nome_tipo: "Mapa Mental",
+                descricao_tipo:
+                    "Arquivo visual representando o raciocínio do grupo sobre o problema. Pode ser feito à mão ou digitalmente.",
+                tipos_de_arquivos_aceitos: ["pdf", "png", "jpg", "jpeg"],
+            },
+        ];
+    }
+
+    function addDefinicaoArquivo() {
+        formData.definicao_arquivos_de_avaliacao = [
+            ...formData.definicao_arquivos_de_avaliacao,
+            {
+                nome_tipo: "",
+                descricao_tipo: "",
+                tipos_de_arquivos_aceitos: [],
+            },
+        ];
+    }
+
+    function removeDefinicaoArquivo(index: number) {
+        formData.definicao_arquivos_de_avaliacao.splice(index, 1);
+        formData.definicao_arquivos_de_avaliacao = [
+            ...formData.definicao_arquivos_de_avaliacao,
+        ];
+    }
+
+    function addTipoArquivo(index: number) {
+        const tipo = prompt("Digite a extensão do arquivo (ex: pdf, png):");
+        if (tipo) {
+            formData.definicao_arquivos_de_avaliacao[
+                index
+            ].tipos_de_arquivos_aceitos.push(tipo);
+            formData.definicao_arquivos_de_avaliacao = [
+                ...formData.definicao_arquivos_de_avaliacao,
+            ];
+        }
+    }
+
+    function removeTipoArquivo(index: number, tipoIndex: number) {
+        formData.definicao_arquivos_de_avaliacao[
+            index
+        ].tipos_de_arquivos_aceitos.splice(tipoIndex, 1);
+        formData.definicao_arquivos_de_avaliacao = [
+            ...formData.definicao_arquivos_de_avaliacao,
+        ];
+    }
+
     async function handleSubmit() {
         try {
             loading = true;
@@ -158,6 +233,9 @@
                 ...formData,
                 id_turma: parseInt(turmaId),
                 criterios: JSON.stringify(formData.criterios),
+                definicao_arquivos_de_avaliacao: JSON.stringify(
+                    formData.definicao_arquivos_de_avaliacao,
+                ),
             };
 
             const newProblema = await ProblemasService.create(payload);
@@ -227,6 +305,7 @@
                 bind:value={formData.data_inicio}
                 min={today}
                 required
+                on:change={validateStartDate}
             />
         </div>
 
@@ -239,6 +318,7 @@
                 min={formData.data_inicio || today}
                 disabled={!formData.data_inicio}
                 required
+                on:change={validateEndDate}
             />
             {#if !formData.data_inicio}
                 <span class="helper-text"
@@ -321,6 +401,88 @@
                     </div>
                 </div>
             {/each}
+        </div>
+
+        <div class="arquivos-section">
+            <div class="arquivos-header">
+                <h2>Definições de Arquivos de Avaliação</h2>
+                <Button
+                    type="button"
+                    variant="secondary"
+                    on:click={addDefinicaoArquivo}
+                >
+                    + Adicionar Tipo de Arquivo
+                </Button>
+            </div>
+            <div class="arquivos-list">
+                {#each formData.definicao_arquivos_de_avaliacao as definicao, index}
+                    <div class="arquivo-item">
+                        <div class="arquivo-header">
+                            <input
+                                type="text"
+                                placeholder="Nome do tipo de arquivo"
+                                bind:value={definicao.nome_tipo}
+                                required
+                            />
+                            <button
+                                type="button"
+                                class="remove-button"
+                                on:click={() => removeDefinicaoArquivo(index)}
+                                title="Remover tipo de arquivo"
+                            >
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+                                        fill="currentColor"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                        <textarea
+                            placeholder="Descrição do tipo de arquivo"
+                            bind:value={definicao.descricao_tipo}
+                            rows="2"
+                            required
+                        />
+                        <div class="tipos-arquivos">
+                            <label>Extensões aceitas:</label>
+                            <div class="extensoes-list">
+                                {#each definicao.tipos_de_arquivos_aceitos as tipo, tipoIndex}
+                                    <span class="extensao-tag">
+                                        .{tipo}
+                                        <button
+                                            type="button"
+                                            class="extensao-remove"
+                                            on:click={() =>
+                                                removeTipoArquivo(
+                                                    index,
+                                                    tipoIndex,
+                                                )}
+                                            title="Remover extensão"
+                                        >
+                                            ×
+                                        </button>
+                                    </span>
+                                {/each}
+                            </div>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                on:click={() => addTipoArquivo(index)}
+                            >
+                                + Adicionar Extensão
+                            </Button>
+                        </div>
+                    </div>
+                {/each}
+            </div>
         </div>
 
         <div class="form-actions">
@@ -541,5 +703,118 @@
     .form-group input:disabled {
         background-color: #e9ecef;
         cursor: not-allowed;
+    }
+
+    /* New styles for arquivos-section */
+    .arquivos-section {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .arquivos-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .arquivos-header h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .arquivos-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .arquivo-item {
+        background: white;
+        padding: 1rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .arquivo-item:last-child {
+        border-bottom: none;
+    }
+
+    .arquivo-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .arquivo-header input {
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+
+    .arquivo-item textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        resize: vertical;
+        min-height: 6rem;
+    }
+
+    .tipos-arquivos {
+        margin-top: 1rem;
+    }
+
+    .tipos-arquivos label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #495057;
+    }
+
+    .extensoes-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+    }
+
+    .extensao-tag {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        background: #e9ecef;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+        color: #495057;
+    }
+
+    .extensao-remove {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.25rem;
+        color: #dc3545;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .extensao-remove:hover {
+        background-color: #f8d7da;
     }
 </style>

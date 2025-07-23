@@ -35,7 +35,9 @@ function parseProblema(data: any): Problema {
         nome_problema: data.nome_problema || null,
         id_turma: data.id_turma || null,
         media_geral: data.media_geral || null,
-        criterios: data.criterios || null
+        criterios: data.criterios || null,
+        definicao_arquivos_de_avaliacao: data.definicao_arquivos_de_avaliacao || null
+
     };
 }
 
