@@ -8,6 +8,7 @@
     import SearchAlunoDialog from "../SearchAlunoDialog.svelte";
     import Dialog from "$lib/components/Dialog.svelte";
     import { TurmasService } from "$lib/services/turmas_service";
+    import type { AlunoModel } from "$lib/interfaces/interfaces";
 
     const turmaId = $page.params.id;
 
@@ -19,16 +20,8 @@
         nome_turma: "",
         id_professor: "",
     };
-    let alunosMatriculados: Array<{
-        id: number;
-        nome_completo: string;
-        email: string;
-    }> = [];
-    let originalAlunosMatriculados: Array<{
-        id: number;
-        nome_completo: string;
-        email: string;
-    }> = [];
+    let alunosMatriculados: AlunoModel[] = [];
+    let originalAlunosMatriculados: AlunoModel[] = [];
     let loading = true;
     let saving = false;
     let error: string | null = null;
@@ -181,23 +174,11 @@
         searchDialogOpen = true;
     }
 
-    function handleAlunoSelected(
-        event: CustomEvent<{
-            id_aluno: number;
-            nome_completo: string;
-            email: string;
-        }>,
-    ) {
+    function handleAlunoSelected(event: CustomEvent<AlunoModel>) {
         const aluno = event.detail;
-        // Map id_aluno to id for interface consistency
-        const alunoFormatted = {
-            id: aluno.id_aluno,
-            nome_completo: aluno.nome_completo,
-            email: aluno.email,
-        };
         // Check if student is already added
-        if (!alunosMatriculados.some((a) => a.id === alunoFormatted.id)) {
-            alunosMatriculados = [...alunosMatriculados, alunoFormatted];
+        if (!alunosMatriculados.some((a) => a.id === aluno.id)) {
+            alunosMatriculados = [...alunosMatriculados, aluno];
             hasUnsavedChanges = true;
         }
     }
@@ -346,7 +327,7 @@
                             <div class="aluno-item">
                                 <div class="aluno-info">
                                     <img
-                                        src="https://via.placeholder.com/32"
+                                        src={aluno.link_avatar}
                                         alt="Avatar"
                                         class="avatar"
                                     />

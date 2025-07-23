@@ -1,6 +1,7 @@
 <script lang="ts">
     import Dialog from "$lib/components/Dialog.svelte";
     import Button from "$lib/components/Button.svelte";
+    import Avatar from "$lib/components/Avatar.svelte";
     import { api } from "$lib/utils/api";
     import { debounce } from "lodash-es";
     import { onMount } from "svelte";
@@ -11,11 +12,7 @@
     let searchQuery = "";
     let loading = false;
     let error: string | null = null;
-    let results: Array<{
-        id_aluno: number;
-        nome_completo: string;
-        email: string;
-    }> = [];
+    let results: AlunoModel[] = [];
     let hasInitialLoad = false;
 
     $: if (open && !hasInitialLoad) {
@@ -30,9 +27,11 @@
             const data = await api.get(
                 `/alunos/search?query=%20&exclude_turma_id=${exclude_turma_id || ""}`,
             );
-            results = data.sort((a: any, b: any) =>
+            results =  Parsers.parseAlunos(data.sort((a: any, b: any) =>
                 a.nome_completo.localeCompare(b.nome_completo),
-            );
+            ));
+
+            
         } catch (err) {
             error =
                 err instanceof Error ? err.message : "Erro ao carregar alunos";
@@ -54,7 +53,7 @@
             const data = await api.get(
                 `/alunos/search?query=${encodeURIComponent(query)}&exclude_turma_id=${exclude_turma_id || ""}`,
             );
-            results = data;
+            results = Parsers.parseAlunos(data);
         } catch (err) {
             error =
                 err instanceof Error ? err.message : "Erro ao buscar alunos";
@@ -82,6 +81,8 @@
     }
 
     import { createEventDispatcher } from "svelte";
+    import type { AlunoModel } from "$lib/interfaces/interfaces";
+    import { Parsers } from "$lib/interfaces/parsers";
     const dispatch = createEventDispatcher();
 </script>
 
@@ -107,14 +108,21 @@
             <div class="status-message">Nenhum aluno encontrado</div>
         {:else}
             <div class="results-list">
-                {#each results as aluno (aluno.id_aluno)}
+                {#each results as aluno (aluno.id)}
                     <button
                         class="result-item"
                         on:click={() => handleSelectAluno(aluno)}
                     >
                         <div class="aluno-info">
-                            <strong>{aluno.nome_completo}</strong>
-                            <span>{aluno.email}</span>
+                            <Avatar 
+                                src={aluno.link_avatar || "/avatars/default.png"} 
+                                alt={`Avatar de ${aluno.nome_completo}`}
+                                size="sm"
+                            />
+                            <div class="aluno-details">
+                                <strong>{aluno.nome_completo}</strong>
+                                <span>{aluno.email}</span>
+                            </div>
                         </div>
                     </button>
                 {/each}
@@ -197,15 +205,22 @@
 
     .aluno-info {
         display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
+        align-items: center;
+        gap: 0.75rem;
     }
 
-    .aluno-info strong {
+    .aluno-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        flex: 1;
+    }
+
+    .aluno-details strong {
         color: #212529;
     }
 
-    .aluno-info span {
+    .aluno-details span {
         color: #6c757d;
         font-size: 0.875rem;
     }

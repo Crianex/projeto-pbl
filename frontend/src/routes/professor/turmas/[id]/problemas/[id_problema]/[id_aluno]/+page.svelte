@@ -13,6 +13,7 @@
     import Container from "$lib/components/Container.svelte";
     import Table from "$lib/components/Table.svelte";
     import BackButton from "$lib/components/BackButton.svelte";
+    import Avatar from "$lib/components/Avatar.svelte";
     import { MediaCalculator } from "$lib/utils/utils";
     import Button from "$lib/components/Button.svelte";
     import { ProblemasService } from "$lib/services/problemas_service";
@@ -228,7 +229,14 @@
                     <span class="problema-title"
                         >{problema?.nome_problema || ""}</span
                     >
-                    <span class="aluno-name">{aluno?.nome_completo || ""}</span>
+                    <div class="aluno-profile">
+                        <Avatar 
+                            src={aluno?.link_avatar || "/avatars/default.png"} 
+                            alt={`Avatar de ${aluno?.nome_completo || "Aluno"}`}
+                            size="md"
+                        />
+                        <span class="aluno-name">{aluno?.nome_completo || ""}</span>
+                    </div>
                 </div>
             </div>
 
@@ -360,6 +368,12 @@
         font-size: 1rem;
         color: #6c757d;
         font-weight: 500;
+    }
+
+    .aluno-profile {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
     }
 
     .aluno-name {
