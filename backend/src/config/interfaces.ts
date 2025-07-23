@@ -43,6 +43,7 @@ export interface Problema {
     id_turma: number | null;
     media_geral: number | null;
     criterios: string;
+    definicao_arquivos_de_avaliacao: string;
 }
 
 export interface Professor {

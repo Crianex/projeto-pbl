@@ -32,6 +32,7 @@ export interface ProblemaDB {
     id_turma: number | null;
     media_geral: number | null;
     criterios: string;
+    definicao_arquivos_de_avaliacao: string;
 }
 
 export interface ProfessorDB {
@@ -51,6 +52,12 @@ export interface TurmaDB {
     alunos: AlunoDB[] | null;
 }
 
+export interface DefinicaoArquivoDeAvaliacao {
+    nome_tipo: string | null;
+    descricao_tipo: string | null;
+    tipos_de_arquivos_aceitos: string[];
+}
+
 // Models
 
 export interface ProblemaModel {
@@ -63,6 +70,7 @@ export interface ProblemaModel {
     media_geral: number | null;
     turma: TurmaModel | null;
     criterios: CriteriosGroup;
+    definicao_arquivos_de_avaliacao: DefinicaoArquivoDeAvaliacao[];
 }
 
 export interface TurmaModel {
