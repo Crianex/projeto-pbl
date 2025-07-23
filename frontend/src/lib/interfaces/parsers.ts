@@ -26,7 +26,10 @@ function parseProblema(data: any): ProblemaModel {
 
     var definicao_arquivos_de_avaliacao_json = data.definicao_arquivos_de_avaliacao ? JSON.parse(data.definicao_arquivos_de_avaliacao) : [];
 
-    var definicao_arquivos_de_avaliacao = definicao_arquivos_de_avaliacao_json.map((arquivo: any) => parseDefinicaoArquivoDeAvaliacao(arquivo));
+    // Ensure it's an array before mapping
+    var definicao_arquivos_de_avaliacao = Array.isArray(definicao_arquivos_de_avaliacao_json)
+        ? definicao_arquivos_de_avaliacao_json.map((arquivo: any) => parseDefinicaoArquivoDeAvaliacao(arquivo))
+        : [];
 
     return {
         id_problema: data.id_problema,

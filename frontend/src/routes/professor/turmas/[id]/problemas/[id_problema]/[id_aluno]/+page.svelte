@@ -224,19 +224,20 @@
                 <h1>Avaliações do Aluno</h1>
             </div>
 
-            <div class="header">
-                <div class="problema-info">
-                    <span class="problema-title"
-                        >{problema?.nome_problema || ""}</span
-                    >
-                    <div class="aluno-profile">
-                        <Avatar 
-                            src={aluno?.link_avatar || "/avatars/default.png"} 
-                            alt={`Avatar de ${aluno?.nome_completo || "Aluno"}`}
-                            size="md"
-                        />
-                        <span class="aluno-name">{aluno?.nome_completo || ""}</span>
-                    </div>
+            <div class="problema-header">
+                <h3 class="problema-subtitle">
+                    {problema?.nome_problema || ""}
+                </h3>
+            </div>
+
+            <div class="aluno-info">
+                <div class="aluno-profile">
+                    <Avatar
+                        src={aluno?.link_avatar || "/avatars/default.png"}
+                        alt={`Avatar de ${aluno?.nome_completo || "Aluno"}`}
+                        size="md"
+                    />
+                    <span class="aluno-name">{aluno?.nome_completo || ""}</span>
                 </div>
             </div>
 
@@ -349,25 +350,25 @@
         letter-spacing: -0.025em;
     }
 
-    .header {
+    .problema-header {
+        text-align: left;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .problema-subtitle {
+        font-size: 1.125rem;
+        font-weight: 500;
+        margin: 0;
+        color: #6b7280;
+        letter-spacing: -0.025em;
+    }
+
+    .aluno-info {
         display: flex;
         justify-content: flex-start;
-        align-items: flex-start;
         margin-bottom: 1.5rem;
-    }
-
-    .problema-info {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.25rem;
-        text-align: left;
-    }
-
-    .problema-title {
-        font-size: 1rem;
-        color: #6c757d;
-        font-weight: 500;
     }
 
     .aluno-profile {
@@ -493,6 +494,10 @@
             font-size: 1.75rem;
         }
 
+        .problema-subtitle {
+            font-size: 1rem;
+        }
+
         .avaliacoes-section {
             padding: 1rem;
         }
@@ -518,6 +523,10 @@
 
         .page-title h1 {
             font-size: 1.5rem;
+        }
+
+        .problema-subtitle {
+            font-size: 0.875rem;
         }
 
         .avaliacoes-section {

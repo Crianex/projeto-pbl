@@ -146,26 +146,30 @@
                                 disabled={loading}
                             />
                         {:else if col.sortable}
-                            <span class="header-label">{col.label}</span>
-                            {#if col.tooltip}
-                                <span class="tooltip-container">
-                                    <span class="tooltip-icon">ℹ️</span>
-                                    <span class="tooltip-text"
-                                        >{col.tooltip}</span
-                                    >
-                                </span>
-                            {/if}
-                            <span class="sort-icon">↓</span>
+                            <div class="header-content">
+                                <span class="header-label">{col.label}</span>
+                                {#if col.tooltip}
+                                    <span class="tooltip-container">
+                                        <span class="tooltip-icon">ℹ️</span>
+                                        <div class="tooltip-text">
+                                            {col.tooltip}
+                                        </div>
+                                    </span>
+                                {/if}
+                                <span class="sort-icon">↓</span>
+                            </div>
                         {:else}
-                            <span class="header-label">{col.label}</span>
-                            {#if col.tooltip}
-                                <span class="tooltip-container">
-                                    <span class="tooltip-icon">ℹ️</span>
-                                    <span class="tooltip-text"
-                                        >{col.tooltip}</span
-                                    >
-                                </span>
-                            {/if}
+                            <div class="header-content">
+                                <span class="header-label">{col.label}</span>
+                                {#if col.tooltip}
+                                    <span class="tooltip-container">
+                                        <span class="tooltip-icon">ℹ️</span>
+                                        <div class="tooltip-text">
+                                            {col.tooltip}
+                                        </div>
+                                    </span>
+                                {/if}
+                            </div>
                         {/if}
                     </th>
                 {/each}
@@ -392,6 +396,72 @@
         vertical-align: middle;
         font-size: 13px;
         color: #697077;
+    }
+
+    /* Header content and tooltip styles */
+    .header-content {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .tooltip-container {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .tooltip-icon {
+        font-size: 12px;
+        cursor: help;
+        opacity: 0.6;
+        transition: opacity 0.2s;
+    }
+
+    .tooltip-icon:hover {
+        opacity: 1;
+    }
+
+    .tooltip-text {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a1a1a;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: normal;
+        white-space: pre-wrap;
+        max-width: 300px;
+        min-width: 200px;
+        text-align: left;
+        line-height: 1.4;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+        margin-bottom: 5px;
+        visibility: hidden;
+        opacity: 0;
+        transition:
+            opacity 0.2s,
+            visibility 0.2s;
+        pointer-events: none;
+    }
+
+    .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 5px solid transparent;
+        border-top-color: #1a1a1a;
+    }
+
+    .tooltip-container:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
     }
 
     /* Mobile Card Styles */
