@@ -9,6 +9,7 @@
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
     import Table from "$lib/components/Table.svelte";
     import Container from "$lib/components/Container.svelte";
+    import FileUpload from "$lib/components/FileUpload.svelte";
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
     import { ProblemasService } from "$lib/services/problemas_service";
     import Pagination from "$lib/components/Pagination.svelte";
@@ -102,6 +103,8 @@
             // Get the problem details first using cache service
             problema = await ProblemasService.getById(id_problema.toString());
 
+            console.log(JSON.stringify(problema, null, 2));
+
             // Get all evaluations using the service
             const avaliacoesData =
                 await AvaliacoesService.getAvaliacoes(id_problema);
@@ -178,6 +181,19 @@
         );
     }
 
+    function handleFilesSelected(event: CustomEvent, tipoIndex: number) {
+        // TODO: Implement file upload functionality
+        console.log(
+            `Files selected for tipo ${tipoIndex}:`,
+            event.detail.files,
+        );
+    }
+
+    function handleFileRemoved(event: CustomEvent, tipoIndex: number) {
+        // TODO: Implement file removal functionality
+        console.log(`File removed for tipo ${tipoIndex}:`, event.detail.files);
+    }
+
     onMount(fetchAvaliacoes);
 </script>
 
@@ -215,6 +231,50 @@
                         {totalPages}
                         on:pageChange={(e) => (currentPage = e.detail.page)}
                     />
+                </div>
+            {/if}
+
+            <!-- File Upload Sections -->
+            {#if !loading && problema?.definicao_arquivos_de_avaliacao && problema.definicao_arquivos_de_avaliacao.length > 0}
+                <div
+                    class="file-upload-section"
+                    in:fade={{ duration: 400, delay: 400 }}
+                >
+                    <h2>Envio de Arquivos</h2>
+                    <p class="upload-description">
+                        Envie os arquivos solicitados para este problema
+                        conforme as especificações abaixo:
+                    </p>
+
+                    {#each problema.definicao_arquivos_de_avaliacao as definicao, index}
+                        <div
+                            class="upload-container"
+                            in:fade={{
+                                duration: 300,
+                                delay: 450 + index * 100,
+                            }}
+                        >
+                            <FileUpload
+                                accept={definicao.tipos_de_arquivos_aceitos?.join(
+                                    ",",
+                                ) || "*"}
+                                multiple={true}
+                                maxSize={10 * 1024 * 1024}
+                                label={definicao.nome_tipo ||
+                                    `Tipo de Arquivo ${index + 1}`}
+                                description={definicao.descricao_tipo ||
+                                    "Arraste e solte seus arquivos aqui ou clique para selecionar"}
+                                supportedFormats={definicao.tipos_de_arquivos_aceitos
+                                    ?.join(", ")
+                                    .toUpperCase() || "Todos os formatos"}
+                                disabled={false}
+                                on:filesSelected={(e) =>
+                                    handleFilesSelected(e, index)}
+                                on:fileRemoved={(e) =>
+                                    handleFileRemoved(e, index)}
+                            />
+                        </div>
+                    {/each}
                 </div>
             {/if}
         {/if}
@@ -321,6 +381,35 @@
             inset 0 1px 0 rgba(255, 255, 255, 0.2);
     }
 
+    /* File Upload Section Styles */
+    .file-upload-section {
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(226, 232, 240, 0.3);
+    }
+
+    .file-upload-section h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .upload-description {
+        color: #718096;
+        font-size: 0.95rem;
+        margin-bottom: 2rem;
+        line-height: 1.5;
+    }
+
+    .upload-container {
+        margin-bottom: 2rem;
+    }
+
+    .upload-container:last-child {
+        margin-bottom: 0;
+    }
+
     /* Responsividade aprimorada */
     @media (max-width: 768px) {
         .header {
@@ -330,6 +419,24 @@
 
         h1 {
             font-size: 1.5rem;
+        }
+
+        .file-upload-section {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+        }
+
+        .file-upload-section h2 {
+            font-size: 1.25rem;
+        }
+
+        .upload-description {
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-container {
+            margin-bottom: 1.5rem;
         }
     }
 
@@ -345,6 +452,24 @@
 
         .close-btn {
             padding: 0.375rem;
+        }
+
+        .file-upload-section {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+        }
+
+        .file-upload-section h2 {
+            font-size: 1.125rem;
+        }
+
+        .upload-description {
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .upload-container {
+            margin-bottom: 1rem;
         }
     }
 </style>

@@ -24,6 +24,8 @@ function parseAluno(data: any): AlunoModel {
 
 function parseProblema(data: any): ProblemaModel {
 
+    console.log(`parsing problema, definicao_arquivos_de_avaliacao: ${data.definicao_arquivos_de_avaliacao}`);
+
     var definicao_arquivos_de_avaliacao_json = data.definicao_arquivos_de_avaliacao ? JSON.parse(data.definicao_arquivos_de_avaliacao) : [];
 
     // Ensure it's an array before mapping

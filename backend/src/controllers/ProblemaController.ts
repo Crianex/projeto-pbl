@@ -116,8 +116,8 @@ export const ProblemaController: EndpointController = {
         }),
 
         'create': new Pair(RequestType.POST, async (req: Request, res: Response) => {
-            const { nome_problema, data_inicio, data_fim, id_turma, criterios } = req.body;
-            if (!nome_problema || !data_inicio || !data_fim || !id_turma || !criterios) {
+            const { nome_problema, data_inicio, data_fim, id_turma, criterios, definicao_arquivos_de_avaliacao } = req.body;
+            if (!nome_problema || !data_inicio || !data_fim || !id_turma || !criterios || !definicao_arquivos_de_avaliacao) {
                 logger.error('Missing required fields');
                 return res.status(400).json({ error: 'Missing required fields' });
             }
@@ -131,7 +131,8 @@ export const ProblemaController: EndpointController = {
                     data_fim,
                     id_turma,
                     criterios: criterios || '{}',
-                    media_geral: 0
+                    media_geral: 0,
+                    definicao_arquivos_de_avaliacao: definicao_arquivos_de_avaliacao || '[]'
                 }])
                 .select(`
                     *,
