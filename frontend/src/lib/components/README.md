@@ -436,4 +436,76 @@ Todos os componentes são totalmente responsivos e otimizados para:
         on:dismiss={() => showToast = false}
     />
 {/if}
-``` 
+```
+
+### FileUpload.svelte
+Componente premium de upload de arquivos com drag & drop, suporte a múltiplos formatos e validação.
+
+```svelte
+<script>
+    import FileUpload from "$lib/components/FileUpload.svelte";
+    
+    let uploadedFiles = [];
+    
+    function handleFilesSelected(event) {
+        console.log('Arquivos selecionados:', event.detail.files);
+        uploadedFiles = [...uploadedFiles, ...event.detail.files];
+    }
+    
+    function handleFileRemoved(event) {
+        console.log('Arquivos restantes:', event.detail.files);
+        uploadedFiles = event.detail.files;
+    }
+</script>
+
+<!-- Upload básico -->
+<FileUpload
+    label="Enviar Documentos"
+    description="Arraste seus arquivos aqui ou clique para selecionar"
+    on:filesSelected={handleFilesSelected}
+    on:fileRemoved={handleFileRemoved}
+/>
+
+<!-- Upload customizado -->
+<FileUpload
+    label="Anexar Imagens"
+    description="Envie suas fotos"
+    accept=".png,.jpg,.jpeg"
+    supportedFormats="PNG, JPG, JPEG"
+    multiple={true}
+    maxSize={5 * 1024 * 1024}
+    on:filesSelected={handleFilesSelected}
+/>
+
+<!-- Upload único -->
+<FileUpload
+    label="Documento PDF"
+    accept=".pdf"
+    supportedFormats="PDF"
+    multiple={false}
+    maxSize={2 * 1024 * 1024}
+/>
+```
+
+**Propriedades:**
+- `accept`: Tipos de arquivo aceitos (padrão: `.pdf,.png,.jpg,.jpeg`)
+- `multiple`: Permite múltiplos arquivos (padrão: `true`)
+- `maxSize`: Tamanho máximo em bytes (padrão: `10MB`)
+- `label`: Rótulo do componente
+- `description`: Texto descritivo
+- `supportedFormats`: Texto dos formatos suportados
+- `disabled`: Estado desabilitado
+- `error`: Mensagem de erro
+
+**Eventos:**
+- `filesSelected`: Disparado quando arquivos são selecionados
+- `fileRemoved`: Disparado quando um arquivo é removido
+
+**Características:**
+- 🎨 Design glassmorphism premium
+- 🖱️ Drag & drop intuitivo
+- ✅ Validação de tipo e tamanho
+- 📱 Totalmente responsivo
+- ♿ Acessível (ARIA labels)
+- 🎭 Animações suaves
+- 🔄 Estados visuais (hover, drag, error) 
