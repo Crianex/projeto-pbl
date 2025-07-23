@@ -104,7 +104,6 @@ export async function createOrGetUser(session: any): Promise<BaseUser | null> {
     }
 }
 
-// Initialize the store with the current session
 export async function initializeAuth() {
     if (isInitializing) {
         logger.info('Auth initialization already in progress, skipping');

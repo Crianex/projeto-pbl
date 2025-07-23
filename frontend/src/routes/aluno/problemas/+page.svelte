@@ -13,7 +13,6 @@
     import { currentUser } from "$lib/utils/auth";
     import { Parsers } from "$lib/interfaces/parsers";
     import { get } from "svelte/store";
-    import { goto } from "$app/navigation";
 
     let problems: ProblemaModel[] = [];
     let loading = true;
@@ -21,7 +20,6 @@
     let showToast = false;
     let toastMessage: string = "";
     let toastType: "success" | "error" | "info" = "error";
-    let isMobile = false;
 
     const columns: Column[] = [
         {
@@ -98,14 +96,6 @@
 
     $: user = get(currentUser) as AlunoModel;
 
-    onMount(() => {
-        const checkMobile = () => {
-            isMobile = window.innerWidth <= 640;
-        };
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-    });
-
     onMount(fetchProblems);
 </script>
 
@@ -115,9 +105,9 @@
 </svelte:head>
 
 <div class="page-wrapper">
-    <Container class="responsive-container no-padding-mobile full-width-mobile" maxWidth="full" glass={true} shadow={true}>
+    <Container maxWidth="xl" glass={true} shadow={true}>
         <div class="header" in:fade={{ duration: 300, delay: 50 }}>
-            <h1 class="responsive-title">Meus Problemas</h1>
+            <h1>Meus Problemas</h1>
             <p class="subtitle">Explore e resolva os problemas disponíveis</p>
         </div>
 
@@ -132,7 +122,7 @@
                             matriculado em uma turma. Entre em contato com seu
                             professor para ser adicionado.
                         </p>
-                        <Button variant="secondary" on:click={fetchProblems} class="responsive-btn">
+                        <Button variant="secondary" on:click={fetchProblems}>
                             Atualizar
                         </Button>
                     </div>
@@ -147,7 +137,6 @@
                             variant="primary"
                             on:click={fetchProblems}
                             {loading}
-                            class="responsive-btn"
                         >
                             Tentar Novamente
                         </Button>
@@ -162,36 +151,13 @@
                             Não há problemas cadastrados no momento. Volte mais
                             tarde ou entre em contato com seu professor.
                         </p>
-                        <Button variant="secondary" on:click={fetchProblems} class="responsive-btn">
+                        <Button variant="secondary" on:click={fetchProblems}>
                             Atualizar
                         </Button>
                     </div>
                 </div>
             {:else}
-                {#if isMobile}
-                    <div class="problems-list-mobile">
-                        {#each problems as problema}
-                            <div class="problem-card">
-                                <div class="problem-title">{problema.nome_problema}</div>
-                                <div class="problem-dates">
-                                    <span>Início: {Utils.formatDate(problema.data_inicio)}</span>
-                                    <span>Fim: {Utils.formatDate(problema.data_fim)}</span>
-                                </div>
-                                <div class="problem-actions">
-                                    <Button
-                                        variant="primary"
-                                        class="responsive-btn"
-                                        on:click={() => goto(`/aluno/problemas/${problema.id_problema}`)}
-                                    >
-                                        Ver Problema
-                                    </Button>
-                                </div>
-                            </div>
-                        {/each}
-                    </div>
-                {:else}
-                    <Table rows={problems} {columns} {loading} />
-                {/if}
+                <Table rows={problems} {columns} {loading} />
             {/if}
         </div>
     </Container>
@@ -407,50 +373,162 @@
         transform: translateY(0);
     }
 
-    .problems-list-mobile {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        margin-top: 1rem;
+    /* Large screens optimization */
+    @media (min-width: 1200px) {
+        .page-wrapper {
+            padding: 3rem;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+        }
+
+        .error-content,
+        .empty-content {
+            max-width: 500px;
+            padding: 3rem;
+        }
     }
-    .problem-card {
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        padding: 1rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
+
+    @media (min-width: 1600px) {
+        .page-wrapper {
+            padding: 4rem;
+        }
+
+        .header {
+            margin-bottom: 3rem;
+        }
     }
-    .problem-title {
-        font-weight: 600;
-        font-size: 1.1rem;
+
+    /* Medium to large screens */
+    @media (min-width: 1024px) and (max-width: 1199px) {
+        .page-wrapper {
+            padding: 2.5rem;
+        }
+
+        .header h1 {
+            font-size: 2.75rem;
+        }
     }
-    .problem-dates {
-        font-size: 0.95rem;
-        color: #555;
-        display: flex;
-        gap: 1.5rem;
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .page-wrapper {
+            padding: 1rem;
+            padding-top: 5rem; /* Account for mobile menu */
+        }
+
+        .header h1 {
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+        }
+
+        .error-content,
+        .empty-content {
+            padding: 1.5rem;
+            margin: 0;
+        }
+
+        .error-content h3,
+        .empty-content h3 {
+            font-size: 1.25rem;
+        }
     }
-    .problem-actions {
-        margin-top: 0.75rem;
-        display: flex;
-        justify-content: center;
+
+    @media (max-width: 640px) {
+        .page-wrapper {
+            padding: 0.75rem;
+            padding-top: 5rem;
+        }
+
+        .header h1 {
+            font-size: 1.75rem;
+        }
+
+        .error-icon,
+        .empty-icon {
+            font-size: 2.5rem;
+        }
+
+        .error-content,
+        .empty-content {
+            padding: 1.25rem;
+        }
+
+        /* Improve table readability on mobile */
+        :global(.content table) {
+            font-size: 0.875rem;
+        }
+
+        :global(.btn-action) {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.8rem;
+        }
     }
-    .problem-actions .responsive-btn {
-        width: 100%;
-        max-width: 220px;
-        font-size: 1.05rem;
-        padding: 0.85rem 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(80, 80, 200, 0.10);
-        font-weight: 600;
-        transition: background 0.2s, box-shadow 0.2s;
-        display: block;
+
+    @media (max-width: 480px) {
+        .page-wrapper {
+            padding: 0.5rem;
+            padding-top: 4.5rem;
+        }
+
+        .header {
+            margin-bottom: 1.5rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+        }
+
+        .error-content,
+        .empty-content {
+            padding: 1rem;
+        }
+
+        .error-icon,
+        .empty-icon {
+            font-size: 2rem;
+        }
+
+        .error-content h3,
+        .empty-content h3 {
+            font-size: 1.125rem;
+        }
+
+        .error-content p,
+        .empty-content p {
+            font-size: 0.875rem;
+        }
     }
-    .problem-actions .responsive-btn:hover {
-        background: #5a67d8;
-        color: #fff;
-        box-shadow: 0 4px 16px rgba(80, 80, 200, 0.18);
+
+    @media (max-width: 360px) {
+        .page-wrapper {
+            padding: 0.375rem;
+            padding-top: 4rem;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+        }
+
+        .subtitle {
+            font-size: 0.8rem;
+        }
+
+        .error-content,
+        .empty-content {
+            padding: 0.75rem;
+        }
     }
 </style>

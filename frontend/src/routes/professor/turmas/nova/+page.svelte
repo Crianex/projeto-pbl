@@ -4,7 +4,6 @@
     import Button from "$lib/components/Button.svelte";
     import SearchAlunoDialog from "../SearchAlunoDialog.svelte";
     import { currentUser } from "$lib/utils/auth";
-    import Container from "$lib/components/Container.svelte";
     import { TurmasService } from "$lib/services/turmas_service";
 
     let nomeTurma = "";
@@ -75,9 +74,9 @@
     }
 </script>
 
-<Container class="responsive-container" maxWidth="xl" glass={true} shadow={true}>
+<div class="container">
     <div class="header">
-        <h1 class="responsive-title">Nova Turma</h1>
+        <h1>Nova Turma</h1>
     </div>
 
     {#if error}
@@ -173,7 +172,7 @@
             </div>
         </form>
     {/if}
-</Container>
+</div>
 
 <SearchAlunoDialog
     open={searchDialogOpen}
@@ -183,8 +182,23 @@
 />
 
 <style>
-    /* Remover estilos de responsividade duplicados já cobertos pelo global */
-    /* Manter apenas estilos específicos que não estão no global */
+    .container {
+        height: 100%;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .header {
+        margin-bottom: 2rem;
+    }
+
+    .header h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
     .form {
         background: white;
         padding: 2rem;
@@ -290,7 +304,6 @@
         margin-top: 2rem;
     }
 
-    .loading,
     .error {
         text-align: center;
         padding: 2rem;
@@ -301,9 +314,5 @@
 
     .error {
         color: #dc3545;
-    }
-
-    .error button {
-        margin-top: 1rem;
     }
 </style>

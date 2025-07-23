@@ -8,7 +8,6 @@
     import type { CriteriosGroup } from "$lib/interfaces/interfaces";
     import { currentUser } from "$lib/utils/auth";
     import { ProblemasService } from "$lib/services/problemas_service";
-    import Container from "$lib/components/Container.svelte";
 
     const turmaId = $page.params.id;
 
@@ -161,10 +160,8 @@
                 criterios: JSON.stringify(formData.criterios),
             };
 
-            // Use the service instead of raw API call
             const newProblema = await ProblemasService.create(payload);
 
-            // Add to store (cache will be automatically invalidated by service)
             problemaStore.update((problemas) => [...problemas, newProblema]);
 
             await goto(`/professor/turmas/${turmaId}/problemas`);
@@ -180,7 +177,7 @@
     }
 </script>
 
-<Container class="responsive-container" maxWidth="xl" glass={true} shadow={true}>
+<div class="container">
     <div class="header">
         <div class="title-section">
             <a href="/professor/turmas/{turmaId}/problemas" class="back-link">
@@ -339,9 +336,210 @@
             </Button>
         </div>
     </form>
-</Container>
+</div>
 
 <style>
-    /* Remover estilos de responsividade duplicados já cobertos pelo global */
-    /* Manter apenas estilos específicos que não estão no global */
+    .container {
+        margin: 2rem auto;
+        padding: 1rem 2rem;
+        height: 100%;
+        width: 100%;
+    }
+
+    .header {
+        margin-bottom: 2rem;
+    }
+
+    .title-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .back-link {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #6c757d;
+        text-decoration: none;
+        font-size: 0.875rem;
+    }
+
+    .back-link:hover {
+        color: #0d6efd;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .form {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    .form-group input {
+        padding: 0.75rem;
+        width: 100%;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+
+    .error-message {
+        background: #f8d7da;
+        color: #842029;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+    }
+
+    .criterios-section {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .criterios-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .criterios-header h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .criterio-group {
+        margin-bottom: 2rem;
+    }
+
+    .criterio-group h3 {
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: #495057;
+        margin: 0 0 1rem 0;
+    }
+
+    .criterios-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .criterio-item {
+        background: white;
+        padding: 1rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .criterio-item:last-child {
+        border-bottom: none;
+    }
+
+    .criterio-header {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .criterio-header input {
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+
+    .nota-maxima {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .nota-maxima label {
+        color: #495057;
+        font-size: 0.875rem;
+    }
+
+    .nota-maxima input {
+        width: 80px;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+
+    .criterio-item textarea {
+        width: 100%;
+
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        resize: vertical;
+        min-height: 10rem;
+    }
+
+    .remove-button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.5rem;
+        color: #dc3545;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .remove-button:hover {
+        background-color: #f8d7da;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e9ecef;
+    }
+
+    :global(.criterios-list .button) {
+        margin: 1rem;
+    }
+
+    .helper-text {
+        display: block;
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
+    .form-group input:disabled {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+    }
 </style>

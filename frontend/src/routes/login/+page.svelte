@@ -102,96 +102,94 @@
         center={true}
     />
 {:else}
-    <main>
-        <div class="responsive-container login-container">
-            <h1 class="responsive-title">Login</h1>
+    <div class="login-container">
+        <h1>Login</h1>
 
-            {#if errorMessage}
-                <div class="error-message">
-                    {errorMessage}
-                </div>
-            {/if}
-
-            <form on:submit|preventDefault={handleLogin}>
-                <div class="form-group">
-                    <Input
-                        type="email"
-                        id="email"
-                        label="Email"
-                        bind:value={email}
-                        placeholder="seu@email.com"
-                        required
-                        disabled={loading}
-                        autocomplete="email"
-                    />
-                </div>
-
-                <div class="form-group">
-                    <Input
-                        type="password"
-                        id="password"
-                        label="Senha"
-                        bind:value={password}
-                        placeholder="Digite sua senha"
-                        required
-                        disabled={loading}
-                        autocomplete="current-password"
-                    />
-                </div>
-
-                <div class="button-group">
-                    <Button
-                        type="submit"
-                        disabled={loading}
-                        {loading}
-                        variant="primary"
-                    >
-                        {loading ? "Entrando..." : "Entrar"}
-                    </Button>
-
-                    <Button
-                        type="button"
-                        on:click={handleGoogleLogin}
-                        disabled={loading}
-                        {loading}
-                        variant="secondary"
-                    >
-                        <div class="google-icon">
-                            <svg
-                                width="18"
-                                height="18"
-                                viewBox="0 0 18 18"
-                                xmlns="http://www.w3.org/2000/svg"
-                            >
-                                <path
-                                    fill="#4285F4"
-                                    d="M18 9.2c0-.6-.1-1.2-.2-1.8H9.2v3.4h4.9c-.2 1.1-.9 2-1.8 2.6v2.2h2.9c1.7-1.6 2.8-3.9 2.8-6.4z"
-                                />
-                                <path
-                                    fill="#34A853"
-                                    d="M9.2 18c2.4 0 4.5-.8 6-2.2l-2.9-2.2c-.8.6-1.9.9-3.1.9-2.4 0-4.4-1.6-5.1-3.8H1.1v2.3C2.6 15.4 5.7 18 9.2 18z"
-                                />
-                                <path
-                                    fill="#FBBC04"
-                                    d="M4.1 10.7c-.2-.6-.3-1.2-.3-1.8s.1-1.2.3-1.8V4.8H1.1C.4 6.1 0 7.5 0 9s.4 2.9 1.1 4.2l3-2.5z"
-                                />
-                                <path
-                                    fill="#EA4335"
-                                    d="M9.2 3.6c1.3 0 2.5.4 3.4 1.3l2.5-2.5C13.7.7 11.6 0 9.2 0 5.7 0 2.6 2.6 1.1 5.9l3 2.5c.7-2.2 2.7-3.8 5.1-3.8z"
-                                />
-                            </svg>
-                        </div>
-                        {loading ? "Entrando..." : "Entrar com Google"}
-                    </Button>
-                </div>
-            </form>
-
-            <div class="links">
-                <a href="/register">Criar conta</a>
-                <a href="/forgot-password">Esqueceu a senha?</a>
+        {#if errorMessage}
+            <div class="error-message">
+                {errorMessage}
             </div>
+        {/if}
+
+        <form on:submit|preventDefault={handleLogin}>
+            <div class="form-group">
+                <Input
+                    type="email"
+                    id="email"
+                    label="Email"
+                    bind:value={email}
+                    placeholder="seu@email.com"
+                    required
+                    disabled={loading}
+                    autocomplete="email"
+                />
+            </div>
+
+            <div class="form-group">
+                <Input
+                    type="password"
+                    id="password"
+                    label="Senha"
+                    bind:value={password}
+                    placeholder="Digite sua senha"
+                    required
+                    disabled={loading}
+                    autocomplete="current-password"
+                />
+            </div>
+
+            <div class="button-group">
+                <Button
+                    type="submit"
+                    disabled={loading}
+                    {loading}
+                    variant="primary"
+                >
+                    {loading ? "Entrando..." : "Entrar"}
+                </Button>
+
+                <Button
+                    type="button"
+                    on:click={handleGoogleLogin}
+                    disabled={loading}
+                    {loading}
+                    variant="secondary"
+                >
+                    <div class="google-icon">
+                        <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 18 18"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                fill="#4285F4"
+                                d="M18 9.2c0-.6-.1-1.2-.2-1.8H9.2v3.4h4.9c-.2 1.1-.9 2-1.8 2.6v2.2h2.9c1.7-1.6 2.8-3.9 2.8-6.4z"
+                            />
+                            <path
+                                fill="#34A853"
+                                d="M9.2 18c2.4 0 4.5-.8 6-2.2l-2.9-2.2c-.8.6-1.9.9-3.1.9-2.4 0-4.4-1.6-5.1-3.8H1.1v2.3C2.6 15.4 5.7 18 9.2 18z"
+                            />
+                            <path
+                                fill="#FBBC04"
+                                d="M4.1 10.7c-.2-.6-.3-1.2-.3-1.8s.1-1.2.3-1.8V4.8H1.1C.4 6.1 0 7.5 0 9s.4 2.9 1.1 4.2l3-2.5z"
+                            />
+                            <path
+                                fill="#EA4335"
+                                d="M9.2 3.6c1.3 0 2.5.4 3.4 1.3l2.5-2.5C13.7.7 11.6 0 9.2 0 5.7 0 2.6 2.6 1.1 5.9l3 2.5c.7-2.2 2.7-3.8 5.1-3.8z"
+                            />
+                        </svg>
+                    </div>
+                    {loading ? "Entrando..." : "Entrar com Google"}
+                </Button>
+            </div>
+        </form>
+
+        <div class="links">
+            <a href="/register">Criar conta</a>
+            <a href="/forgot-password">Esqueceu a senha?</a>
         </div>
-    </main>
+    </div>
 {/if}
 
 <style>

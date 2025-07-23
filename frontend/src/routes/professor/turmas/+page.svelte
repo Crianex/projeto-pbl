@@ -11,7 +11,6 @@
     import { TurmasService } from "$lib/services/turmas_service";
     import { cacheInvalidation } from "$lib/utils/stores";
     import Pagination from "../../../lib/components/Pagination.svelte";
-    import Container from "$lib/components/Container.svelte";
 
     let turmas: TurmaModel[] = [];
     let loading = true;
@@ -165,9 +164,9 @@
     }
 </script>
 
-<Container class="responsive-container" maxWidth="xl" glass={true} shadow={true}>
+<div class="turmas-container">
     <div class="header">
-        <h1 class="responsive-title">Turmas</h1>
+        <h1>Turmas</h1>
         <SearchBar
             bind:value={searchQuery}
             placeholder="Buscar turma..."
@@ -296,7 +295,7 @@
             on:pageChange={(e) => (currentPage = e.detail.page)}
         />
     {/if}
-</Container>
+</div>
 
 <Dialog open={deleteConfirmOpen} on:close={closeDeleteConfirm}>
     <svelte:fragment slot="header">
@@ -322,8 +321,6 @@
 </Dialog>
 
 <style>
-    /* Remover estilos de responsividade duplicados já cobertos pelo global */
-    /* Manter apenas estilos específicos que não estão no global */
     .turmas-container {
         width: 100%;
         height: 100%;

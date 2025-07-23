@@ -8,7 +8,6 @@
     import SearchAlunoDialog from "../SearchAlunoDialog.svelte";
     import Dialog from "$lib/components/Dialog.svelte";
     import { TurmasService } from "$lib/services/turmas_service";
-    import Container from "$lib/components/Container.svelte";
 
     const turmaId = $page.params.id;
 
@@ -311,9 +310,7 @@
     onMount(fetchTurma);
 </script>
 
-<Container class="responsive-container" maxWidth="xl" glass={true} shadow={true}>
-    <BackButton text="Voltar" on:click={() => goto("/professor/turmas")} />
-    
+<div class="container">
     <div class="header">
         <h1>Editar Turma</h1>
     </div>
@@ -415,7 +412,7 @@
             </div>
         </form>
     {/if}
-</Container>
+</div>
 
 <SearchAlunoDialog
     open={searchDialogOpen}
@@ -523,10 +520,6 @@
         width: 100%;
         margin: 0 auto;
         padding: 2rem;
-    }
-
-    .container :global(.back-btn) {
-        margin-bottom: 1.5rem;
     }
 
     .header {
@@ -682,49 +675,36 @@
     }
 
     .changes-summary-content {
-        padding: 1.5rem;
+        padding: 1rem;
     }
 
     .change-item {
-        margin-bottom: 2rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #f1f3f4;
-    }
-
-    .change-item:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
+        margin-bottom: 1.5rem;
     }
 
     .change-title {
         font-weight: 500;
         color: #1a1a1a;
         display: block;
-        margin-bottom: 0.75rem;
-        font-size: 1rem;
+        margin-bottom: 0.5rem;
     }
 
     .change-detail {
         color: #4a5568;
         font-size: 0.875rem;
-        margin: 0.5rem 0;
-        line-height: 1.4;
+        margin: 0.25rem 0;
     }
 
     .change-list {
         list-style: none;
         padding: 0;
-        margin: 0.75rem 0 0 0;
+        margin: 0.25rem 0;
     }
 
     .change-list li {
         color: #4a5568;
         font-size: 0.875rem;
-        margin-bottom: 0.75rem;
-    }
-
-    .change-list li:last-child {
-        margin-bottom: 0;
+        padding: 0.25rem 0;
     }
 
     .dialog-actions {
@@ -732,44 +712,30 @@
         justify-content: flex-end;
         gap: 1rem;
         margin-top: 2rem;
-        padding-top: 1rem;
-        border-top: 1px solid #f1f3f4;
     }
 
     .change-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.75rem;
+        margin-bottom: 0.5rem;
     }
 
     .change-list-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.75rem 1rem;
-        background-color: #f8f9fa;
-        border-radius: 6px;
-        margin-bottom: 0.75rem;
-    }
-
-    .change-list-item:last-child {
-        margin-bottom: 0;
-    }
-
-    .change-list-item :global(.button) {
-        margin-left: 1rem;
+        padding: 0.5rem 0;
     }
 
     .error-message {
         background-color: #fee2e2;
         border: 1px solid #ef4444;
         color: #dc2626;
-        padding: 1rem;
-        border-radius: 6px;
-        margin-bottom: 1.5rem;
+        padding: 0.75rem;
+        border-radius: 4px;
+        margin-bottom: 1rem;
         font-size: 0.875rem;
-        line-height: 1.4;
     }
 
     :global(.change-list-item .button),

@@ -11,7 +11,6 @@
     import { Parsers } from "$lib/interfaces/parsers";
     import type { ProblemaModel } from "$lib/interfaces/interfaces";
     import { Utils } from "$lib/utils/utils";
-    import Container from "$lib/components/Container.svelte";
 
     const turmaId = $page.params.id;
 
@@ -108,7 +107,7 @@
     });
 </script>
 
-<Container class="responsive-container" maxWidth="xl" glass={true} shadow={true}>
+<div class="container">
     <div class="header">
         <div class="title-section">
             <a href="/professor/turmas" class="back-link">
@@ -129,9 +128,9 @@
                 </svg>
                 Voltar para turmas
             </a>
-            <h1 class="responsive-title">Problemas - {turma.nome_turma}</h1>
+            <h1>Problemas - {turma.nome_turma}</h1>
         </div>
-        <Button variant="primary" on:click={handleCreateProblema} class="responsive-btn">
+        <Button variant="primary" on:click={handleCreateProblema}>
             + Criar problema
         </Button>
     </div>
@@ -148,7 +147,7 @@
     {:else if problemas.length === 0}
         <div class="empty-state">
             <p>Nenhum problema encontrado para esta turma.</p>
-            <Button variant="primary" on:click={handleCreateProblema} class="responsive-btn">
+            <Button variant="primary" on:click={handleCreateProblema}>
                 Criar primeiro problema
             </Button>
         </div>
@@ -238,7 +237,7 @@
             {/each}
         </div>
     {/if}
-</Container>
+</div>
 
 <Dialog open={deleteConfirmOpen} on:close={closeDeleteConfirm}>
     <svelte:fragment slot="header">
@@ -264,8 +263,51 @@
 </Dialog>
 
 <style>
-    /* Remover estilos de responsividade duplicados já cobertos pelo global */
-    /* Manter apenas estilos específicos que não estão no global */
+    .container {
+        height: 100%;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .title-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .back-link {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #6c757d;
+        text-decoration: none;
+        font-size: 0.875rem;
+    }
+
+    .back-link:hover {
+        color: #0d6efd;
+    }
+
+    .header h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .problemas-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
     .problema-item {
         background: white;
         border: 1px solid #e9ecef;
