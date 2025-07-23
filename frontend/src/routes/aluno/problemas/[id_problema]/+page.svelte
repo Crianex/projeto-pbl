@@ -10,10 +10,12 @@
     import Table from "$lib/components/Table.svelte";
     import Container from "$lib/components/Container.svelte";
     import FileUpload from "$lib/components/FileUpload.svelte";
+    import Button from "$lib/components/Button.svelte";
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
     import { ProblemasService } from "$lib/services/problemas_service";
     import Pagination from "$lib/components/Pagination.svelte";
     import { MediaCalculator } from "$lib/utils/utils";
+    import { api } from "$lib/utils/api";
 
     interface Avaliacao {
         id_avaliacao: number;
@@ -27,6 +29,15 @@
         isCurrentUser?: boolean;
     }
 
+    interface UploadedFile {
+        id?: number;
+        nome_arquivo: string;
+        link_arquivo: string;
+        id_aluno?: number;
+        id_problema?: number;
+        created_at?: string;
+    }
+
     let avaliacoes: Avaliacao[] = [];
     let problema: ProblemaModel;
     let loading = true;
@@ -36,6 +47,25 @@
     let currentPage = 1;
     const itemsPerPage = 10;
     $: totalPages = Math.ceil(avaliacoes.length / itemsPerPage);
+
+    // File upload state - using simple arrays for better Svelte reactivity
+    let allUploadedFiles: File[] = [];
+    let existingFilesByType: Map<number, UploadedFile[]> = new Map();
+    let isUploading = false;
+    let uploadError: string | null = null;
+    let uploadProgress = { current: 0, total: 0 };
+
+    // Computed property for existing files to avoid linter errors
+    $: existingFiles = existingFilesByType.get(0) || [];
+
+    // Reactive statement to track file upload state - now using simple array length
+    $: canSave = allUploadedFiles.length > 0;
+    $: console.log(
+        "Reactive canSave:",
+        canSave,
+        "allUploadedFiles length:",
+        allUploadedFiles.length,
+    );
 
     $: paginatedAvaliacoes = avaliacoes.slice(
         (currentPage - 1) * itemsPerPage,
@@ -182,19 +212,104 @@
     }
 
     function handleFilesSelected(event: CustomEvent, tipoIndex: number) {
-        // TODO: Implement file upload functionality
-        console.log(
-            `Files selected for tipo ${tipoIndex}:`,
-            event.detail.files,
-        );
+        const files = event.detail.files as File[];
+        allUploadedFiles = [...allUploadedFiles, ...files];
+        console.log(`Files selected for tipo ${tipoIndex}:`, files);
+        console.log("Current allUploadedFiles:", allUploadedFiles);
+        console.log("hasFilesToUpload:", hasFilesToUpload());
     }
 
     function handleFileRemoved(event: CustomEvent, tipoIndex: number) {
-        // TODO: Implement file removal functionality
-        console.log(`File removed for tipo ${tipoIndex}:`, event.detail.files);
+        const remainingFiles = event.detail.files as File[];
+        allUploadedFiles = allUploadedFiles.filter(
+            (file) => !remainingFiles.includes(file),
+        );
+        console.log(`File removed for tipo ${tipoIndex}:`, remainingFiles);
+        console.log("Current allUploadedFiles:", allUploadedFiles);
+        console.log("hasFilesToUpload:", hasFilesToUpload());
     }
 
-    onMount(fetchAvaliacoes);
+    async function loadExistingFiles() {
+        try {
+            const id_problema = parseInt($page.params.id_problema);
+            const currentUserId = $currentUser?.id;
+
+            if (!currentUserId) return;
+
+            const files: UploadedFile[] = await api.get(
+                `/problemas/get-arquivos?id_aluno=${currentUserId}&id_problema=${id_problema}`,
+            );
+
+            // Group files by file type (we'll need to match them somehow)
+            // For now, we'll store all files in a general map
+            existingFilesByType.set(0, files);
+            existingFilesByType = existingFilesByType;
+
+            console.log("Loaded existing files:", files);
+        } catch (e: any) {
+            console.error("Error loading existing files:", e);
+        }
+    }
+
+    async function uploadFiles() {
+        try {
+            console.log("Uploading files");
+            isUploading = true;
+            uploadError = null;
+            uploadProgress = { current: 0, total: allUploadedFiles.length };
+
+            const id_problema = parseInt($page.params.id_problema);
+            const currentUserId = $currentUser?.id;
+
+            if (!currentUserId) {
+                console.log("User not authenticated");
+                throw new Error("User not authenticated");
+            }
+
+            // Upload all selected files
+            for (let i = 0; i < allUploadedFiles.length; i++) {
+                const file = allUploadedFiles[i];
+                uploadProgress.current = i + 1;
+                uploadProgress = uploadProgress; // Trigger reactivity
+
+                const formData = new FormData();
+                formData.append("arquivo", file);
+                formData.append("id_aluno", currentUserId.toString());
+                formData.append("id_problema", id_problema.toString());
+
+                console.log("Form data:", formData);
+
+                const result = await api.post(
+                    "/problemas/upload-arquivo",
+                    formData,
+                );
+                console.log("File uploaded successfully:", result);
+            }
+
+            // Clear uploaded files and reload existing files
+            allUploadedFiles = [];
+            uploadProgress = { current: 0, total: 0 };
+
+            await loadExistingFiles();
+
+            console.log("All files uploaded successfully");
+        } catch (e: any) {
+            console.error("Error uploading files:", e);
+            uploadError = e.message;
+            uploadProgress = { current: 0, total: 0 };
+        } finally {
+            isUploading = false;
+        }
+    }
+
+    function hasFilesToUpload(): boolean {
+        return allUploadedFiles.length > 0;
+    }
+
+    onMount(async () => {
+        await fetchAvaliacoes();
+        await loadExistingFiles();
+    });
 </script>
 
 <Container maxWidth="lg" glass={true} shadow={true} center={true}>
@@ -246,35 +361,107 @@
                         conforme as especificações abaixo:
                     </p>
 
-                    {#each problema.definicao_arquivos_de_avaliacao as definicao, index}
+                    <!-- Upload Loading Overlay -->
+                    {#if isUploading}
                         <div
-                            class="upload-container"
-                            in:fade={{
-                                duration: 300,
-                                delay: 450 + index * 100,
-                            }}
+                            class="upload-loading-overlay"
+                            in:fade={{ duration: 200 }}
                         >
-                            <FileUpload
-                                accept={definicao.tipos_de_arquivos_aceitos?.join(
-                                    ",",
-                                ) || "*"}
-                                multiple={true}
-                                maxSize={10 * 1024 * 1024}
-                                label={definicao.nome_tipo ||
-                                    `Tipo de Arquivo ${index + 1}`}
-                                description={definicao.descricao_tipo ||
-                                    "Arraste e solte seus arquivos aqui ou clique para selecionar"}
-                                supportedFormats={definicao.tipos_de_arquivos_aceitos
-                                    ?.join(", ")
-                                    .toUpperCase() || "Todos os formatos"}
-                                disabled={false}
-                                on:filesSelected={(e) =>
-                                    handleFilesSelected(e, index)}
-                                on:fileRemoved={(e) =>
-                                    handleFileRemoved(e, index)}
-                            />
+                            <div class="upload-loading-content">
+                                <LoadingSpinner size="lg" />
+                                <p>Enviando arquivos...</p>
+                                <p class="upload-progress">
+                                    {uploadProgress.current} de {uploadProgress.total}
+                                    arquivos
+                                </p>
+                            </div>
                         </div>
-                    {/each}
+                    {/if}
+
+                    <div class="upload-forms" class:uploading={isUploading}>
+                        {#each problema.definicao_arquivos_de_avaliacao as definicao, index}
+                            <div
+                                class="upload-container"
+                                in:fade={{
+                                    duration: 300,
+                                    delay: 450 + index * 100,
+                                }}
+                            >
+                                <FileUpload
+                                    accept={definicao.tipos_de_arquivos_aceitos?.join(
+                                        ",",
+                                    ) || "*"}
+                                    multiple={true}
+                                    maxSize={10 * 1024 * 1024}
+                                    label={definicao.nome_tipo ||
+                                        `Tipo de Arquivo ${index + 1}`}
+                                    description={definicao.descricao_tipo ||
+                                        "Arraste e solte seus arquivos aqui ou clique para selecionar"}
+                                    supportedFormats={definicao.tipos_de_arquivos_aceitos
+                                        ?.join(", ")
+                                        .toUpperCase() || "Todos os formatos"}
+                                    disabled={isUploading}
+                                    on:filesSelected={(e) =>
+                                        handleFilesSelected(e, index)}
+                                    on:fileRemoved={(e) =>
+                                        handleFileRemoved(e, index)}
+                                />
+
+                                <!-- Display existing files for this type -->
+                                {#if existingFiles.length > 0}
+                                    <div class="existing-files">
+                                        <h4>Arquivos já enviados:</h4>
+                                        <div class="existing-files-list">
+                                            {#each existingFiles as file}
+                                                <div class="existing-file-item">
+                                                    <span class="file-name"
+                                                        >{file.nome_arquivo}</span
+                                                    >
+                                                    <a
+                                                        href={file.link_arquivo}
+                                                        target="_blank"
+                                                        class="download-link"
+                                                    >
+                                                        Baixar
+                                                    </a>
+                                                </div>
+                                            {/each}
+                                        </div>
+                                    </div>
+                                {/if}
+                            </div>
+                        {/each}
+
+                        <!-- Upload Error Message -->
+                        {#if uploadError}
+                            <div
+                                class="upload-error"
+                                in:fade={{ duration: 200 }}
+                            >
+                                {uploadError}
+                            </div>
+                        {/if}
+
+                        <!-- Save Button -->
+                        <div
+                            class="save-button-container"
+                            in:fade={{ duration: 300 }}
+                        >
+                            <Button
+                                variant="primary"
+                                disabled={isUploading || !canSave}
+                                on:click={uploadFiles}
+                                fullWidth={false}
+                            >
+                                {#if isUploading}
+                                    <LoadingSpinner size="sm" />
+                                    Enviando...
+                                {:else}
+                                    Salvar Arquivos
+                                {/if}
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             {/if}
         {/if}
@@ -386,6 +573,16 @@
         margin-top: 3rem;
         padding-top: 2rem;
         border-top: 1px solid rgba(226, 232, 240, 0.3);
+        position: relative;
+    }
+
+    .upload-forms {
+        transition: opacity 0.3s ease;
+    }
+
+    .upload-forms.uploading {
+        opacity: 0.6;
+        pointer-events: none;
     }
 
     .file-upload-section h2 {
@@ -408,6 +605,109 @@
 
     .upload-container:last-child {
         margin-bottom: 0;
+    }
+
+    /* Existing Files Styles */
+    .existing-files {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px dashed rgba(226, 232, 240, 0.5);
+    }
+
+    .existing-files h4 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 0.75rem;
+    }
+
+    .existing-files-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .existing-file-item {
+        display: flex;
+        align-items: center;
+        background: #f8f9fa;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: #4a5568;
+    }
+
+    .file-name {
+        flex-grow: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .download-link {
+        color: #4299e1;
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.2s ease;
+    }
+
+    .download-link:hover {
+        color: #3182ce;
+    }
+
+    /* Upload Error Message Styles */
+    .upload-error {
+        color: #dc3545;
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin-top: 1.5rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-align: center;
+    }
+
+    /* Save Button Container Styles */
+    .save-button-container {
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    /* Upload Loading Overlay Styles */
+    .upload-loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+        backdrop-filter: blur(5px);
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .upload-loading-content {
+        text-align: center;
+        color: #333;
+    }
+
+    .upload-loading-content p {
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .upload-progress {
+        font-size: 0.8rem;
+        color: #666;
+        margin-top: 0.25rem;
     }
 
     /* Responsividade aprimorada */
@@ -437,6 +737,42 @@
 
         .upload-container {
             margin-bottom: 1.5rem;
+        }
+
+        .existing-files {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+        }
+
+        .existing-files h4 {
+            font-size: 1rem;
+        }
+
+        .existing-files-list {
+            gap: 0.5rem;
+        }
+
+        .existing-file-item {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+        }
+
+        .file-name {
+            font-size: 0.8rem;
+        }
+
+        .download-link {
+            font-size: 0.8rem;
+        }
+
+        .upload-error {
+            margin-top: 1rem;
+            padding: 0.6rem 0.8rem;
+            font-size: 0.8rem;
+        }
+
+        .save-button-container {
+            margin-top: 1.5rem;
         }
     }
 
@@ -470,6 +806,42 @@
 
         .upload-container {
             margin-bottom: 1rem;
+        }
+
+        .existing-files {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+        }
+
+        .existing-files h4 {
+            font-size: 0.9rem;
+        }
+
+        .existing-files-list {
+            gap: 0.4rem;
+        }
+
+        .existing-file-item {
+            padding: 0.3rem 0.7rem;
+            font-size: 0.7rem;
+        }
+
+        .file-name {
+            font-size: 0.7rem;
+        }
+
+        .download-link {
+            font-size: 0.7rem;
+        }
+
+        .upload-error {
+            margin-top: 0.75rem;
+            padding: 0.5rem 0.7rem;
+            font-size: 0.7rem;
+        }
+
+        .save-button-container {
+            margin-top: 1rem;
         }
     }
 </style>

@@ -300,6 +300,7 @@ export const ProblemaController: EndpointController = {
 
         'upload-arquivo': new Pair(RequestType.POST, async (req: Request, res: Response) => {
             const { id_aluno, id_problema } = req.body;
+            logger.info(`Uploading arquivo for aluno ${id_aluno}, problema ${id_problema}`);
             if (!id_aluno || !id_problema) {
                 logger.error('id_aluno and id_problema are required');
                 return res.status(400).json({ error: 'id_aluno and id_problema are required' });
@@ -347,7 +348,7 @@ export const ProblemaController: EndpointController = {
 
                 // Save file metadata in arquivos_aluno_problema table
                 const { data, error: dbError } = await supabase
-                    .from('arquivos_aluno_problema')
+                    .from('arquivos_alunos_problema')
                     .insert([{
                         id_aluno,
                         id_problema,
@@ -378,7 +379,7 @@ export const ProblemaController: EndpointController = {
                 return res.status(400).json({ error: 'id_aluno or id_problema is required' });
             }
 
-            let query = supabase.from('arquivos_aluno_problema').select('*');
+            let query = supabase.from('arquivos_alunos_problema').select('*');
             if (id_aluno) {
                 query = query.eq('id_aluno', id_aluno);
             }

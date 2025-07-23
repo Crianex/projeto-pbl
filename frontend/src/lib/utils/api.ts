@@ -35,13 +35,20 @@ async function fetchWithLogging(url: string, options: RequestOptions): Promise<a
     });
 
     try {
+        // Prepare headers and body
+        const headers: Record<string, string> = { ...options.headers };
+        let body: any = options.body;
+
+        // Only set Content-Type and stringify if body is not FormData
+        if (options.body && !(options.body instanceof FormData)) {
+            headers['Content-Type'] = 'application/json';
+            body = JSON.stringify(options.body);
+        }
+
         const response = await fetch(fullUrl, {
             ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-            body: options.body ? JSON.stringify(options.body) : undefined,
+            headers,
+            body,
         });
 
         const duration = Date.now() - startTime;
