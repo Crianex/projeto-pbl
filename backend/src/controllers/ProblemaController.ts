@@ -312,10 +312,10 @@ export const ProblemaController: EndpointController = {
 
             const arquivoFile = req.files.arquivo as any;
 
-            // Optionally validate file size/type here if needed
-            // Example: max 20MB
-            if (arquivoFile.size > 20 * 1024 * 1024) {
-                return res.status(400).json({ error: 'File size must be less than 20MB' });
+            // Validate file size - max 10MB
+            if (arquivoFile.size > 10 * 1024 * 1024) {
+                logger.error(`File size too large: ${arquivoFile.size} bytes (max: 10MB)`);
+                return res.status(400).json({ error: 'File size must be less than 10MB' });
             }
 
             try {

@@ -1,17 +1,18 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
-    import { fade, scale } from 'svelte/transition';
+    import { createEventDispatcher } from "svelte";
+    import { fade, scale } from "svelte/transition";
 
     const dispatch = createEventDispatcher();
 
-    export let accept = '.pdf,.png,.jpg,.jpeg';
+    export let accept = ".pdf,.png,.jpg,.jpeg";
     export let multiple = true;
     export let maxSize = 10 * 1024 * 1024; // 10MB
-    export let label = 'Importar Arquivos';
-    export let description = 'Arraste e solte seus arquivos aqui ou clique para selecionar';
-    export let supportedFormats = 'PDF, PNG, JPG, JPEG';
+    export let label = "Importar Arquivos";
+    export let description =
+        "Arraste e solte seus arquivos aqui ou clique para selecionar";
+    export let supportedFormats = "PDF, PNG, JPG, JPEG";
     export let disabled = false;
-    export let error = '';
+    export let error = "";
 
     let fileInput: HTMLInputElement;
     let dragOver = false;
@@ -28,7 +29,7 @@
     function handleDrop(event: DragEvent) {
         event.preventDefault();
         dragOver = false;
-        
+
         if (event.dataTransfer?.files && !disabled) {
             processFiles(event.dataTransfer.files);
         }
@@ -47,13 +48,18 @@
     }
 
     function processFiles(fileList: FileList) {
-        error = '';
+        error = "";
         const validFiles: File[] = [];
         const errors: string[] = [];
 
-        Array.from(fileList).forEach(file => {
+        Array.from(fileList).forEach((file) => {
             // Verificar tipo de arquivo
-            const validTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
+            const validTypes = [
+                "application/pdf",
+                "image/png",
+                "image/jpeg",
+                "image/jpg",
+            ];
             if (!validTypes.includes(file.type)) {
                 errors.push(`${file.name}: Tipo de arquivo não suportado`);
                 return;
@@ -61,7 +67,9 @@
 
             // Verificar tamanho
             if (file.size > maxSize) {
-                errors.push(`${file.name}: Arquivo muito grande (máx: ${formatFileSize(maxSize)})`);
+                errors.push(
+                    `${file.name}: Arquivo muito grande (máx: ${formatFileSize(maxSize)})`,
+                );
                 return;
             }
 
@@ -69,32 +77,34 @@
         });
 
         if (errors.length > 0) {
-            error = errors.join(', ');
+            error = errors.join(", ");
         }
 
         if (validFiles.length > 0) {
-            uploadedFiles = multiple ? [...uploadedFiles, ...validFiles] : validFiles;
-            dispatch('filesSelected', { files: validFiles });
+            uploadedFiles = multiple
+                ? [...uploadedFiles, ...validFiles]
+                : validFiles;
+            dispatch("filesSelected", { files: validFiles });
         }
     }
 
     function removeFile(index: number) {
         uploadedFiles = uploadedFiles.filter((_, i) => i !== index);
-        dispatch('fileRemoved', { files: uploadedFiles });
+        dispatch("fileRemoved", { files: uploadedFiles });
     }
 
     function formatFileSize(bytes: number): string {
-        if (bytes === 0) return '0 Bytes';
+        if (bytes === 0) return "0 Bytes";
         const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const sizes = ["Bytes", "KB", "MB", "GB"];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
     }
 
     function getFileIcon(file: File): string {
-        if (file.type === 'application/pdf') return '📄';
-        if (file.type.startsWith('image/')) return '🖼️';
-        return '📁';
+        if (file.type === "application/pdf") return "📄";
+        if (file.type.startsWith("image/")) return "🖼️";
+        return "📁";
     }
 
     function openFileDialog() {
@@ -106,8 +116,8 @@
 
 <div class="file-upload-container" class:disabled>
     <div class="upload-label">{label}</div>
-    
-    <div 
+
+    <div
         class="upload-zone"
         class:drag-over={dragOver}
         class:has-error={!!error}
@@ -117,7 +127,7 @@
         on:click={openFileDialog}
         role="button"
         tabindex="0"
-        on:keydown={(e) => e.key === 'Enter' && openFileDialog()}
+        on:keydown={(e) => e.key === "Enter" && openFileDialog()}
     >
         <input
             bind:this={fileInput}
@@ -128,19 +138,47 @@
             on:change={handleFileSelect}
             style="display: none;"
         />
-        
+
         <div class="upload-icon" class:animated={dragOver}>
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M7 10L12 5L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M12 5V19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M21 15V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <path
+                    d="M7 10L12 5L17 10"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+                <path
+                    d="M12 5V19"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+                <path
+                    d="M21 15V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V15"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
             </svg>
         </div>
-        
+
         <div class="upload-text">
             <div class="primary-text">{description}</div>
-            <div class="secondary-text">Formatos suportados: {supportedFormats}</div>
-            <div class="size-text">Tamanho máximo: {formatFileSize(maxSize)}</div>
+            <div class="secondary-text">
+                Formatos suportados: {supportedFormats}
+            </div>
+            <div class="size-text">
+                Tamanho máximo: {formatFileSize(maxSize)}
+            </div>
         </div>
     </div>
 
@@ -152,25 +190,41 @@
 
     {#if uploadedFiles.length > 0}
         <div class="uploaded-files" transition:fade={{ duration: 300 }}>
-            <div class="files-header">Arquivos Selecionados ({uploadedFiles.length})</div>
-            
+            <div class="files-header">
+                Arquivos Selecionados ({uploadedFiles.length})
+            </div>
+
             {#each uploadedFiles as file, index (file.name + file.size)}
                 <div class="file-item" transition:scale={{ duration: 200 }}>
                     <div class="file-info">
                         <span class="file-icon">{getFileIcon(file)}</span>
                         <div class="file-details">
                             <span class="file-name">{file.name}</span>
-                            <span class="file-size">{formatFileSize(file.size)}</span>
+                            <span class="file-size"
+                                >{formatFileSize(file.size)}</span
+                            >
                         </div>
                     </div>
-                    
-                    <button 
+
+                    <button
                         class="remove-button"
                         on:click|stopPropagation={() => removeFile(index)}
                         aria-label="Remover arquivo"
                     >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M18 6L6 18M6 6L18 18"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            />
                         </svg>
                     </button>
                 </div>
@@ -217,7 +271,7 @@
         border-color: #667eea;
         background: rgba(255, 255, 255, 0.95);
         transform: translateY(-2px);
-        box-shadow: 
+        box-shadow:
             0 15px 35px rgba(102, 126, 234, 0.08),
             0 8px 20px rgba(102, 126, 234, 0.06),
             0 3px 8px rgba(102, 126, 234, 0.04);
@@ -227,7 +281,7 @@
         border-color: #667eea;
         background: rgba(102, 126, 234, 0.05);
         transform: scale(1.02);
-        box-shadow: 
+        box-shadow:
             0 25px 50px rgba(102, 126, 234, 0.12),
             0 15px 30px rgba(102, 126, 234, 0.08),
             0 8px 15px rgba(102, 126, 234, 0.06);
@@ -240,7 +294,7 @@
 
     .upload-zone.has-error:hover {
         border-color: #e53e3e;
-        box-shadow: 
+        box-shadow:
             0 15px 35px rgba(229, 62, 62, 0.08),
             0 8px 20px rgba(229, 62, 62, 0.06),
             0 3px 8px rgba(229, 62, 62, 0.04);
@@ -469,4 +523,4 @@
             font-size: 0.75rem;
         }
     }
-</style> 
+</style>
