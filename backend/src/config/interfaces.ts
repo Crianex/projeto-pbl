@@ -63,3 +63,20 @@ export interface Turma {
 }
 
 
+export interface ArquivoAlunoTurma {
+    id_arquivo: number;
+    created_at: Date;
+    id_aluno: number | null;
+    id_turma: number | null;
+    nome_arquivo: string | null;
+    link_arquivo: string | null;
+}
+
+export interface ArquivoAlunoProblema {
+    id_arquivo: number;
+    created_at: Date;
+    id_aluno: number | null;
+    id_problema: number | null;
+    nome_arquivo: string | null;
+    link_arquivo: string | null;
+}

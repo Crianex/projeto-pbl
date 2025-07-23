@@ -175,7 +175,10 @@
             />
 
             <div class="progress-steps">
-                <div class="step active">
+                <div
+                    class="step"
+                    class:active={loadingText.includes("Verificando")}
+                >
                     <div class="step-icon">1</div>
                     <span>Verificando dados</span>
                 </div>
@@ -197,7 +200,12 @@
         </div>
     </Container>
 {:else}
-    <Container class="responsive-container callback-container" maxWidth="md" glass={true} shadow={true}>
+    <Container
+        class="responsive-container callback-container"
+        maxWidth="md"
+        glass={true}
+        shadow={true}
+    >
         <div class="success-container">
             <div class="success-icon">✓</div>
             <h1 class="responsive-title">Login Realizado!</h1>

@@ -8,6 +8,7 @@
     import type { CriteriosGroup } from "$lib/interfaces/interfaces";
     import { currentUser } from "$lib/utils/auth";
     import { ProblemasService } from "$lib/services/problemas_service";
+    import Container from "$lib/components/Container.svelte";
 
     const turmaId = $page.params.id;
 

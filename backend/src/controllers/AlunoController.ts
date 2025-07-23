@@ -99,9 +99,9 @@ export const AlunoController: EndpointController = {
         }),
 
         'create': new Pair(RequestType.POST, async (req: Request, res: Response) => {
-            const { nome_completo, email } = req.body;
+            const { nome_completo, email, link_avatar: link_avatar_body } = req.body;
 
-            // check if data is present
+            // check if data is present
             if (!nome_completo || !email) {
                 return res.status(400).json({ error: 'Nome completo e email são obrigatórios' });
             }
@@ -123,12 +123,54 @@ export const AlunoController: EndpointController = {
                 return res.json(existingUser);
             }
 
+            let link_avatar = null;
+            // Handle avatar upload if present (file takes precedence)
+            if (req.files && req.files.avatar) {
+                const avatarFile = req.files.avatar as any;
+                // Validate file type
+                if (!avatarFile.mimetype.startsWith('image/')) {
+                    return res.status(400).json({ error: 'File must be an image' });
+                }
+                // Validate file size (max 5MB)
+                if (avatarFile.size > 5 * 1024 * 1024) {
+                    return res.status(400).json({ error: 'File size must be less than 5MB' });
+                }
+                try {
+                    // Generate unique filename
+                    const fileExtension = avatarFile.name.split('.').pop();
+                    const fileName = `alunos/avatar_${email.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.${fileExtension}`;
+                    // Upload to Supabase Storage
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('avatars')
+                        .upload(fileName, avatarFile.data, {
+                            contentType: avatarFile.mimetype,
+                            upsert: true
+                        });
+                    if (uploadError) {
+                        logger.error(`Error uploading to Supabase storage: ${uploadError.message}`);
+                        return res.status(500).json({ error: 'Error uploading avatar to storage' });
+                    }
+                    // Generate public URL
+                    const { data: urlData } = supabase.storage
+                        .from('avatars')
+                        .getPublicUrl(fileName);
+                    link_avatar = urlData.publicUrl;
+                } catch (error) {
+                    logger.error(`Error uploading avatar for aluno ${email}: ${error}`);
+                    return res.status(500).json({ error: 'Error uploading avatar' });
+                }
+            } else if (link_avatar_body) {
+                // If no file, but a direct link is provided, use it
+                link_avatar = link_avatar_body;
+            }
+
             // Create new user if doesn't exist
             const { data, error } = await supabase
                 .from('alunos')
                 .insert([{
                     nome_completo,
-                    email
+                    email,
+                    link_avatar
                 }])
                 .select()
                 .single();
@@ -180,7 +222,7 @@ export const AlunoController: EndpointController = {
 
         'uploadAvatar': new Pair(RequestType.POST, async (req: Request, res: Response) => {
             const { id_aluno } = req.query;
-            
+
             if (!id_aluno) {
                 return res.status(400).json({ error: 'id_aluno is required' });
             }
@@ -190,7 +232,7 @@ export const AlunoController: EndpointController = {
             }
 
             const avatarFile = req.files.avatar as any;
-            
+
             // Validate file type
             if (!avatarFile.mimetype.startsWith('image/')) {
                 return res.status(400).json({ error: 'File must be an image' });

@@ -295,6 +295,102 @@ export const ProblemaController: EndpointController = {
 
             logger.info(`Successfully fetched ${data?.length || 0} avaliacoes for problema ${id_problema}`);
             return res.json(data);
+        }),
+
+        'upload-arquivo': new Pair(RequestType.POST, async (req: Request, res: Response) => {
+            const { id_aluno, id_problema } = req.body;
+            if (!id_aluno || !id_problema) {
+                logger.error('id_aluno and id_problema are required');
+                return res.status(400).json({ error: 'id_aluno and id_problema are required' });
+            }
+
+            if (!req.files || !req.files.arquivo) {
+                return res.status(400).json({ error: 'Arquivo file is required' });
+            }
+
+            const arquivoFile = req.files.arquivo as any;
+
+            // Optionally validate file size/type here if needed
+            // Example: max 20MB
+            if (arquivoFile.size > 20 * 1024 * 1024) {
+                return res.status(400).json({ error: 'File size must be less than 20MB' });
+            }
+
+            try {
+                // Generate unique filename
+                const fileExtension = arquivoFile.name.split('.').pop();
+                const fileName = `aluno_problema/arquivo_${id_aluno}_${id_problema}_${Date.now()}.${fileExtension}`;
+
+                // Upload to Supabase Storage (bucket: arquivos)
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('arquivos')
+                    .upload(fileName, arquivoFile.data, {
+                        contentType: arquivoFile.mimetype,
+                        upsert: true
+                    });
+
+                if (uploadError) {
+                    logger.error(`Error uploading to Supabase storage: ${uploadError.message}`);
+                    return res.status(500).json({ error: 'Error uploading file to storage' });
+                }
+
+                // Generate private URL with infinite expiration
+                const { data: urlData, error: urlError } = await supabase.storage
+                    .from('arquivos')
+                    .createSignedUrl(fileName, 60 * 60 * 24 * 365 * 100); // 100 years
+
+                if (urlError || !urlData) {
+                    logger.error(`Error generating signed URL: ${urlError?.message}`);
+                    return res.status(500).json({ error: 'Error generating file URL' });
+                }
+
+                // Save file metadata in arquivos_aluno_problema table
+                const { data, error: dbError } = await supabase
+                    .from('arquivos_aluno_problema')
+                    .insert([{
+                        id_aluno,
+                        id_problema,
+                        nome_arquivo: arquivoFile.name,
+                        link_arquivo: urlData.signedUrl
+                    }])
+                    .select()
+                    .single();
+
+                if (dbError) {
+                    logger.error(`Error saving file metadata: ${dbError.message}`);
+                    return res.status(500).json({ error: dbError.message });
+                }
+
+                return res.status(201).json({
+                    success: true,
+                    arquivo: data
+                });
+            } catch (error) {
+                logger.error(`Error uploading arquivo for aluno ${id_aluno}, problema ${id_problema}: ${error}`);
+                return res.status(500).json({ error: 'Error uploading arquivo' });
+            }
+        }),
+
+        'get-arquivos': new Pair(RequestType.GET, async (req: Request, res: Response) => {
+            const { id_aluno, id_problema } = req.query;
+            if (!id_aluno && !id_problema) {
+                return res.status(400).json({ error: 'id_aluno or id_problema is required' });
+            }
+
+            let query = supabase.from('arquivos_aluno_problema').select('*');
+            if (id_aluno) {
+                query = query.eq('id_aluno', id_aluno);
+            }
+            if (id_problema) {
+                query = query.eq('id_problema', id_problema);
+            }
+
+            const { data, error } = await query;
+            if (error) {
+                logger.error(`Error fetching arquivos: ${error.message}`);
+                return res.status(500).json({ error: error.message });
+            }
+            return res.json(data);
         })
     }
 

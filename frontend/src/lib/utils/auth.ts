@@ -89,7 +89,8 @@ export async function createOrGetUser(session: any): Promise<BaseUser | null> {
         logger.info('Creating new aluno account', { email: supabaseUser.email });
         const newUser = await api.post('/alunos/create', {
             email: supabaseUser.email,
-            nome_completo: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'Novo Usuário'
+            nome_completo: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'Novo Usuário',
+            link_avatar: supabaseUser.user_metadata?.avatar_url || undefined
         });
 
         var user = parseToAlunoModel(newUser);

@@ -230,7 +230,7 @@
                     />
                 </div>
             {/if}
-            
+
             <div class="card-content">
                 {#each displayColumns as col}
                     {#if col.key !== "select" && col.key !== "actions"}
@@ -241,13 +241,18 @@
                                     <div class="user-cell">
                                         <img
                                             class="avatar"
-                                            src={row.user?.avatar ||
+                                            src={row.user?.link_avatar ||
+                                                row.user?.avatar ||
                                                 `https://ui-avatars.com/api/?name=${encodeURIComponent(row.user?.name || "User")}&background=random`}
                                             alt={row.user?.name || "User"}
                                         />
                                         <div class="user-info">
-                                            <span class="user-name">{row.user?.name || ""}</span>
-                                            <span class="user-role">{row.user?.role || ""}</span>
+                                            <span class="user-name"
+                                                >{row.user?.name || ""}</span
+                                            >
+                                            <span class="user-role"
+                                                >{row.user?.role || ""}</span
+                                            >
                                         </div>
                                     </div>
                                 {:else if col.key === "badge"}
@@ -261,23 +266,27 @@
                         </div>
                     {/if}
                 {/each}
-                
-                {#if displayColumns.find(col => col.key === "actions")}
+
+                {#if displayColumns.find((col) => col.key === "actions")}
                     <div class="card-actions">
                         {#each displayColumns as col}
                             {#if col.key === "actions" && col.render}
                                 {@const renderResult = col.render(row)}
                                 {#if renderResult.component === "a"}
                                     <Button
-                                        variant={renderResult.props.variant || "primary"}
+                                        variant={renderResult.props.variant ||
+                                            "primary"}
                                         href={renderResult.props.href}
                                         class={renderResult.props.class || ""}
                                     >
-                                        {renderResult.props.textContent || renderResult.props.text || ""}
+                                        {renderResult.props.textContent ||
+                                            renderResult.props.text ||
+                                            ""}
                                     </Button>
                                 {:else if renderResult.component === "button" || renderResult.component === "Button"}
                                     <Button
-                                        variant={renderResult.props.variant || "primary"}
+                                        variant={renderResult.props.variant ||
+                                            "primary"}
                                         class={renderResult.props.class || ""}
                                         on:click={() => {
                                             if (renderResult?.props?.onClick) {
@@ -285,11 +294,23 @@
                                             }
                                         }}
                                     >
-                                        {typeof renderResult.props.text === 'string' ? renderResult.props.text : String(renderResult.props.text || "")}
+                                        {typeof renderResult.props.text ===
+                                        "string"
+                                            ? renderResult.props.text
+                                            : String(
+                                                  renderResult.props.text || "",
+                                              )}
                                     </Button>
                                 {:else if renderResult.component === "span"}
-                                    <span class={renderResult.props.class || ""}>
-                                        {typeof renderResult.props.text === 'string' ? renderResult.props.text : String(renderResult.props.text || "")}
+                                    <span
+                                        class={renderResult.props.class || ""}
+                                    >
+                                        {typeof renderResult.props.text ===
+                                        "string"
+                                            ? renderResult.props.text
+                                            : String(
+                                                  renderResult.props.text || "",
+                                              )}
                                     </span>
                                 {/if}
                             {/if}

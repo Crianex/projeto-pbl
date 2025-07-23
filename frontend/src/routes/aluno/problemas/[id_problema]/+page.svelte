@@ -125,7 +125,9 @@
                     aluno: {
                         id: avaliacao.aluno_avaliado?.id || 0,
                         nome: avaliacao.aluno_avaliado?.nome_completo || "",
-                        avatar: "/avatars/default.png",
+                        avatar:
+                            avaliacao.aluno_avaliado?.link_avatar ||
+                            "/avatars/default.png",
                     },
                     nota: media,
                     enviada: true,
@@ -151,7 +153,8 @@
                             aluno: {
                                 id: aluno.id,
                                 nome: aluno.nome_completo || "",
-                                avatar: "/avatars/default.png",
+                                avatar:
+                                    aluno.link_avatar || "/avatars/default.png",
                             },
                             enviada: false,
                             isCurrentUser: false,
@@ -178,7 +181,12 @@
     onMount(fetchAvaliacoes);
 </script>
 
-<Container class="responsive-container" maxWidth="xl" glass={true} shadow={true}>
+<Container
+    class="responsive-container"
+    maxWidth="xl"
+    glass={true}
+    shadow={true}
+>
     <div class="evaluations-container">
         {#if loading && !problema}
             <div class="loading-container">
@@ -194,20 +202,6 @@
                 <h1 class="responsive-title">
                     Avaliações - {problema?.nome_problema || "Carregando..."}
                 </h1>
-                <button class="close-btn" on:click={() => history.back()}>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                    >
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
             </div>
 
             <div class="table-wrapper" in:fade={{ duration: 400, delay: 200 }}>

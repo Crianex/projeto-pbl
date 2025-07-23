@@ -132,7 +132,7 @@
             avaliacaoData = {
                 aluno: {
                     nome: aluno.nome_completo,
-                    avatar: "/avatars/default.png",
+                    avatar: aluno.link_avatar,
                 },
                 notas: { ...currentValues },
             };

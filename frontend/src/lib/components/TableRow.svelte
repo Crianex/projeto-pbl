@@ -36,7 +36,8 @@
                 <div class="user-cell">
                     <img
                         class="avatar"
-                        src={row.user?.avatar ||
+                        src={row.user?.link_avatar ||
+                            row.user?.avatar ||
                             `https://ui-avatars.com/api/?name=${encodeURIComponent(row.user?.name || "User")}&background=random`}
                         alt={row.user?.name || "User"}
                     />
@@ -55,7 +56,9 @@
                         href={renderResult.props.href}
                         class={renderResult.props.class || ""}
                     >
-                        {renderResult.props.textContent || renderResult.props.text || ""}
+                        {renderResult.props.textContent ||
+                            renderResult.props.text ||
+                            ""}
                     </Button>
                 {:else if renderResult.component === "button" || renderResult.component === "Button"}
                     <Button
@@ -63,11 +66,15 @@
                         class={renderResult.props.class || ""}
                         on:click={() => handleCellClick(col, row)}
                     >
-                        {typeof renderResult.props.text === 'string' ? renderResult.props.text : String(renderResult.props.text || "")}
+                        {typeof renderResult.props.text === "string"
+                            ? renderResult.props.text
+                            : String(renderResult.props.text || "")}
                     </Button>
                 {:else if renderResult.component === "span"}
                     <span class={renderResult.props.class || ""}>
-                        {typeof renderResult.props.text === 'string' ? renderResult.props.text : String(renderResult.props.text || "")}
+                        {typeof renderResult.props.text === "string"
+                            ? renderResult.props.text
+                            : String(renderResult.props.text || "")}
                     </span>
                 {:else}
                     {@html renderResult}
