@@ -48,23 +48,24 @@
     const itemsPerPage = 10;
     $: totalPages = Math.ceil(avaliacoes.length / itemsPerPage);
 
-    // File upload state - using simple arrays for better Svelte reactivity
-    let allUploadedFiles: File[] = [];
-    let existingFilesByType: Map<number, UploadedFile[]> = new Map();
+    // File upload state - using maps keyed by nome_tipo for better organization
+    let uploadedFilesByType: Map<string, File[]> = new Map();
+    let existingFilesByType: Map<string, UploadedFile[]> = new Map();
     let isUploading = false;
     let uploadError: string | null = null;
     let uploadProgress = { current: 0, total: 0 };
 
-    // Computed property for existing files to avoid linter errors
-    $: existingFiles = existingFilesByType.get(0) || [];
-
-    // Reactive statement to track file upload state - now using simple array length
-    $: canSave = allUploadedFiles.length > 0;
+    // Reactive statement to track file upload state
+    $: allUploadedFilesCount = Array.from(uploadedFilesByType.values()).reduce(
+        (total, files) => total + files.length,
+        0,
+    );
+    $: canSave = allUploadedFilesCount > 0;
     $: console.log(
         "Reactive canSave:",
         canSave,
-        "allUploadedFiles length:",
-        allUploadedFiles.length,
+        "allUploadedFilesCount:",
+        allUploadedFilesCount,
     );
 
     $: paginatedAvaliacoes = avaliacoes.slice(
@@ -211,21 +212,28 @@
         );
     }
 
-    function handleFilesSelected(event: CustomEvent, tipoIndex: number) {
+    function handleFilesSelected(event: CustomEvent, definicao: any) {
         const files = event.detail.files as File[];
-        allUploadedFiles = [...allUploadedFiles, ...files];
-        console.log(`Files selected for tipo ${tipoIndex}:`, files);
-        console.log("Current allUploadedFiles:", allUploadedFiles);
+        const nomeType = definicao.nome_tipo || "";
+
+        const currentFiles = uploadedFilesByType.get(nomeType) || [];
+        uploadedFilesByType.set(nomeType, [...currentFiles, ...files]);
+        uploadedFilesByType = uploadedFilesByType; // Trigger reactivity
+
+        console.log(`Files selected for tipo ${nomeType}:`, files);
+        console.log("Current uploadedFilesByType:", uploadedFilesByType);
         console.log("hasFilesToUpload:", hasFilesToUpload());
     }
 
-    function handleFileRemoved(event: CustomEvent, tipoIndex: number) {
+    function handleFileRemoved(event: CustomEvent, definicao: any) {
         const remainingFiles = event.detail.files as File[];
-        allUploadedFiles = allUploadedFiles.filter(
-            (file) => !remainingFiles.includes(file),
-        );
-        console.log(`File removed for tipo ${tipoIndex}:`, remainingFiles);
-        console.log("Current allUploadedFiles:", allUploadedFiles);
+        const nomeType = definicao.nome_tipo || "";
+
+        uploadedFilesByType.set(nomeType, remainingFiles);
+        uploadedFilesByType = uploadedFilesByType; // Trigger reactivity
+
+        console.log(`File removed for tipo ${nomeType}:`, remainingFiles);
+        console.log("Current uploadedFilesByType:", uploadedFilesByType);
         console.log("hasFilesToUpload:", hasFilesToUpload());
     }
 
@@ -240,12 +248,17 @@
                 `/problemas/get-arquivos?id_aluno=${currentUserId}&id_problema=${id_problema}`,
             );
 
-            // Group files by file type (we'll need to match them somehow)
-            // For now, we'll store all files in a general map
-            existingFilesByType.set(0, files);
+            // Group files by nome_tipo
+            existingFilesByType.clear();
+            files.forEach((file) => {
+                const nomeType = (file as any).nome_tipo || "default";
+                const currentFiles = existingFilesByType.get(nomeType) || [];
+                existingFilesByType.set(nomeType, [...currentFiles, file]);
+            });
             existingFilesByType = existingFilesByType;
 
             console.log("Loaded existing files:", files);
+            console.log("Grouped by type:", existingFilesByType);
         } catch (e: any) {
             console.error("Error loading existing files:", e);
         }
@@ -256,7 +269,6 @@
             console.log("Uploading files");
             isUploading = true;
             uploadError = null;
-            uploadProgress = { current: 0, total: allUploadedFiles.length };
 
             const id_problema = parseInt($page.params.id_problema);
             const currentUserId = $currentUser?.id;
@@ -266,28 +278,41 @@
                 throw new Error("User not authenticated");
             }
 
-            // Upload all selected files
-            for (let i = 0; i < allUploadedFiles.length; i++) {
-                const file = allUploadedFiles[i];
-                uploadProgress.current = i + 1;
-                uploadProgress = uploadProgress; // Trigger reactivity
+            // Count total files to upload
+            const totalFiles = Array.from(uploadedFilesByType.values()).reduce(
+                (total, files) => total + files.length,
+                0,
+            );
+            uploadProgress = { current: 0, total: totalFiles };
 
-                const formData = new FormData();
-                formData.append("arquivo", file);
-                formData.append("id_aluno", currentUserId.toString());
-                formData.append("id_problema", id_problema.toString());
+            let currentFileIndex = 0;
 
-                console.log("Form data:", formData);
+            // Upload all selected files by type
+            for (const [nomeType, files] of uploadedFilesByType.entries()) {
+                for (const file of files) {
+                    currentFileIndex++;
+                    uploadProgress.current = currentFileIndex;
+                    uploadProgress = uploadProgress; // Trigger reactivity
 
-                const result = await api.post(
-                    "/problemas/upload-arquivo",
-                    formData,
-                );
-                console.log("File uploaded successfully:", result);
+                    const formData = new FormData();
+                    formData.append("arquivo", file);
+                    formData.append("id_aluno", currentUserId.toString());
+                    formData.append("id_problema", id_problema.toString());
+                    formData.append("nome_tipo", nomeType);
+
+                    console.log("Form data for tipo:", nomeType, formData);
+
+                    const result = await api.post(
+                        "/problemas/upload-arquivo",
+                        formData,
+                    );
+                    console.log("File uploaded successfully:", result);
+                }
             }
 
             // Clear uploaded files and reload existing files
-            allUploadedFiles = [];
+            uploadedFilesByType.clear();
+            uploadedFilesByType = uploadedFilesByType;
             uploadProgress = { current: 0, total: 0 };
 
             await loadExistingFiles();
@@ -303,7 +328,9 @@
     }
 
     function hasFilesToUpload(): boolean {
-        return allUploadedFiles.length > 0;
+        return Array.from(uploadedFilesByType.values()).some(
+            (files) => files.length > 0,
+        );
     }
 
     onMount(async () => {
@@ -380,6 +407,10 @@
 
                     <div class="upload-forms" class:uploading={isUploading}>
                         {#each problema.definicao_arquivos_de_avaliacao as definicao, index}
+                            {@const existingFilesForType =
+                                existingFilesByType.get(
+                                    definicao.nome_tipo || "",
+                                ) || []}
                             <div
                                 class="upload-container"
                                 in:fade={{
@@ -402,17 +433,17 @@
                                         .toUpperCase() || "Todos os formatos"}
                                     disabled={isUploading}
                                     on:filesSelected={(e) =>
-                                        handleFilesSelected(e, index)}
+                                        handleFilesSelected(e, definicao)}
                                     on:fileRemoved={(e) =>
-                                        handleFileRemoved(e, index)}
+                                        handleFileRemoved(e, definicao)}
                                 />
 
                                 <!-- Display existing files for this type -->
-                                {#if existingFiles.length > 0}
+                                {#if existingFilesForType.length > 0}
                                     <div class="existing-files">
                                         <h4>Arquivos já enviados:</h4>
                                         <div class="existing-files-list">
-                                            {#each existingFiles as file}
+                                            {#each existingFilesForType as file}
                                                 <div class="existing-file-item">
                                                     <span class="file-name"
                                                         >{file.nome_arquivo}</span

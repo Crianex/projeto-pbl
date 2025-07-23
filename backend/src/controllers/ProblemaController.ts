@@ -299,11 +299,11 @@ export const ProblemaController: EndpointController = {
         }),
 
         'upload-arquivo': new Pair(RequestType.POST, async (req: Request, res: Response) => {
-            const { id_aluno, id_problema } = req.body;
-            logger.info(`Uploading arquivo for aluno ${id_aluno}, problema ${id_problema}`);
-            if (!id_aluno || !id_problema) {
-                logger.error('id_aluno and id_problema are required');
-                return res.status(400).json({ error: 'id_aluno and id_problema are required' });
+            const { id_aluno, id_problema, nome_tipo } = req.body;
+            logger.info(`Uploading arquivo for aluno ${id_aluno}, problema ${id_problema}, tipo ${nome_tipo}`);
+            if (!id_aluno || !id_problema || !nome_tipo) {
+                logger.error('id_aluno, id_problema and nome_tipo are required');
+                return res.status(400).json({ error: 'id_aluno, id_problema and nome_tipo are required' });
             }
 
             if (!req.files || !req.files.arquivo) {
@@ -319,9 +319,58 @@ export const ProblemaController: EndpointController = {
             }
 
             try {
+                // Check if file already exists for this aluno/problema/tipo combination
+                const { data: existingFiles, error: existingError } = await supabase
+                    .from('arquivos_alunos_problema')
+                    .select('*')
+                    .eq('id_aluno', id_aluno)
+                    .eq('id_problema', id_problema)
+                    .eq('nome_tipo', nome_tipo);
+
+                if (existingError) {
+                    logger.error(`Error checking existing files: ${existingError.message}`);
+                    return res.status(500).json({ error: 'Error checking existing files' });
+                }
+
+                // If file exists, delete it from storage and database
+                if (existingFiles && existingFiles.length > 0) {
+                    logger.info(`Found ${existingFiles.length} existing file(s) for aluno ${id_aluno}, problema ${id_problema}, tipo ${nome_tipo}. Replacing...`);
+
+                    for (const existingFile of existingFiles) {
+                        // Extract filename from signed URL or use a pattern to find the file
+                        const urlParts = existingFile.link_arquivo?.split('/');
+                        const filenamePart = urlParts?.[urlParts.length - 1]?.split('?')[0];
+
+                        if (filenamePart) {
+                            // Try to delete from storage (don't fail if file doesn't exist)
+                            const { error: deleteStorageError } = await supabase.storage
+                                .from('arquivos')
+                                .remove([`aluno_problema/${filenamePart}`]);
+
+                            if (deleteStorageError) {
+                                logger.warn(`Could not delete file from storage: ${deleteStorageError.message}`);
+                            } else {
+                                logger.info(`Deleted existing file from storage: ${filenamePart}`);
+                            }
+                        }
+
+                        // Delete from database
+                        const { error: deleteDbError } = await supabase
+                            .from('arquivos_alunos_problema')
+                            .delete()
+                            .eq('id_arquivo', existingFile.id_arquivo);
+
+                        if (deleteDbError) {
+                            logger.error(`Error deleting existing file from database: ${deleteDbError.message}`);
+                        } else {
+                            logger.info(`Deleted existing file record from database: ${existingFile.id_arquivo}`);
+                        }
+                    }
+                }
+
                 // Generate unique filename
                 const fileExtension = arquivoFile.name.split('.').pop();
-                const fileName = `aluno_problema/arquivo_${id_aluno}_${id_problema}_${Date.now()}.${fileExtension}`;
+                const fileName = `aluno_problema/arquivo_${id_aluno}_${id_problema}_${nome_tipo}_${Date.now()}.${fileExtension}`;
 
                 // Upload to Supabase Storage (bucket: arquivos)
                 const { data: uploadData, error: uploadError } = await supabase.storage
@@ -353,7 +402,8 @@ export const ProblemaController: EndpointController = {
                         id_aluno,
                         id_problema,
                         nome_arquivo: arquivoFile.name,
-                        link_arquivo: urlData.signedUrl
+                        link_arquivo: urlData.signedUrl,
+                        nome_tipo
                     }])
                     .select()
                     .single();
@@ -363,18 +413,19 @@ export const ProblemaController: EndpointController = {
                     return res.status(500).json({ error: dbError.message });
                 }
 
+                logger.info(`Successfully uploaded arquivo for aluno ${id_aluno}, problema ${id_problema}, tipo ${nome_tipo}`);
                 return res.status(201).json({
                     success: true,
                     arquivo: data
                 });
             } catch (error) {
-                logger.error(`Error uploading arquivo for aluno ${id_aluno}, problema ${id_problema}: ${error}`);
+                logger.error(`Error uploading arquivo for aluno ${id_aluno}, problema ${id_problema}, tipo ${nome_tipo}: ${error}`);
                 return res.status(500).json({ error: 'Error uploading arquivo' });
             }
         }),
 
         'get-arquivos': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            const { id_aluno, id_problema } = req.query;
+            const { id_aluno, id_problema, nome_tipo } = req.query;
             if (!id_aluno && !id_problema) {
                 return res.status(400).json({ error: 'id_aluno or id_problema is required' });
             }
@@ -385,6 +436,9 @@ export const ProblemaController: EndpointController = {
             }
             if (id_problema) {
                 query = query.eq('id_problema', id_problema);
+            }
+            if (nome_tipo) {
+                query = query.eq('nome_tipo', nome_tipo);
             }
 
             const { data, error } = await query;

@@ -80,4 +80,5 @@ export interface ArquivoAlunoProblema {
     id_problema: number | null;
     nome_arquivo: string | null;
     link_arquivo: string | null;
+    nome_tipo: string | null;
 }
