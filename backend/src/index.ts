@@ -276,7 +276,26 @@ console.log('🔧 Configuring CORS...');
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'User-ID']
+    allowedHeaders: [
+        'Origin',
+        'X-Requested-With',
+        'Content-Type',
+        'Accept',
+        'Authorization',
+        'User-ID',
+        'Content-Length',
+        'Content-Disposition',
+        'Accept-Encoding',
+        'Range',
+        'Cache-Control'
+    ],
+    exposedHeaders: [
+        'Content-Length',
+        'Content-Disposition',
+        'Content-Range',
+        'Accept-Ranges',
+        'ETag'
+    ]
 }));
 
 console.log('📁 Configuring file upload middleware...');
