@@ -22,6 +22,16 @@
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
     import Pagination from "$lib/components/Pagination.svelte";
 
+    interface UploadedFile {
+        id?: number;
+        nome_arquivo: string;
+        link_arquivo: string;
+        id_aluno?: number;
+        id_problema?: number;
+        created_at?: string;
+        nome_tipo?: string;
+    }
+
     let problema: ProblemaModel | null = null;
     let aluno: AlunoModel | null = null;
     let turma: TurmaModel | null = null;
@@ -29,6 +39,11 @@
     let avaliacoesRecebidas: any[] = [];
     let loading = true;
     let error: string | null = null;
+
+    // Variáveis para uploads do aluno
+    let uploadedFiles: UploadedFile[] = [];
+    let loadingFiles = false;
+    let filesError: string | null = null;
 
     // Paginação para avaliações enviadas
     let currentPageEnviadas = 1;
@@ -98,6 +113,46 @@
         },
     ];
 
+    async function loadAlunoFiles() {
+        try {
+            loadingFiles = true;
+            filesError = null;
+            
+            const { id_problema, id_aluno } = $page.params;
+            
+            const files: UploadedFile[] = await api.get(
+                `/problemas/get-arquivos?id_aluno=${id_aluno}&id_problema=${id_problema}`,
+            );
+
+            uploadedFiles = files;
+
+            logger.info(`Loaded ${files.length} files for aluno ${id_aluno}`);
+        } catch (e: any) {
+            logger.error("Error loading aluno files:", e);
+            filesError = e.message || "Erro ao carregar arquivos do aluno";
+        } finally {
+            loadingFiles = false;
+        }
+    }
+
+    function formatFileSize(bytes: number): string {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function formatDate(dateString: string): string {
+        return new Date(dateString).toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
     onMount(async () => {
         try {
             const { id_problema, id_aluno, id } = $page.params;
@@ -149,6 +204,9 @@
                         enviada_para: aluno?.nome_completo || "Aluno",
                     };
                 });
+
+            // Carregar arquivos do aluno
+            await loadAlunoFiles();
         } catch (e: any) {
             logger.error("Error loading aluno details:", e);
             error = e.message || "Erro ao carregar os dados";
@@ -182,8 +240,16 @@
 
     function handleAvaliarAluno() {
         const { id_problema, id_aluno, id } = $page.params;
+        const currentUserId = $currentUser?.id;
+        
+        if (!currentUserId) {
+            console.error("Usuário não autenticado");
+            return;
+        }
+        
+        // Redirecionar para a página de avaliação com parâmetros para avaliação de professor
         goto(
-            `/professor/turmas/${id}/problemas/${id_problema}/avaliar/${id_aluno}`,
+            `/avaliacao?id_problema=${id_problema}&id_professor=${currentUserId}&id_aluno_avaliado=${id_aluno}`,
         );
     }
 
@@ -302,6 +368,72 @@
                             />
                         </div>
                     {/if}
+                {/if}
+            </div>
+
+            <!-- Seção de Uploads do Aluno -->
+            <div class="uploads-section">
+                <h2>Arquivos Enviados pelo Aluno</h2>
+                
+                {#if loadingFiles}
+                    <div class="loading-files">
+                        <div class="loading-spinner" />
+                        <p>Carregando arquivos...</p>
+                    </div>
+                {:else if filesError}
+                    <div class="files-error">
+                        <p>{filesError}</p>
+                    </div>
+                {:else if uploadedFiles.length === 0}
+                    <div class="empty-state">
+                        <div class="empty-icon">📁</div>
+                        <h3>Nenhum arquivo enviado</h3>
+                        <p>Este aluno ainda não enviou nenhum arquivo para este problema.</p>
+                    </div>
+                {:else}
+                    <!-- Estatísticas dos uploads -->
+                    <div class="uploads-stats">
+                        <div class="stat-card">
+                            <div class="stat-number">{uploadedFiles.length}</div>
+                            <div class="stat-label">Total de Arquivos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">
+                                {uploadedFiles.length > 0 ? formatDate(uploadedFiles[0].created_at || '') : 'N/A'}
+                            </div>
+                            <div class="stat-label">Último Upload</div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de arquivos -->
+                    <div class="files-list">
+                        {#each uploadedFiles as file}
+                            <div class="file-item">
+                                <div class="file-info">
+                                    <div class="file-icon">📄</div>
+                                    <div class="file-details">
+                                        <div class="file-name">{file.nome_arquivo}</div>
+                                        <div class="file-meta">
+                                            <span class="file-type">{file.nome_tipo || 'Sem tipo'}</span>
+                                            <span class="file-date">
+                                                {file.created_at ? formatDate(file.created_at) : 'Data não disponível'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="file-actions">
+                                    <a 
+                                        href={file.link_arquivo} 
+                                        target="_blank" 
+                                        class="download-btn"
+                                        title="Baixar arquivo"
+                                    >
+                                        📥 Baixar
+                                    </a>
+                                </div>
+                            </div>
+                        {/each}
+                    </div>
                 {/if}
             </div>
 
@@ -447,6 +579,167 @@
         font-weight: 600;
     }
 
+    /* Uploads Section Styles */
+    .uploads-section {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+    }
+
+    .uploads-section h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: #2d3748;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 0.5rem;
+    }
+
+    .loading-files {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        color: #6c757d;
+    }
+
+    .loading-files p {
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .files-error {
+        background-color: #fee2e2;
+        border: 1px solid #ef4444;
+        color: #b91c1c;
+        padding: 0.75rem 1rem;
+        border-radius: 0.375rem;
+        text-align: center;
+    }
+
+    /* Uploads Statistics */
+    .uploads-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+    }
+
+    .stat-number {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        opacity: 0.9;
+    }
+
+    /* Files List */
+    .files-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .file-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0.75rem;
+        transition: all 0.2s ease;
+    }
+
+    .file-item:hover {
+        border-color: #667eea;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+    }
+
+    .file-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex: 1;
+    }
+
+    .file-icon {
+        font-size: 1.25rem;
+        color: #667eea;
+    }
+
+    .file-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .file-name {
+        font-weight: 500;
+        color: #2d3748;
+        font-size: 0.9rem;
+    }
+
+    .file-meta {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
+
+    .file-type {
+        background: #e2e8f0;
+        padding: 0.125rem 0.375rem;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+
+    .file-date {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .file-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .download-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        background: #667eea;
+        color: white;
+        text-decoration: none;
+        padding: 0.5rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .download-btn:hover {
+        background: #5a67d8;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+    }
+
     .loading-container {
         display: flex;
         justify-content: center;
@@ -494,16 +787,50 @@
             font-size: 1.75rem;
         }
 
-        .problema-subtitle {
-            font-size: 1rem;
-        }
-
         .avaliacoes-section {
             padding: 1rem;
         }
 
         .avaliacoes-section h2 {
             font-size: 1.125rem;
+        }
+
+        .uploads-section {
+            padding: 1rem;
+        }
+
+        .uploads-section h2 {
+            font-size: 1.125rem;
+        }
+
+        .uploads-stats {
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .stat-card {
+            padding: 0.75rem;
+        }
+
+        .stat-number {
+            font-size: 1.25rem;
+        }
+
+        .file-item {
+            padding: 0.5rem;
+        }
+
+        .file-info {
+            gap: 0.5rem;
+        }
+
+        .file-name {
+            font-size: 0.85rem;
+        }
+
+        .download-btn {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.75rem;
         }
 
         .empty-state {
@@ -525,12 +852,41 @@
             font-size: 1.5rem;
         }
 
-        .problema-subtitle {
-            font-size: 0.875rem;
-        }
-
         .avaliacoes-section {
             padding: 0.75rem;
+        }
+
+        .uploads-section {
+            padding: 0.75rem;
+        }
+
+        .uploads-stats {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+        }
+
+        .stat-card {
+            padding: 0.5rem;
+        }
+
+        .stat-number {
+            font-size: 1.125rem;
+        }
+
+        .file-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .file-actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+
+        .download-btn {
+            width: 100%;
+            justify-content: center;
         }
 
         .empty-state {
