@@ -348,24 +348,6 @@
         text-align: center;
     }
 
-    .search-bar {
-        display: flex;
-        gap: 1rem;
-        align-items: center;
-    }
-
-    .search-bar input {
-        flex: 3;
-        padding: 0.75rem;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 1rem;
-    }
-
-    .create-turma-button {
-        flex: 1;
-    }
-
     .turmas-list {
         flex: 1;
         display: flex;
@@ -427,62 +409,6 @@
         display: block;
     }
 
-    .dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        width: 100%;
-        padding: 0.5rem 1rem;
-        border: none;
-        background: none;
-        text-align: left;
-        cursor: pointer;
-        color: #212529;
-        font-size: 0.875rem;
-        white-space: nowrap;
-    }
-
-    .dropdown-item.delete {
-        color: #dc3545;
-    }
-
-    .dropdown-item:hover {
-        background-color: #f8f9fa;
-    }
-
-    .pagination {
-        display: flex;
-        justify-content: center;
-        gap: 0.3rem;
-        margin-top: 1rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .page-nav,
-    .page-number {
-        padding: 0.5rem 1rem;
-        border: 1px solid #dee2e6;
-        background: white;
-        cursor: pointer;
-        border-radius: 4px;
-    }
-
-    .page-nav:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .page-number.active {
-        background: #0d6efd;
-        color: white;
-        border-color: #0d6efd;
-    }
-
-    .page-nav:hover:not(:disabled),
-    .page-number:hover:not(.active) {
-        background: #f8f9fa;
-    }
-
     .loading,
     .error,
     .empty-state {
@@ -495,10 +421,6 @@
 
     .error {
         color: #dc3545;
-    }
-
-    .error button {
-        margin-top: 1rem;
     }
 
     .delete-confirm-content {
@@ -548,13 +470,7 @@
         .actions {
             gap: 0.1rem;
         }
-        .pagination {
-            gap: 0.1rem;
-            margin-top: 0.5rem;
-            margin-bottom: 0.2rem;
-        }
-        .search-bar button,
-        .search-bar .create-turma-button,
+
         .header :global(button) {
             width: 100%;
             min-width: 0;
@@ -567,7 +483,7 @@
     @media (max-width: 480px) {
         .turmas-container {
             margin-top: 1.2rem;
-            padding: 0 0.02rem;
+            padding: 0.5rem;
         }
         .header {
             margin-top: 0.1rem;
@@ -575,9 +491,11 @@
             gap: 0.2rem;
         }
         .header h1 {
-            font-size: 0.95rem;
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
         }
         .turmas-list {
+            gap: 0.1rem;
             border-radius: 6px;
             margin-bottom: 0.3rem;
             padding: 0.05rem 0.01rem;
@@ -590,13 +508,7 @@
         .actions {
             gap: 0.05rem;
         }
-        .pagination {
-            gap: 0.05rem;
-            margin-top: 0.2rem;
-            margin-bottom: 0.05rem;
-        }
-        .search-bar button,
-        .search-bar .create-turma-button,
+
         .header :global(button) {
             padding: 0.3rem 0.1rem;
             font-size: 0.91rem;

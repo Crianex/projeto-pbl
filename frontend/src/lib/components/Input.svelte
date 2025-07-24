@@ -2,6 +2,7 @@
     import { formatToDateTime } from "brazilian-values";
     import { onMount } from "svelte";
     import type { FullAutoFill } from "svelte/elements";
+    import { createEventDispatcher } from "svelte";
 
     export let type: string = "text";
     export let placeholder: string = "";
@@ -22,6 +23,8 @@
     export let variant: "default" | "outlined" = "default";
 
     let inputElement: HTMLInputElement;
+
+    const dispatch = createEventDispatcher();
 
     // Size classes
     const sizeClasses = {
@@ -62,7 +65,11 @@
         <input
             type="text"
             bind:this={inputElement}
-            bind:value
+            {value}
+            on:input={(e) => {
+                value = e.target.value;
+                dispatch("input", value);
+            }}
             {id}
             {name}
             {placeholder}
@@ -82,7 +89,11 @@
         <input
             type="number"
             bind:this={inputElement}
-            bind:value
+            {value}
+            on:input={(e) => {
+                value = e.target.value;
+                dispatch("input", value);
+            }}
             {id}
             {name}
             {placeholder}
@@ -102,7 +113,11 @@
         <input
             type="datetime-local"
             bind:this={inputElement}
-            bind:value
+            {value}
+            on:input={(e) => {
+                value = e.target.value;
+                dispatch("input", value);
+            }}
             {id}
             {name}
             {placeholder}
@@ -123,6 +138,10 @@
             {type}
             bind:this={inputElement}
             {value}
+            on:input={(e) => {
+                value = e.target.value;
+                dispatch("input", value);
+            }}
             {id}
             {name}
             {placeholder}

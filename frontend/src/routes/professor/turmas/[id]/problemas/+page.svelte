@@ -396,8 +396,8 @@
         .header {
             flex-direction: column;
             align-items: stretch;
-            gap: 0.4rem;
-            margin-bottom: 0.7rem;
+            gap: 1.2rem; /* increased gap */
+            margin-bottom: 1.2rem; /* increased margin */
         }
         .header h1 {
             font-size: 1.05rem;
@@ -405,29 +405,29 @@
         }
         .title-section {
             align-items: center;
-            gap: 0.2rem;
+            gap: 0.8rem; /* increased gap */
         }
         .problemas-list {
-            gap: 0.4rem;
+            gap: 1rem; /* increased gap */
         }
         .problema-item {
-            padding: 0.5rem 0.3rem;
+            padding: 0.7rem 0.5rem; /* slightly increased padding */
             border-radius: 8px;
             font-size: 0.97rem;
             flex-direction: column;
             align-items: stretch;
-            gap: 0.5rem;
+            gap: 0.8rem; /* increased gap */
         }
         .problema-info h3 {
             font-size: 0.97rem;
-            margin-bottom: 0.1rem;
+            margin-bottom: 0.3rem;
         }
         .problema-details {
-            gap: 0.3rem;
+            gap: 0.7rem; /* increased gap */
             font-size: 0.9rem;
         }
         .actions {
-            gap: 0.1rem;
+            gap: 0.5rem; /* increased gap */
             flex-direction: row;
             justify-content: flex-end;
         }
@@ -447,33 +447,34 @@
             margin-top: 1.2rem;
         }
         .header {
-            gap: 0.1rem;
-            margin-bottom: 0.2rem;
+            gap: 0.7rem; /* increased gap */
+            margin-bottom: 0.7rem; /* increased margin */
         }
         .header h1 {
             font-size: 0.93rem;
         }
         .title-section {
-            gap: 0.05rem;
+            gap: 0.5rem; /* increased gap */
         }
         .problemas-list {
-            gap: 0.15rem;
+            gap: 0.6rem; /* increased gap */
         }
         .problema-item {
-            padding: 0.2rem 0.05rem;
+            padding: 0.4rem 0.2rem; /* slightly increased padding */
             border-radius: 6px;
             font-size: 0.91rem;
+            gap: 0.5rem; /* increased gap */
         }
         .problema-info h3 {
             font-size: 0.91rem;
-            margin-bottom: 0.05rem;
+            margin-bottom: 0.2rem;
         }
         .problema-details {
-            gap: 0.1rem;
+            gap: 0.4rem; /* increased gap */
             font-size: 0.88rem;
         }
         .actions {
-            gap: 0.05rem;
+            gap: 0.3rem; /* increased gap */
         }
         .header :global(button),
         .header Button {

@@ -6,24 +6,27 @@
     export let shadow = true;
     export let rounded = true;
     export let needsContainerStyle = false;
+
+    // Compute class string
+    $: containerClass = [
+        needsContainerStyle ? "container" : "",
+        center ? "center" : "",
+        glass ? "glass" : "",
+        shadow ? "shadow" : "",
+        rounded ? "rounded" : "",
+        maxWidth ? `max-${maxWidth}` : "",
+        padding ? `pad-${padding}` : "",
+    ]
+        .filter(Boolean)
+        .join(" ");
 </script>
 
-<div
-    class={needsContainerStyle ? "container" : ""}
-    class:maxWidth
-    class:padding
-    class:center
-    class:glass
-    class:shadow
-    class:rounded
->
+<div class={containerClass}>
     <slot />
 </div>
 
 <style>
     .container {
-        max-width: 100%;
-
         width: 100%;
         transition: all 0.3s ease;
     }
@@ -33,40 +36,33 @@
     }
 
     /* Max Width Variants */
-    .sm {
+    .max-sm {
         max-width: 640px;
     }
-
-    .md {
+    .max-md {
         max-width: 768px;
     }
-
-    .lg {
+    .max-lg {
         max-width: 1024px;
     }
-
-    .xl {
+    .max-xl {
         max-width: 1280px;
     }
-
-    .full {
+    .max-full {
         max-width: 100%;
     }
 
     /* Padding Variants */
-    .none {
+    .pad-none {
         padding: 0;
     }
-
-    .sm {
+    .pad-sm {
         padding: 1rem;
     }
-
-    .md {
+    .pad-md {
         padding: 2rem;
     }
-
-    .lg {
+    .pad-lg {
         padding: 3rem;
     }
 
@@ -84,7 +80,6 @@
             0 8px 20px rgba(0, 0, 0, 0.06),
             0 3px 8px rgba(0, 0, 0, 0.04);
     }
-
     .shadow:hover {
         box-shadow:
             0 25px 50px rgba(0, 0, 0, 0.12),
@@ -100,70 +95,59 @@
 
     /* Responsive Design */
     @media (max-width: 640px) {
-        .sm,
-        .md,
-        .lg,
-        .xl {
+        .max-sm,
+        .max-md,
+        .max-lg,
+        .max-xl {
             padding-left: 1rem;
             padding-right: 1rem;
         }
-
-        .lg {
+        .max-lg {
             padding-top: 1.5rem;
             padding-bottom: 1.5rem;
         }
-
-        .md {
+        .max-md {
             padding-top: 1rem;
             padding-bottom: 1rem;
         }
-
         .rounded {
             border-radius: 12px;
         }
     }
-
     @media (max-width: 768px) {
-        .lg,
-        .xl {
+        .max-lg,
+        .max-xl {
             max-width: 100%;
             margin: 0;
         }
-
         .rounded {
             border-radius: 16px;
         }
-
         .glass {
             backdrop-filter: blur(15px);
         }
     }
-
     @media (max-width: 480px) {
-        .sm,
-        .md,
-        .lg,
-        .xl {
+        .max-sm,
+        .max-md,
+        .max-lg,
+        .max-xl {
             padding-left: 0.5rem;
             padding-right: 0.5rem;
             max-width: 100%;
             margin: 0;
         }
-
-        .lg {
+        .max-lg {
             padding-top: 0.75rem;
             padding-bottom: 0.75rem;
         }
-
-        .md {
+        .max-md {
             padding-top: 0.5rem;
             padding-bottom: 0.5rem;
         }
-
         .rounded {
             border-radius: 12px;
         }
-
         .glass {
             backdrop-filter: blur(10px);
         }

@@ -73,6 +73,22 @@
         !emailError &&
         !passwordError &&
         !confirmPasswordError;
+    $: formTouched = name || email || password || confirmPassword;
+
+    $: missingFields = [] as string[];
+    if (formTouched) {
+        if (!name) missingFields.push("Nome completo");
+        else if (nameError) missingFields.push(nameError);
+
+        if (!email) missingFields.push("E-mail");
+        else if (emailError) missingFields.push(emailError);
+
+        if (!password) missingFields.push("Senha");
+        else if (passwordError) missingFields.push(passwordError);
+
+        if (!confirmPassword) missingFields.push("Confirmação de senha");
+        else if (confirmPasswordError) missingFields.push(confirmPasswordError);
+    }
 
     async function handleRegister() {
         if (!formValid) return;
@@ -154,7 +170,12 @@
 </svelte:head>
 
 {#if registrationComplete}
-    <Container maxWidth="md" glass={true} shadow={true} needsContainerStyle={true}>
+    <Container
+        maxWidth="md"
+        glass={true}
+        shadow={true}
+        needsContainerStyle={true}
+    >
         <div class="success-container">
             <div class="success-icon">✓</div>
             <h1>Conta Criada!</h1>
@@ -176,7 +197,7 @@
         </div>
     </Container>
 {:else}
-    <Container maxWidth="md" glass={true} shadow={true} needsContainerStyle={true}>
+    <Container maxWidth="lg" glass={true} shadow={true}>
         <div class="header">
             <h1>Criar Conta</h1>
             <p class="subtitle">Preencha os dados para se registrar</p>
@@ -257,6 +278,17 @@
                 </Button>
             </div>
         </form>
+
+        {#if !formValid && formTouched}
+            <div class="form-warning">
+                <div>Por favor, corrija os seguintes itens:</div>
+                <ul>
+                    {#each missingFields as field}
+                        <li>• {field}</li>
+                    {/each}
+                </ul>
+            </div>
+        {/if}
 
         <div class="divider">
             <span>ou registre-se com</span>
@@ -913,5 +945,16 @@
         .strength-text {
             font-size: 0.75rem;
         }
+    }
+
+    .form-warning {
+        color: #e53e3e;
+        background: #fff5f5;
+        border: 1px solid #fed7d7;
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        margin-top: 1rem;
+        text-align: center;
+        font-size: 1rem;
     }
 </style>

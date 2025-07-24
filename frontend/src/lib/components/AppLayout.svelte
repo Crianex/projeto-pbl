@@ -396,13 +396,13 @@
         .sidebar-content,
         nav,
         .logout {
-            align-items: flex-start;
-            text-align: left;
+            align-items: center;
+            text-align: center;
         }
         nav a,
         .logout button {
-            justify-content: flex-start;
-            text-align: left;
+            justify-content: center;
+            text-align: center;
         }
         .sidebar {
             width: 70vw;
@@ -445,6 +445,8 @@
             width: 100vw;
             min-width: 0;
             display: flex;
+            align-items: center;
+            justify-content: center;
         }
     }
     @media (max-width: 480px) {
@@ -461,6 +463,21 @@
         .logout button {
             padding: 1rem 0.5rem;
             font-size: 1.05rem;
+        }
+        .sidebar-content,
+        nav,
+        .logout {
+            align-items: center;
+            text-align: center;
+        }
+        nav a,
+        .logout button {
+            justify-content: center;
+            text-align: center;
+        }
+        .main-content {
+            align-items: center;
+            justify-content: center;
         }
     }
     @media (max-width: 768px) {

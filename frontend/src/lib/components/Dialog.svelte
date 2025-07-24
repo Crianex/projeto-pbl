@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fade, scale } from "svelte/transition";
 	import { createEventDispatcher } from "svelte";
+	import Portal from "svelte-portal";
 
 	export let open = false;
 	export let closeOnClickOutside = true;
@@ -20,24 +21,26 @@
 </script>
 
 {#if open}
-	<div
-		class="dialog-overlay"
-		on:click={handleClose}
-		transition:fade={{ duration: 200 }}
-	>
+	<Portal>
 		<div
-			class="dialog"
-			on:click={handleDialogClick}
-			transition:scale={{ duration: 200, start: 0.95 }}
+			class="dialog-overlay"
+			on:click={handleClose}
+			transition:fade={{ duration: 200 }}
 		>
-			<div class="dialog-header">
-				<slot name="header" />
-			</div>
-			<div class="dialog-content">
-				<slot />
+			<div
+				class="dialog"
+				on:click={handleDialogClick}
+				transition:scale={{ duration: 200, start: 0.95 }}
+			>
+				<div class="dialog-header">
+					<slot name="header" />
+				</div>
+				<div class="dialog-content">
+					<slot />
+				</div>
 			</div>
 		</div>
-	</div>
+	</Portal>
 {/if}
 
 <style>
@@ -50,7 +53,11 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%);
+		background: linear-gradient(
+			135deg,
+			rgba(0, 0, 0, 0.4) 0%,
+			rgba(0, 0, 0, 0.6) 100%
+		);
 		backdrop-filter: blur(12px);
 		z-index: 1000;
 	}

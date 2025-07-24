@@ -57,26 +57,26 @@ export async function createOrGetUser(session: any): Promise<BaseUser | null> {
             return null;
         }
 
-        // First, try to find existing user as aluno by email
-        try {
-            const alunoResponse = await api.get(`/alunos/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`);
-            logger.info('Found existing aluno', { email: supabaseUser.email });
-            var userAluno = parseToAlunoModel(alunoResponse);
-            return userAluno;
-        } catch (error) {
-            if (error instanceof APIError && error.status === 404) {
-                // Continue to try professor
-            } else {
-                throw error;
-            }
-        }
-
-        // Then try as professor
+        // First, try to find existing user as professor by email
         try {
             const professorResponse = await api.get(`/professores/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`);
             logger.info('Found existing professor', { email: supabaseUser.email });
             var userProfessor = parseToProfessorModel(professorResponse);
             return userProfessor;
+        } catch (error) {
+            if (error instanceof APIError && error.status === 404) {
+                // Continue to try aluno
+            } else {
+                throw error;
+            }
+        }
+
+        // Then try as aluno
+        try {
+            const alunoResponse = await api.get(`/alunos/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`);
+            logger.info('Found existing aluno', { email: supabaseUser.email });
+            var userAluno = parseToAlunoModel(alunoResponse);
+            return userAluno;
         } catch (error) {
             if (error instanceof APIError && error.status === 404) {
                 // Continue to create new user

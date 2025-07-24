@@ -212,4 +212,14 @@ export class DateUtils {
             .filter(Boolean);
         return ranges.join("<br><br>");
     }
+
+    static isNowWithinAnyDateRange(problema: ProblemaModel): boolean {
+        const now = new Date();
+        return Object.values(problema.data_e_hora_criterios_e_arquivos).some(dateObj => {
+            if (!dateObj.data_e_hora_inicio || !dateObj.data_e_hora_fim) return false;
+            const inicio = new Date(dateObj.data_e_hora_inicio);
+            const fim = new Date(dateObj.data_e_hora_fim);
+            return now >= inicio && now <= fim;
+        });
+    }
 }

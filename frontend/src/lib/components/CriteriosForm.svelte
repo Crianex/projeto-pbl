@@ -111,6 +111,8 @@
                 dataEHoraCriteriosEArquivos[groupName].data_e_hora_fim =
                     parseToDate(value);
             }
+            // Trigger reactivity
+            dataEHoraCriteriosEArquivos = { ...dataEHoraCriteriosEArquivos };
         };
     }
 
@@ -128,6 +130,8 @@
                 dataEHoraCriteriosEArquivos[groupName].data_e_hora_inicio =
                     parseToDate(value);
             }
+            // Trigger reactivity
+            dataEHoraCriteriosEArquivos = { ...dataEHoraCriteriosEArquivos };
         };
     }
 </script>

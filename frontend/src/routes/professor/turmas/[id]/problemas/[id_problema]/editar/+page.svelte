@@ -73,16 +73,18 @@
                                   data_e_hora_inicio: problema!
                                       .data_e_hora_criterios_e_arquivos[tag]
                                       .data_e_hora_inicio
-                                      ? problema!.data_e_hora_criterios_e_arquivos[
-                                                tag
-                                            ].data_e_hora_inicio
+                                      ? problema!
+                                            .data_e_hora_criterios_e_arquivos[
+                                            tag
+                                        ].data_e_hora_inicio
                                       : new Date(),
                                   data_e_hora_fim: problema!
                                       .data_e_hora_criterios_e_arquivos[tag]
                                       .data_e_hora_fim
-                                      ? problema!.data_e_hora_criterios_e_arquivos[
-                                                tag
-                                            ].data_e_hora_fim
+                                      ? problema!
+                                            .data_e_hora_criterios_e_arquivos[
+                                            tag
+                                        ].data_e_hora_fim
                                       : new Date(),
                               }
                             : {
@@ -119,6 +121,10 @@
                 ),
             };
 
+            console.log(
+                `Updating problema with payload: ${JSON.stringify(payload)}`,
+            );
+
             // Use the service instead of raw API call
             const updatedProblema = await ProblemasService.update(
                 problemaId,
@@ -150,56 +156,55 @@
 {#if loading}
     <LoadingSpinner message="Carregando problema..." />
 {:else}
-        <PageHeader
-            backUrl="/professor/turmas/{turmaId}/problemas"
-            backText="Voltar para problemas"
-            title="Editar Problema"
+    <PageHeader
+        backUrl="/professor/turmas/{turmaId}/problemas"
+        backText="Voltar para problemas"
+        title="Editar Problema"
+    />
+
+    <form on:submit|preventDefault={handleSubmit} class="form">
+        {#if error}
+            <div class="error-message">
+                {error}
+            </div>
+        {/if}
+
+        <div class="form-group">
+            <Input
+                type="text"
+                id="nome_problema"
+                label="Nome do Problema"
+                bind:value={formData.nome_problema}
+                required
+            />
+        </div>
+
+        <!-- Remove DateRangeInput for data_inicio and data_fim -->
+
+        <CriteriosForm
+            bind:criterios={formData.criterios}
+            bind:dataEHoraCriteriosEArquivos={
+                formData.data_e_hora_criterios_e_arquivos
+            }
         />
 
-        <form on:submit|preventDefault={handleSubmit} class="form">
-            {#if error}
-                <div class="error-message">
-                    {error}
-                </div>
-            {/if}
+        <ArquivosForm
+            bind:definicoes={formData.definicao_arquivos_de_avaliacao}
+        />
 
-            <div class="form-group">
-                <Input
-                    type="text"
-                    id="nome_problema"
-                    label="Nome do Problema"
-                    bind:value={formData.nome_problema}
-                    required
-                />
-            </div>
-
-            <!-- Remove DateRangeInput for data_inicio and data_fim -->
-
-            <CriteriosForm
-                bind:criterios={formData.criterios}
-                bind:dataEHoraCriteriosEArquivos={
-                    formData.data_e_hora_criterios_e_arquivos
-                }
-            />
-
-            <ArquivosForm
-                bind:definicoes={formData.definicao_arquivos_de_avaliacao}
-            />
-
-            <div class="form-actions">
-                <Button
-                    type="button"
-                    variant="secondary"
-                    on:click={() =>
-                        goto(`/professor/turmas/${turmaId}/problemas`)}
-                >
-                    Cancelar
-                </Button>
-                <Button type="submit" variant="primary" disabled={saving}>
-                    {saving ? "Salvando..." : "Salvar Alterações"}
-                </Button>
-            </div>
-        </form>
+        <div class="form-actions">
+            <Button
+                type="button"
+                variant="secondary"
+                on:click={() => goto(`/professor/turmas/${turmaId}/problemas`)}
+            >
+                Cancelar
+            </Button>
+            <Button type="submit" variant="primary" disabled={saving}>
+                {saving ? "Salvando..." : "Salvar Alterações"}
+            </Button>
+        </div>
+    </form>
 {/if}
 
 <style>

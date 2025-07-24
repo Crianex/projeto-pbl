@@ -27,11 +27,11 @@
             const data = await api.get(
                 `/alunos/search?query=%20&exclude_turma_id=${exclude_turma_id || ""}`,
             );
-            results =  Parsers.parseAlunos(data.sort((a: any, b: any) =>
-                a.nome_completo.localeCompare(b.nome_completo),
-            ));
-
-            
+            results = Parsers.parseAlunos(
+                data.sort((a: any, b: any) =>
+                    a.nome_completo.localeCompare(b.nome_completo),
+                ),
+            );
         } catch (err) {
             error =
                 err instanceof Error ? err.message : "Erro ao carregar alunos";
@@ -114,8 +114,9 @@
                         on:click={() => handleSelectAluno(aluno)}
                     >
                         <div class="aluno-info">
-                            <Avatar 
-                                src={aluno.link_avatar || "/avatars/default.png"} 
+                            <Avatar
+                                src={aluno.link_avatar ||
+                                    "/avatars/default.png"}
                                 alt={`Avatar de ${aluno.nome_completo}`}
                                 size="sm"
                             />

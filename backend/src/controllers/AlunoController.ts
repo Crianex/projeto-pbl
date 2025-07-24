@@ -10,7 +10,7 @@ export const AlunoController: EndpointController = {
     name: 'alunos',
     routes: {
         'search': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            const { query, exclude_turma_id } = req.query;
+            const { query, exclude_turma_id, exclude_aluno_ids } = req.query;
 
             if (!query) {
                 return res.status(400).json({ error: 'Search query is required' });
@@ -21,9 +21,23 @@ export const AlunoController: EndpointController = {
             queryStatement = queryStatement.is('id_turma', null);
 
             queryStatement = queryStatement.ilike('nome_completo', `%${query}%`);
+
+            // Exclude specific aluno IDs if provided
+            if (exclude_aluno_ids) {
+                // Accept both string and array (from querystring)
+                let ids: string[] = [];
+                if (typeof exclude_aluno_ids === 'string') {
+                    ids = exclude_aluno_ids.split(',').map(id => id.trim()).filter(Boolean);
+                } else if (Array.isArray(exclude_aluno_ids)) {
+                    ids = exclude_aluno_ids.map(String);
+                }
+                if (ids.length > 0) {
+                    queryStatement = queryStatement.not('id_aluno', 'in', `(${ids.join(',')})`);
+                }
+            }
+
             // First get all alunos that match the search query
             const { data: matchingAlunos, error: searchError } = await queryStatement;
-
 
             if (searchError) {
                 logger.error(`Error searching alunos: ${searchError.message}`);
