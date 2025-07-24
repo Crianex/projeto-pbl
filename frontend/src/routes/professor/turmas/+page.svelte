@@ -327,16 +327,25 @@
         margin: 0 auto;
         display: flex;
         flex-direction: column;
+        margin-top: 2.5rem;
+        padding: 0 0.5rem;
+        box-sizing: border-box;
     }
 
     .header {
-        margin-bottom: 2rem;
+        margin-bottom: 1.2rem;
+        margin-top: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.7rem;
     }
 
     .header h1 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+        text-align: center;
     }
 
     .search-bar {
@@ -363,19 +372,22 @@
         flex-direction: column;
         background: white;
         border: 1px solid #e9ecef;
-        border-radius: 8px;
+        border-radius: 10px;
         overflow: visible;
-        margin-bottom: 2rem;
+        margin-bottom: 1.2rem;
+        padding: 0.2rem 0.2rem;
     }
 
     .turma-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 1rem;
+        padding: 0.7rem 0.5rem;
         border-bottom: 1px solid #e9ecef;
         cursor: pointer;
         transition: background-color 0.2s ease;
+        border-radius: 6px;
+        margin: 0.1rem 0;
     }
 
     .turma-item:hover {
@@ -388,7 +400,7 @@
 
     .actions {
         display: flex;
-        gap: 0.5rem;
+        gap: 0.3rem;
         align-items: center;
     }
 
@@ -441,8 +453,9 @@
     .pagination {
         display: flex;
         justify-content: center;
-        gap: 0.5rem;
-        margin-top: 2rem;
+        gap: 0.3rem;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
     }
 
     .page-nav,
@@ -506,5 +519,48 @@
         justify-content: flex-end;
         gap: 1rem;
         margin-top: 2rem;
+    }
+
+    @media (max-width: 768px) {
+        .turmas-container {
+            margin-top: 3rem;
+            padding: 0 0.1rem;
+        }
+        .header {
+            margin-top: 0.2rem;
+            margin-bottom: 0.7rem;
+            gap: 0.4rem;
+        }
+        .header h1 {
+            font-size: 1.05rem;
+            margin-bottom: 0.1rem;
+        }
+        .turmas-list {
+            border-radius: 8px;
+            margin-bottom: 0.7rem;
+            padding: 0.1rem 0.05rem;
+        }
+        .turma-item {
+            padding: 0.5rem 0.2rem;
+            font-size: 0.97rem;
+            border-radius: 4px;
+        }
+        .actions {
+            gap: 0.1rem;
+        }
+        .pagination {
+            gap: 0.1rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.2rem;
+        }
+        .search-bar button,
+        .search-bar .create-turma-button,
+        .header :global(button) {
+            width: 100%;
+            min-width: 0;
+            padding: 0.5rem 0.2rem;
+            font-size: 0.97rem;
+            box-sizing: border-box;
+        }
     }
 </style>

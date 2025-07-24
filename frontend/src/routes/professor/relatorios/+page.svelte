@@ -324,6 +324,19 @@
         return result;
     }
 
+    // Função para detectar outlier
+    function isOutlier(evaluatedId: number, grade: number): boolean {
+        if (grade === 0) return false;
+        // Coletar todas as notas recebidas pelo avaliado (exceto autoavaliação e zeros)
+        const received = Object.keys(evaluationMatrix)
+            .map((evaluatorId) => evaluationMatrix[Number(evaluatorId)][evaluatedId])
+            .filter((g, idx) => alunos[idx]?.id !== evaluatedId && g > 0);
+        if (received.length <= 1) return false;
+        const avg = received.reduce((a, b) => a + b, 0) / received.length;
+        // Outlier se diferença absoluta for maior que 2 pontos
+        return Math.abs(grade - avg) > 2;
+    }
+
     // Force reactive updates when matrix or alunos change
     $: if (evaluationMatrix && alunos) {
         console.log("Reactive update triggered - matrix and alunos changed");
@@ -606,25 +619,13 @@
                                             {getReceivedAverage(evaluator.id) ||
                                                 "-"}
                                         </td>
-                                        {#each alunos as evaluated, evaluatedIndex}
-                                            <td
-                                                class="grade-cell"
-                                                class:self-evaluation={evaluator.id ===
-                                                    evaluated.id}
-                                                class:no-grade={evaluationMatrix[
-                                                    evaluator.id
-                                                ]?.[evaluated.id] === 0 &&
-                                                    evaluator.id !==
-                                                        evaluated.id}
-                                            >
+                                        {#each alunos as evaluated}
+                                            {@const grade = evaluationMatrix[evaluator.id]?.[evaluated.id]}
+                                            <td class="grade-cell{evaluator.id === evaluated.id ? ' self-evaluation' : ''}{grade === 0 && evaluator.id !== evaluated.id ? ' zero-grade' : ''}{isOutlier(evaluated.id, grade) ? ' outlier-grade' : ''}">
                                                 {#if evaluator.id === evaluated.id}
-                                                    X
-                                                {:else if evaluationMatrix[evaluator.id]?.[evaluated.id]}
-                                                    {evaluationMatrix[
-                                                        evaluator.id
-                                                    ][evaluated.id]}
+                                                    <span class="grade-cell self-evaluation">X</span>
                                                 {:else}
-                                                    -
+                                                    {grade > 0 ? grade : grade === 0 ? 0 : '-'}
                                                 {/if}
                                             </td>
                                         {/each}
@@ -638,22 +639,12 @@
                 <div class="matrix-legend">
                     <h4>Legenda:</h4>
                     <ul>
-                        <li>
-                            <strong>Número:</strong> Identificação numérica do aluno
-                            na matriz
-                        </li>
-                        <li>
-                            <strong>Média:</strong> Nota média recebida pelo aluno
-                            de seus colegas
-                        </li>
-                        <li>
-                            <strong>Colunas numeradas (1, 2, 3...):</strong> Notas
-                            dadas para cada aluno (identificado pelo número)
-                        </li>
-                        <li>
-                            <strong>X:</strong> Auto-avaliação (aluno não avalia
-                            a si mesmo)
-                        </li>
+                        <li><strong>Número:</strong> Identificação numérica do aluno na matriz</li>
+                        <li><strong>Média:</strong> Nota média recebida pelo aluno de seus colegas</li>
+                        <li><strong>Colunas numeradas (1, 2, 3...):</strong> Notas dadas para cada aluno (identificado pelo número)</li>
+                        <li><strong>X:</strong> Auto-avaliação (aluno não avalia a si mesmo)</li>
+                        <li><span style="background:#ffcccc;padding:2px 8px;border-radius:4px;">&nbsp;</span> Nota zero enviada</li>
+                        <li><span style="background:#fff9c4;padding:2px 8px;border-radius:4px;">&nbsp;</span> Nota fora do padrão dos colegas</li>
                     </ul>
                 </div>
             </div>
@@ -675,22 +666,31 @@
     .relatorios-container {
         width: 100%;
         height: 100%;
-        padding: 2rem;
+        padding: 1rem 0.5rem;
         display: flex;
         flex-direction: column;
-        gap: 2rem;
+        gap: 1rem;
+        background: #fafbfc;
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+        margin-top: 2.5rem;
+    }
+
+    .header {
+        margin-bottom: 0.7rem;
+        margin-top: 0;
     }
 
     .header h1 {
-        font-size: 1.8rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-        color: #2c3e50;
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+        color: #22223b;
     }
 
     .subtitle {
         color: #6c757d;
-        margin-bottom: 2rem;
+        margin-bottom: 0.7rem;
+        font-size: 0.98rem;
     }
 
     .loading {
@@ -712,110 +712,99 @@
     }
 
     .filters-section {
-        background: white;
-        border: 1px solid #e9ecef;
+        background: #fff;
+        border: 1px solid #e3e6ed;
         border-radius: 8px;
-        padding: 1.5rem;
+        padding: 0.7rem 0.7rem;
         display: flex;
-        gap: 2rem;
+        gap: 0.7rem;
         align-items: end;
+        box-shadow: none;
     }
 
     .filter-group {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
-        min-width: 250px;
+        gap: 0.2rem;
+        min-width: 120px;
     }
 
     .filter-group label {
         font-weight: 600;
-        color: #2c3e50;
-        font-size: 0.9rem;
+        color: #22223b;
+        font-size: 0.92rem;
     }
 
     .filter-select {
-        padding: 0.75rem;
-        border: 1px solid #dee2e6;
+        padding: 0.4rem 0.6rem;
+        border: 1px solid #d1d5db;
         border-radius: 6px;
-        background: white;
-        font-size: 0.9rem;
+        background: #f8fafc;
+        font-size: 0.97rem;
         cursor: pointer;
-        transition: border-color 0.2s ease;
+        transition: border-color 0.2s;
     }
 
-    .filter-select:hover:not(:disabled) {
-        border-color: #007bff;
-    }
-
-    .filter-select:focus {
+    .filter-select:hover:not(:disabled), .filter-select:focus {
+        border-color: #6c63ff;
         outline: none;
-        border-color: #007bff;
-        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        box-shadow: 0 0 0 2px #e0e7ff;
     }
 
     .filter-select:disabled {
-        background: #f8f9fa;
-        color: #6c757d;
+        background: #f1f1f1;
+        color: #b0b0b0;
         cursor: not-allowed;
     }
 
     .matrix-section {
-        background: white;
-        border: 1px solid #e9ecef;
+        background: #fff;
+        border: 1px solid #e3e6ed;
         border-radius: 8px;
-        padding: 1.5rem;
+        padding: 0.7rem 0.5rem;
+        box-shadow: none;
     }
 
     .matrix-section h2 {
-        font-size: 1.3rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-        color: #2c3e50;
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+        color: #22223b;
     }
 
     .matrix-subtitle {
         color: #6c757d;
-        font-size: 0.9rem;
-        margin-bottom: 1.5rem;
+        font-size: 0.93rem;
+        margin-bottom: 0.7rem;
     }
 
     .statistics-header {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 1rem;
-        margin-bottom: 2rem;
-        padding: 1.5rem;
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        justify-content: center;
     }
 
     .stat-card {
         text-align: center;
-        padding: 1rem;
-        background: white;
-        border: 1px solid #e9ecef;
+        padding: 0.5rem 0.7rem;
+        background: #f8fafc;
+        border: 1px solid #e0e7ff;
         border-radius: 6px;
-        transition:
-            transform 0.2s ease,
-            box-shadow 0.2s ease;
-    }
-
-    .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        box-shadow: none;
+        min-width: 70px;
+        transition: none;
     }
 
     .stat-value {
-        font-size: 1.8rem;
+        font-size: 1.1rem;
         font-weight: 700;
-        color: #2c3e50;
-        margin-bottom: 0.5rem;
+        color: #6c63ff;
+        margin-bottom: 0.1rem;
     }
 
     .stat-label {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         font-weight: 600;
         color: #6c757d;
         text-transform: uppercase;
@@ -824,8 +813,10 @@
 
     .matrix-container {
         overflow-x: auto;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
+        border: 1px solid #e3e6ed;
+        border-radius: 6px;
+        background: #f8fafc;
+        margin-bottom: 0.5rem;
     }
 
     .matrix-wrapper {
@@ -834,231 +825,243 @@
 
     .evaluation-matrix {
         width: 100%;
-        border-collapse: collapse;
-        font-size: 0.9rem;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.93rem;
+        background: #fff;
     }
 
-    .evaluation-matrix th,
+    .evaluation-matrix th {
+        background: #e0e7ff;
+        font-weight: 700;
+        color: #22223b;
+        padding: 0.5rem 0.3rem;
+        border-bottom: 2px solid #bfc6e0;
+    }
+
     .evaluation-matrix td {
-        padding: 0.75rem 0.5rem;
+        padding: 0.5rem 0.3rem;
         text-align: center;
-        border: 1px solid #dee2e6;
+        border-bottom: 1px solid #f0f0f0;
     }
 
-    .student-name-header {
-        background: #f8f9fa;
+    .evaluation-matrix tr:nth-child(even) td {
+        background: #f8fafc;
+    }
+
+    .student-name-header, .student-name {
+        background: #f3f4fa !important;
         font-weight: 600;
         text-align: left;
-        min-width: 150px;
-        max-width: 150px;
+        min-width: 90px;
+        max-width: 120px;
         position: sticky;
         left: 0;
         z-index: 10;
+        border-right: 1px solid #e0e7ff;
+        font-size: 0.93rem;
     }
 
-    .student-number-header {
-        background: #f8f9fa;
+    .student-number-header, .student-number {
+        background: #f3f4fa !important;
         font-weight: 600;
         text-align: center;
-        min-width: 60px;
-        max-width: 60px;
+        min-width: 35px;
+        max-width: 45px;
         position: sticky;
-        left: 150px;
+        left: 90px;
         z-index: 10;
+        border-right: 1px solid #e0e7ff;
+        font-size: 0.93rem;
     }
 
-    .student-name {
-        background: #f8f9fa;
-        font-weight: 500;
-        text-align: left;
-        min-width: 150px;
-        max-width: 150px;
-        position: sticky;
-        left: 0;
-        z-index: 5;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .student-number {
-        background: #f8f9fa;
-        font-weight: 600;
-        text-align: center;
-        min-width: 60px;
-        max-width: 60px;
-        position: sticky;
-        left: 150px;
-        z-index: 5;
-    }
-
-    .student-header {
-        background: #f8f9fa;
-        font-weight: 600;
+    .average-header, .average-cell {
+        background: #e0e7ff !important;
+        font-weight: 700;
+        color: #6c63ff;
         min-width: 50px;
-        max-width: 50px;
-        text-align: center;
-        font-size: 0.9rem;
-    }
-
-    .average-header,
-    .average-label {
-        background: #e3f2fd;
-        font-weight: 600;
-        color: #1976d2;
-        min-width: 80px;
-        max-width: 80px;
+        max-width: 60px;
         position: sticky;
-        left: 210px;
+        left: 135px;
         z-index: 10;
         text-align: center;
+        border-right: 1px solid #e0e7ff;
+        font-size: 0.93rem;
     }
 
     .grade-cell {
-        background: white;
-        font-weight: 500;
+        background: #fff !important;
+        font-size: 0.93rem;
+        border-radius: 3px;
     }
 
     .grade-cell.self-evaluation {
-        background: #f5f5f5;
-        color: #6c757d;
-    }
-
-    .grade-cell.no-grade {
-        background: #fff3cd;
-        color: #856404;
-    }
-
-    .average-cell {
-        background: #e3f2fd;
+        background: #f3f4fa !important;
+        color: #b0b0b0;
         font-weight: 600;
-        color: #1976d2;
-        min-width: 80px;
-        max-width: 80px;
-        position: sticky;
-        left: 210px;
-        z-index: 5;
-        text-align: center;
+    }
+
+    .grade-cell.zero-grade {
+        background: #ffeaea !important;
+        color: #e53935 !important;
+        font-weight: 600;
+    }
+
+    .grade-cell.outlier-grade {
+        background: #fff9c4 !important;
+        color: #bfa600 !important;
+        font-weight: 600;
     }
 
     .matrix-legend {
-        margin-top: 1.5rem;
-        padding: 1rem;
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        font-size: 0.9rem;
+        margin-top: 0.7rem;
+        padding: 0.4rem 0.7rem;
+        background: #f8fafc;
+        border: 1px solid #e3e6ed;
+        border-radius: 6px;
+        font-size: 0.93rem;
+        color: #495057;
+        box-shadow: none;
     }
 
     .matrix-legend h4 {
-        margin: 0 0 1rem 0;
-        color: #2c3e50;
-        font-size: 1rem;
+        margin: 0 0 0.4rem 0;
+        color: #22223b;
+        font-size: 0.97rem;
+        font-weight: 700;
     }
 
     .matrix-legend ul {
         margin: 0;
-        padding-left: 1.5rem;
+        padding-left: 1rem;
     }
 
     .matrix-legend li {
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.2rem;
         color: #495057;
+        line-height: 1.4;
     }
 
     .matrix-legend li:last-child {
         margin-bottom: 0;
     }
 
-    .debug-section {
-        background: #fff3cd;
-        border: 1px solid #ffeaa7;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-bottom: 2rem;
-        font-family: monospace;
-        font-size: 0.9rem;
-    }
-
-    .debug-section h3 {
-        margin: 0 0 1rem 0;
-        color: #856404;
-    }
-
-    .debug-section p {
-        margin: 0.5rem 0;
-        color: #856404;
-    }
-
     .empty-state {
         text-align: center;
-        padding: 3rem 2rem;
-        background: white;
-        border: 1px solid #e9ecef;
-        border-radius: 8px;
+        padding: 1rem 0.5rem;
+        background: #fff;
+        border: 1px solid #e3e6ed;
+        border-radius: 6px;
         color: #6c757d;
+        font-size: 1rem;
+        box-shadow: none;
     }
 
     @media (max-width: 768px) {
         .relatorios-container {
-            padding: 1rem;
+            padding: 0.2rem 0.05rem;
+            gap: 0.4rem;
+            margin-top: 3rem;
         }
-
+        .header {
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+        }
+        .header h1 {
+            text-align: center;
+            font-size: 1rem;
+        }
+        .subtitle {
+            text-align: center;
+            font-size: 0.93rem;
+            margin-bottom: 0.4rem;
+        }
         .filters-section {
             flex-direction: column;
-            gap: 1rem;
+            gap: 0.2rem;
             align-items: stretch;
+            padding: 0.3rem 0.1rem;
         }
-
         .filter-group {
             min-width: 100%;
+            gap: 0.1rem;
         }
-
+        .filter-select {
+            font-size: 0.93rem;
+            padding: 0.2rem 0.3rem;
+        }
+        .matrix-section {
+            padding: 0.3rem 0.1rem;
+        }
+        .matrix-section h2 {
+            font-size: 0.93rem;
+            text-align: center;
+        }
+        .matrix-subtitle {
+            font-size: 0.85rem;
+            margin-bottom: 0.3rem;
+        }
         .statistics-header {
-            grid-template-columns: repeat(2, 1fr);
-            padding: 1rem;
+            flex-direction: column;
+            gap: 0.2rem;
+            padding: 0;
         }
-
         .stat-card {
-            padding: 0.75rem;
+            padding: 0.2rem 0.3rem;
+            min-width: 60px;
         }
-
         .stat-value {
-            font-size: 1.5rem;
+            font-size: 0.93rem;
         }
-
         .stat-label {
-            font-size: 0.8rem;
+            font-size: 0.7rem;
         }
-
         .matrix-container {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
         }
-
-        .student-name-header,
-        .student-name {
-            min-width: 120px;
-            max-width: 120px;
+        .matrix-legend {
+            padding: 0.2rem 0.1rem;
+            font-size: 0.9rem;
         }
-
-        .student-number-header,
-        .student-number {
-            min-width: 50px;
-            max-width: 50px;
-            left: 120px;
+        .empty-state {
+            padding: 0.5rem 0.1rem;
         }
-
-        .average-header,
-        .average-cell {
+        .student-name-header, .student-name {
             min-width: 70px;
-            max-width: 70px;
-            left: 170px;
+            max-width: 90px;
+            font-size: 0.85rem;
         }
-
-        .student-header {
-            min-width: 40px;
-            max-width: 40px;
-            font-size: 0.8rem;
+        .student-number-header, .student-number {
+            min-width: 25px;
+            max-width: 35px;
+            left: 70px;
+            font-size: 0.85rem;
+        }
+        .average-header, .average-cell {
+            min-width: 35px;
+            max-width: 45px;
+            left: 95px;
+            font-size: 0.85rem;
+        }
+        .grade-cell {
+            font-size: 0.85rem;
+        }
+    }
+    @media (max-width: 480px) {
+        .relatorios-container {
+            padding: 0.05rem;
+        }
+        .filters-section {
+            padding: 0.1rem 0.02rem;
+        }
+        .matrix-section {
+            padding: 0.1rem 0.02rem;
+        }
+        .matrix-legend {
+            padding: 0.08rem 0.02rem;
+        }
+        .empty-state {
+            padding: 0.2rem 0.02rem;
         }
     }
 </style>

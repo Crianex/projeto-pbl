@@ -2,6 +2,8 @@
 import Button from "$lib/components/Button.svelte";
 import CardSection from "$lib/components/CardSection.svelte";
 import { goto } from "$app/navigation";
+import { fade, fly } from "svelte/transition";
+import { quintOut } from "svelte/easing";
 import HomepageSvg from "$lib/images/homepage.svg";
 
 function goToLogin() {
@@ -25,7 +27,7 @@ function goToFreeTrial() {
 
 <div class="home-page">
     <!-- Header -->
-    <header class="header">
+    <header class="header" in:fly={{ y: -20, duration: 600, delay: 100, easing: quintOut }}>
         <div class="header-content">
             <div class="logo">
                 <h1>Gerenciamento de avaliações PBL</h1>
@@ -42,7 +44,7 @@ function goToFreeTrial() {
     </header>
 
     <!-- Hero Section -->
-    <section class="hero">
+    <section class="hero" in:fly={{ y: 30, duration: 800, delay: 200, easing: quintOut }}>
         <div class="hero-content">
             <div class="hero-text">
                 <h2 class="hero-title">Avaliações mais rápidas</h2>
@@ -58,38 +60,44 @@ function goToFreeTrial() {
                     </Button>
                 </div>
             </div>
-            <div class="hero-illustration">
+            <div class="hero-illustration" in:fly={{ x: 30, duration: 1000, delay: 400, easing: quintOut }}>
                 <img src={HomepageSvg} alt="Ilustração PBL" class="illustration" />
             </div>
         </div>
     </section>
 
     <!-- Features Section -->
-    <section class="features">
+    <section class="features" in:fly={{ y: 40, duration: 800, delay: 600, easing: quintOut }}>
         <div class="features-content">
             <h3 class="features-title">Principais funcionalidades</h3>
             <div class="features-grid">
-                <CardSection 
-                    title="Gestão de Avaliações" 
-                    description="Crie e gerencie avaliações de forma intuitiva e eficiente"
-                    interactive={true}
-                />
-                <CardSection 
-                    title="Relatórios Detalhados" 
-                    description="Acompanhe o progresso dos estudantes com relatórios completos"
-                    interactive={true}
-                />
-                <CardSection 
-                    title="Interface Moderna" 
-                    description="Design responsivo e fácil de usar em qualquer dispositivo"
-                    interactive={true}
-                />
+                <div in:fly={{ y: 20, duration: 600, delay: 800, easing: quintOut }}>
+                    <CardSection 
+                        title="Gestão de Avaliações" 
+                        description="Crie e gerencie avaliações de forma intuitiva e eficiente"
+                        interactive={true}
+                    />
+                </div>
+                <div in:fly={{ y: 20, duration: 600, delay: 900, easing: quintOut }}>
+                    <CardSection 
+                        title="Relatórios Detalhados" 
+                        description="Acompanhe o progresso dos estudantes com relatórios completos"
+                        interactive={true}
+                    />
+                </div>
+                <div in:fly={{ y: 20, duration: 600, delay: 1000, easing: quintOut }}>
+                    <CardSection 
+                        title="Interface Moderna" 
+                        description="Design responsivo e fácil de usar em qualquer dispositivo"
+                        interactive={true}
+                    />
+                </div>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer class="footer">
+    <footer class="footer" in:fly={{ y: 20, duration: 600, delay: 1200, easing: quintOut }}>
         <div class="footer-content">
             <p>/cria._nex></p>
         </div>
@@ -101,16 +109,17 @@ function goToFreeTrial() {
         min-height: 100vh;
         display: flex;
         flex-direction: column;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        background: var(--color-bg-hero-gradient);
+        color: var(--color-text-white);
+        overflow-x: hidden;
     }
 
     /* Header Styles */
     .header {
         padding: 1rem 0;
-        background: rgba(255, 255, 255, 0.1);
+        background: var(--color-glass-light);
         backdrop-filter: blur(10px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        border-bottom: 1px solid var(--color-glass-border);
     }
 
     .header-content {
@@ -126,7 +135,7 @@ function goToFreeTrial() {
         font-size: 1.5rem;
         font-weight: 600;
         margin: 0;
-        color: white;
+        color: var(--color-text-white);
     }
 
     .header-buttons {
@@ -164,7 +173,7 @@ function goToFreeTrial() {
         font-weight: 700;
         line-height: 1.2;
         margin: 0;
-        background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+        background: var(--color-bg-text-gradient);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -193,7 +202,7 @@ function goToFreeTrial() {
         width: 100%;
         max-width: 400px;
         height: auto;
-        filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.2));
+        filter: drop-shadow(0 20px 40px var(--color-shadow-dark));
         animation: float 6s ease-in-out infinite;
     }
 
@@ -209,7 +218,7 @@ function goToFreeTrial() {
     /* Features Styles */
     .features {
         padding: 4rem 0;
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--color-glass-light);
         backdrop-filter: blur(10px);
     }
 
@@ -224,7 +233,7 @@ function goToFreeTrial() {
         font-weight: 600;
         text-align: center;
         margin: 0 0 3rem 0;
-        color: white;
+        color: var(--color-text-white);
     }
 
     .features-grid {
@@ -236,9 +245,9 @@ function goToFreeTrial() {
     /* Footer Styles */
     .footer {
         padding: 2rem 0;
-        background: rgba(0, 0, 0, 0.2);
+        background: var(--color-shadow-dark);
         backdrop-filter: blur(10px);
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-top: 1px solid var(--color-glass-border);
     }
 
     .footer-content {
@@ -274,74 +283,78 @@ function goToFreeTrial() {
     @media (max-width: 768px) {
         .header-content {
             flex-direction: column;
-            gap: 1rem;
+            align-items: center;
+            gap: 0.5rem;
             text-align: center;
         }
-
         .header-buttons {
-            flex-direction: column;
+            flex-direction: row;
+            justify-content: center;
+            gap: 0.5rem;
             width: 100%;
+            margin-top: 0.5rem;
         }
-
+        .logo {
+            margin-bottom: 0.25rem;
+        }
         .hero {
-            padding: 2rem 0;
+            padding: 0.5rem 0 1rem 0;
         }
-
         .hero-content {
-            gap: 2rem;
-            padding: 0 1rem;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            text-align: center;
         }
-
-        .hero-title {
-            font-size: 2.5rem;
+        .hero-text {
+            gap: 1rem;
+            align-items: center;
         }
-
-        .hero-description {
-            font-size: 1.1rem;
-        }
-
         .hero-buttons {
             flex-direction: column;
             align-items: stretch;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
         }
-
+        .hero-buttons .button {
+            width: 100%;
+            min-width: 0;
+            font-size: 1.1rem;
+        }
+        .hero-illustration {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
         .illustration {
-            max-width: 280px;
+            max-width: 180px;
         }
-
-        .features-content {
-            padding: 0 1rem;
+        .features {
+            padding: 1.2rem 0 0.5rem 0;
         }
-
         .features-title {
-            font-size: 2rem;
+            margin-bottom: 1.2rem;
         }
-
         .features-grid {
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
+            gap: 0.75rem;
+        }
+        .footer {
+            padding: 0.5rem 0;
         }
     }
-
     @media (max-width: 480px) {
-        .logo h1 {
-            font-size: 1.2rem;
+        .header-buttons {
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
         }
-
-        .hero-title {
-            font-size: 2rem;
+        .hero-buttons {
+            gap: 0.5rem;
         }
-
-        .hero-description {
-            font-size: 1rem;
+        .features {
+            padding: 0.5rem 0 0.25rem 0;
         }
-
-        .illustration {
-            max-width: 240px;
-        }
-
         .features-title {
-            font-size: 1.8rem;
+            margin-bottom: 0.75rem;
         }
     }
 </style>

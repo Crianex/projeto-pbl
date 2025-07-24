@@ -176,12 +176,7 @@
 
 <style>
     :global(body) {
-        background: linear-gradient(
-            135deg,
-            #ffffff 0%,
-            #f8f9fa 50%,
-            #e9ecef 100%
-        );
+        background: var(--color-bg-gradient);
         min-height: 100vh;
     }
 
@@ -237,7 +232,7 @@
     }
 
     .header h1 {
-        color: #2d3748;
+        color: var(--color-text-primary);
         font-size: 2.5rem;
         font-weight: 700;
         margin: 0 0 0.5rem 0;
@@ -245,7 +240,7 @@
     }
 
     .subtitle {
-        color: #4a5568;
+        color: var(--color-text-secondary);
         font-size: 1.1rem;
         margin: 0;
         opacity: 0.9;
@@ -278,11 +273,11 @@
         max-width: 400px;
         width: 100%;
         padding: 2rem;
-        background: rgba(255, 255, 255, 0.95);
+        background: var(--color-glass-white);
         backdrop-filter: blur(10px);
         border-radius: 16px;
-        box-shadow: 0 10px 25px rgba(220, 53, 69, 0.1);
-        border: 1px solid rgba(220, 53, 69, 0.1);
+        box-shadow: 0 10px 25px var(--color-shadow-error);
+        border: 1px solid var(--color-error-border);
     }
 
     .error-icon {
@@ -291,14 +286,14 @@
     }
 
     .error-content h3 {
-        color: #dc3545;
+        color: var(--color-error-main);
         margin: 0 0 0.5rem 0;
         font-size: 1.5rem;
         font-weight: 600;
     }
 
     .error-content p {
-        color: #6c757d;
+        color: var(--color-text-muted);
         margin: 0 0 1.5rem 0;
         line-height: 1.5;
     }
@@ -317,11 +312,11 @@
         max-width: 400px;
         width: 100%;
         padding: 2rem;
-        background: rgba(255, 255, 255, 0.95);
+        background: var(--color-glass-white);
         backdrop-filter: blur(10px);
         border-radius: 16px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 10px 25px var(--color-shadow-light);
+        border: 1px solid var(--color-glass-border);
     }
 
     .empty-icon {
@@ -330,14 +325,14 @@
     }
 
     .empty-content h3 {
-        color: #2d3748;
+        color: var(--color-text-primary);
         margin: 0 0 0.5rem 0;
         font-size: 1.5rem;
         font-weight: 600;
     }
 
     .empty-content p {
-        color: #4a5568;
+        color: var(--color-text-secondary);
         margin: 0 0 1.5rem 0;
         line-height: 1.6;
     }
@@ -354,7 +349,7 @@
         align-items: center;
         justify-content: center;
         padding: 0.5rem 1rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--color-primary-gradient);
         color: white;
         text-decoration: none;
         border-radius: 8px;
