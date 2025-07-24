@@ -107,135 +107,133 @@
     });
 </script>
 
-<div class="container">
-    <div class="header">
-        <div class="title-section">
-            <a href="/professor/turmas" class="back-link">
-                <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <path
-                        d="M19 12H5M12 19l-7-7 7-7"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    />
-                </svg>
-                Voltar para turmas
-            </a>
-            <h1>Problemas - {turma.nome_turma}</h1>
-        </div>
+<div class="header">
+    <div class="title-section">
+        <a href="/professor/turmas" class="back-link">
+            <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <path
+                    d="M19 12H5M12 19l-7-7 7-7"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+            </svg>
+            Voltar para turmas
+        </a>
+        <h1>Problemas - {turma.nome_turma}</h1>
+    </div>
+    <Button variant="primary" on:click={handleCreateProblema}>
+        + Criar problema
+    </Button>
+</div>
+
+{#if loading}
+    <div class="loading">Carregando problemas...</div>
+{:else if error}
+    <div class="error">
+        <p>{error}</p>
+        <Button variant="secondary" on:click={fetchData}
+            >Tentar novamente</Button
+        >
+    </div>
+{:else if problemas.length === 0}
+    <div class="empty-state">
+        <p>Nenhum problema encontrado para esta turma.</p>
         <Button variant="primary" on:click={handleCreateProblema}>
-            + Criar problema
+            Criar primeiro problema
         </Button>
     </div>
-
-    {#if loading}
-        <div class="loading">Carregando problemas...</div>
-    {:else if error}
-        <div class="error">
-            <p>{error}</p>
-            <Button variant="secondary" on:click={fetchData}
-                >Tentar novamente</Button
-            >
-        </div>
-    {:else if problemas.length === 0}
-        <div class="empty-state">
-            <p>Nenhum problema encontrado para esta turma.</p>
-            <Button variant="primary" on:click={handleCreateProblema}>
-                Criar primeiro problema
-            </Button>
-        </div>
-    {:else}
-        <div class="problemas-list">
-            {#each problemas as problema}
-                <div class="problema-item">
-                    <div class="problema-info">
-                        <h3>{problema.nome_problema}</h3>
-                        <div class="problema-details">
-                            <span
-                                >Período: {DateUtils.getDateFromProblemaModel(
-                                    problema,
-                                )}</span
-                            >
-                            <!-- <span
+{:else}
+    <div class="problemas-list">
+        {#each problemas as problema}
+            <div class="problema-item">
+                <div class="problema-info">
+                    <h3>{problema.nome_problema}</h3>
+                    <div class="problema-details">
+                        <span
+                            >Período: {DateUtils.getDateFromProblemaModel(
+                                problema,
+                            )}</span
+                        >
+                        <!-- <span
                                 >Média geral: {problema.media_geral?.toFixed(
                                     2,
                                 ) || "0.00"}</span
                             > -->
-                        </div>
-                    </div>
-                    <div class="actions">
-                        <Button
-                            variant="secondary"
-                            on:click={() =>
-                                goto(
-                                    `/professor/turmas/${turmaId}/problemas/${problema.id_problema}`,
-                                )}
-                        >
-                            Ver detalhes
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            size="icon"
-                            class="edit-button"
-                            on:click={() => handleEditProblema(problema)}
-                            title="Editar problema"
-                        >
-                            <svg
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                            >
-                                <path
-                                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                />
-                                <path
-                                    d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                />
-                            </svg>
-                        </Button>
-                        <Button
-                            variant="danger"
-                            size="icon"
-                            class="delete-button"
-                            on:click={() => openDeleteConfirm(problema)}
-                            title="Excluir problema"
-                        >
-                            <svg
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                            >
-                                <path
-                                    d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
-                                    fill="currentColor"
-                                />
-                            </svg>
-                        </Button>
                     </div>
                 </div>
-            {/each}
-        </div>
-    {/if}
-</div>
+                <div class="actions">
+                    <Button
+                        variant="secondary"
+                        on:click={() =>
+                            goto(
+                                `/professor/turmas/${turmaId}/problemas/${problema.id_problema}`,
+                            )}
+                    >
+                        Ver detalhes
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        size="icon"
+                        class="edit-button"
+                        on:click={() => handleEditProblema(problema)}
+                        title="Editar problema"
+                    >
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            />
+                            <path
+                                d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            />
+                        </svg>
+                    </Button>
+                    <Button
+                        variant="danger"
+                        size="icon"
+                        class="delete-button"
+                        on:click={() => openDeleteConfirm(problema)}
+                        title="Excluir problema"
+                    >
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+                                fill="currentColor"
+                            />
+                        </svg>
+                    </Button>
+                </div>
+            </div>
+        {/each}
+    </div>
+{/if}
 
 <Dialog open={deleteConfirmOpen} on:close={closeDeleteConfirm}>
     <svelte:fragment slot="header">
@@ -261,15 +259,6 @@
 </Dialog>
 
 <style>
-    .container {
-        height: 100%;
-        width: 100%;
-        margin: 0 auto;
-        padding: 2rem;
-        margin-top: 2.5rem;
-        box-sizing: border-box;
-    }
-
     .header {
         display: flex;
         justify-content: space-between;

@@ -5,10 +5,13 @@
     export let glass = false;
     export let shadow = true;
     export let rounded = true;
+    export let needsContainerStyle = false;
 </script>
 
 <div
-    class="container {maxWidth} {padding} {$$props.class || ''}"
+    class={needsContainerStyle ? "container" : ""}
+    class:maxWidth
+    class:padding
     class:center
     class:glass
     class:shadow

@@ -16,6 +16,7 @@
     import Pagination from "$lib/components/Pagination.svelte";
     import { MediaCalculator } from "$lib/utils/utils";
     import { api } from "$lib/utils/api";
+    import BackButton from "$lib/components/BackButton.svelte";
 
     interface Avaliacao {
         id_avaliacao: number;
@@ -339,165 +340,161 @@
     });
 </script>
 
-<Container maxWidth="lg" glass={true} shadow={true} center={true}>
-    <div class="evaluations-container">
-        {#if loading && !problema}
-            <div class="loading-container">
-                <LoadingSpinner size="lg" />
-                <p>Carregando avaliações...</p>
-            </div>
-        {:else if error}
-            <div class="error-container">
-                <p class="error-message">{error}</p>
-            </div>
-        {:else}
-            <div class="header" in:fade={{ duration: 300, delay: 50 }}>
-                <h1>
-                    Avaliações - {problema?.nome_problema || "Carregando..."}
-                </h1>
-            </div>
+<div class="evaluations-container">
+    {#if loading && !problema}
+        <div class="loading-container">
+            <LoadingSpinner size="lg" />
+            <p>Carregando avaliações...</p>
+        </div>
+    {:else if error}
+        <div class="error-container">
+            <p class="error-message">{error}</p>
+        </div>
+    {:else}
+        <BackButton text="Voltar" on:click={() => history.back()} />
+        <div class="header" in:fade={{ duration: 300, delay: 50 }}>
+            <h1>
+                Avaliações - {problema?.nome_problema || "Carregando..."}
+            </h1>
+        </div>
 
-            <div class="table-wrapper" in:fade={{ duration: 400, delay: 200 }}>
-                <Table
-                    {columns}
-                    rows={tableRows}
-                    enableSelection={false}
-                    {loading}
+        <div class="table-wrapper" in:fade={{ duration: 400, delay: 200 }}>
+            <Table
+                {columns}
+                rows={tableRows}
+                enableSelection={false}
+                {loading}
+            />
+        </div>
+
+        {#if !loading && totalPages > 1}
+            <div in:fade={{ duration: 300, delay: 350 }}>
+                <Pagination
+                    {currentPage}
+                    {totalPages}
+                    on:pageChange={(e) => (currentPage = e.detail.page)}
                 />
             </div>
+        {/if}
 
-            {#if !loading && totalPages > 1}
-                <div in:fade={{ duration: 300, delay: 350 }}>
-                    <Pagination
-                        {currentPage}
-                        {totalPages}
-                        on:pageChange={(e) => (currentPage = e.detail.page)}
-                    />
-                </div>
-            {/if}
+        <!-- File Upload Sections -->
+        {#if !loading && problema?.definicao_arquivos_de_avaliacao && problema.definicao_arquivos_de_avaliacao.length > 0}
+            <div
+                class="file-upload-section"
+                in:fade={{ duration: 400, delay: 400 }}
+            >
+                <h2>Envio de Arquivos</h2>
+                <p class="upload-description">
+                    Envie os arquivos solicitados para este problema conforme as
+                    especificações abaixo:
+                </p>
 
-            <!-- File Upload Sections -->
-            {#if !loading && problema?.definicao_arquivos_de_avaliacao && problema.definicao_arquivos_de_avaliacao.length > 0}
-                <div
-                    class="file-upload-section"
-                    in:fade={{ duration: 400, delay: 400 }}
-                >
-                    <h2>Envio de Arquivos</h2>
-                    <p class="upload-description">
-                        Envie os arquivos solicitados para este problema
-                        conforme as especificações abaixo:
-                    </p>
+                <!-- Upload Loading Overlay -->
+                {#if isUploading}
+                    <div
+                        class="upload-loading-overlay"
+                        in:fade={{ duration: 200 }}
+                    >
+                        <div class="upload-loading-content">
+                            <LoadingSpinner size="lg" />
+                            <p>Enviando arquivos...</p>
+                            <p class="upload-progress">
+                                {uploadProgress.current} de {uploadProgress.total}
+                                arquivos
+                            </p>
+                        </div>
+                    </div>
+                {/if}
 
-                    <!-- Upload Loading Overlay -->
-                    {#if isUploading}
+                <div class="upload-forms" class:uploading={isUploading}>
+                    {#each problema.definicao_arquivos_de_avaliacao as definicao, index}
+                        {@const existingFilesForType =
+                            existingFilesByType.get(
+                                definicao.nome_tipo || "",
+                            ) || []}
                         <div
-                            class="upload-loading-overlay"
-                            in:fade={{ duration: 200 }}
+                            class="upload-container"
+                            in:fade={{
+                                duration: 300,
+                                delay: 450 + index * 100,
+                            }}
                         >
-                            <div class="upload-loading-content">
-                                <LoadingSpinner size="lg" />
-                                <p>Enviando arquivos...</p>
-                                <p class="upload-progress">
-                                    {uploadProgress.current} de {uploadProgress.total}
-                                    arquivos
-                                </p>
-                            </div>
+                            <FileUpload
+                                accept={definicao.tipos_de_arquivos_aceitos?.join(
+                                    ",",
+                                ) || "*"}
+                                multiple={true}
+                                maxSize={10 * 1024 * 1024}
+                                label={definicao.nome_tipo ||
+                                    `Tipo de Arquivo ${index + 1}`}
+                                description={definicao.descricao_tipo ||
+                                    "Arraste e solte seus arquivos aqui ou clique para selecionar"}
+                                supportedFormats={definicao.tipos_de_arquivos_aceitos
+                                    ?.join(", ")
+                                    .toUpperCase() || "Todos os formatos"}
+                                disabled={isUploading}
+                                on:filesSelected={(e) =>
+                                    handleFilesSelected(e, definicao)}
+                                on:fileRemoved={(e) =>
+                                    handleFileRemoved(e, definicao)}
+                            />
+
+                            <!-- Display existing files for this type -->
+                            {#if existingFilesForType.length > 0}
+                                <div class="existing-files">
+                                    <h4>Arquivos já enviados:</h4>
+                                    <div class="existing-files-list">
+                                        {#each existingFilesForType as file}
+                                            <div class="existing-file-item">
+                                                <span class="file-name"
+                                                    >{file.nome_arquivo}</span
+                                                >
+                                                <a
+                                                    href={file.link_arquivo}
+                                                    target="_blank"
+                                                    class="download-link"
+                                                >
+                                                    Baixar
+                                                </a>
+                                            </div>
+                                        {/each}
+                                    </div>
+                                </div>
+                            {/if}
+                        </div>
+                    {/each}
+
+                    <!-- Upload Error Message -->
+                    {#if uploadError}
+                        <div class="upload-error" in:fade={{ duration: 200 }}>
+                            {uploadError}
                         </div>
                     {/if}
 
-                    <div class="upload-forms" class:uploading={isUploading}>
-                        {#each problema.definicao_arquivos_de_avaliacao as definicao, index}
-                            {@const existingFilesForType =
-                                existingFilesByType.get(
-                                    definicao.nome_tipo || "",
-                                ) || []}
-                            <div
-                                class="upload-container"
-                                in:fade={{
-                                    duration: 300,
-                                    delay: 450 + index * 100,
-                                }}
-                            >
-                                <FileUpload
-                                    accept={definicao.tipos_de_arquivos_aceitos?.join(
-                                        ",",
-                                    ) || "*"}
-                                    multiple={true}
-                                    maxSize={10 * 1024 * 1024}
-                                    label={definicao.nome_tipo ||
-                                        `Tipo de Arquivo ${index + 1}`}
-                                    description={definicao.descricao_tipo ||
-                                        "Arraste e solte seus arquivos aqui ou clique para selecionar"}
-                                    supportedFormats={definicao.tipos_de_arquivos_aceitos
-                                        ?.join(", ")
-                                        .toUpperCase() || "Todos os formatos"}
-                                    disabled={isUploading}
-                                    on:filesSelected={(e) =>
-                                        handleFilesSelected(e, definicao)}
-                                    on:fileRemoved={(e) =>
-                                        handleFileRemoved(e, definicao)}
-                                />
-
-                                <!-- Display existing files for this type -->
-                                {#if existingFilesForType.length > 0}
-                                    <div class="existing-files">
-                                        <h4>Arquivos já enviados:</h4>
-                                        <div class="existing-files-list">
-                                            {#each existingFilesForType as file}
-                                                <div class="existing-file-item">
-                                                    <span class="file-name"
-                                                        >{file.nome_arquivo}</span
-                                                    >
-                                                    <a
-                                                        href={file.link_arquivo}
-                                                        target="_blank"
-                                                        class="download-link"
-                                                    >
-                                                        Baixar
-                                                    </a>
-                                                </div>
-                                            {/each}
-                                        </div>
-                                    </div>
-                                {/if}
-                            </div>
-                        {/each}
-
-                        <!-- Upload Error Message -->
-                        {#if uploadError}
-                            <div
-                                class="upload-error"
-                                in:fade={{ duration: 200 }}
-                            >
-                                {uploadError}
-                            </div>
-                        {/if}
-
-                        <!-- Save Button -->
-                        <div
-                            class="save-button-container"
-                            in:fade={{ duration: 300 }}
+                    <!-- Save Button -->
+                    <div
+                        class="save-button-container"
+                        in:fade={{ duration: 300 }}
+                    >
+                        <Button
+                            variant="primary"
+                            disabled={isUploading || !canSave}
+                            on:click={uploadFiles}
+                            fullWidth={false}
                         >
-                            <Button
-                                variant="primary"
-                                disabled={isUploading || !canSave}
-                                on:click={uploadFiles}
-                                fullWidth={false}
-                            >
-                                {#if isUploading}
-                                    <LoadingSpinner size="sm" />
-                                    Enviando...
-                                {:else}
-                                    Salvar Arquivos
-                                {/if}
-                            </Button>
-                        </div>
+                            {#if isUploading}
+                                <LoadingSpinner size="sm" />
+                                Enviando...
+                            {:else}
+                                Salvar Arquivos
+                            {/if}
+                        </Button>
                     </div>
                 </div>
-            {/if}
+            </div>
         {/if}
-    </div>
-</Container>
+    {/if}
+</div>
 
 <style>
     .evaluations-container {

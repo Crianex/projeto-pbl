@@ -236,92 +236,88 @@
     onMount(fetchData);
 </script>
 
-<Container maxWidth="lg" glass={true} shadow={true} center={true}>
-    <div class="evaluation-container">
-        <div class="back-section">
-            <BackButton text="Voltar" on:click={() => history.back()} />
-        </div>
-        <div class="header">
-            <h1>
-                Avaliação Individual {isProfessorEvaluation
-                    ? "(Professor)"
-                    : ""}
-            </h1>
-        </div>
-        <div class="student-info">
-            <div class="avatar">
-                <img
-                    src={avaliacaoData.aluno.avatar}
-                    alt={avaliacaoData.aluno.nome}
-                />
-            </div>
-            <p>
-                Como foi o desempenho de <span class="highlight"
-                    >{avaliacaoData.aluno.nome}</span
-                > nesse problema?
-            </p>
-        </div>
-        <form on:submit|preventDefault={handleSubmit}>
-            <div class="evaluation-grid">
-                {#each Object.entries(criterios) as [tag, criteriosList]}
-                    <div class="evaluation-section">
-                        <h2>{tag}</h2>
-                        <div class="criteria-group">
-                            {#each criteriosList as criterio}
-                                {@const criterioKey =
-                                    criterio.nome_criterio.toLowerCase()}
-                                <label>
-                                    <span class="criteria-header">
-                                        <span>{criterio.nome_criterio}</span>
-                                        <span class="range"
-                                            >0,0 a {criterio.nota_maxima}</span
-                                        >
-                                    </span>
-                                    <div class="input-wrapper">
-                                        <div class="slider-container">
-                                            <input
-                                                type="range"
-                                                step="0.1"
-                                                min="0"
-                                                max={criterio.nota_maxima}
-                                                value={currentValues[tag]?.[
-                                                    criterioKey
-                                                ] || 0}
-                                                on:input={(e) =>
-                                                    handleValueChange(
-                                                        tag,
-                                                        criterioKey,
-                                                        e,
-                                                    )}
-                                                class="slider"
-                                            />
-                                            <div class="value-display">
-                                                {(
-                                                    currentValues[tag]?.[
-                                                        criterioKey
-                                                    ] || 0
-                                                ).toFixed(1)}
-                                            </div>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            class="criteria-btn"
-                                            on:click={() =>
-                                                showCriterios(tag, criterio)}
-                                        >
-                                            Critérios
-                                        </button>
-                                    </div>
-                                </label>
-                            {/each}
-                        </div>
-                    </div>
-                {/each}
-            </div>
-            <button type="submit" class="submit-btn">Salvar Avaliação</button>
-        </form>
+<div class="evaluation-container">
+    <div class="back-section">
+        <BackButton text="Voltar" on:click={() => history.back()} />
     </div>
-</Container>
+    <div class="header">
+        <h1>
+            Avaliação Individual {isProfessorEvaluation ? "(Professor)" : ""}
+        </h1>
+    </div>
+    <div class="student-info">
+        <div class="avatar">
+            <img
+                src={avaliacaoData.aluno.avatar}
+                alt={avaliacaoData.aluno.nome}
+            />
+        </div>
+        <p>
+            Como foi o desempenho de <span class="highlight"
+                >{avaliacaoData.aluno.nome}</span
+            > nesse problema?
+        </p>
+    </div>
+    <form on:submit|preventDefault={handleSubmit}>
+        <div class="evaluation-grid">
+            {#each Object.entries(criterios) as [tag, criteriosList]}
+                <div class="evaluation-section">
+                    <h2>{tag}</h2>
+                    <div class="criteria-group">
+                        {#each criteriosList as criterio}
+                            {@const criterioKey =
+                                criterio.nome_criterio.toLowerCase()}
+                            <label>
+                                <span class="criteria-header">
+                                    <span>{criterio.nome_criterio}</span>
+                                    <span class="range"
+                                        >0,0 a {criterio.nota_maxima}</span
+                                    >
+                                </span>
+                                <div class="input-wrapper">
+                                    <div class="slider-container">
+                                        <input
+                                            type="range"
+                                            step="0.1"
+                                            min="0"
+                                            max={criterio.nota_maxima}
+                                            value={currentValues[tag]?.[
+                                                criterioKey
+                                            ] || 0}
+                                            on:input={(e) =>
+                                                handleValueChange(
+                                                    tag,
+                                                    criterioKey,
+                                                    e,
+                                                )}
+                                            class="slider"
+                                        />
+                                        <div class="value-display">
+                                            {(
+                                                currentValues[tag]?.[
+                                                    criterioKey
+                                                ] || 0
+                                            ).toFixed(1)}
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="criteria-btn"
+                                        on:click={() =>
+                                            showCriterios(tag, criterio)}
+                                    >
+                                        Critérios
+                                    </button>
+                                </div>
+                            </label>
+                        {/each}
+                    </div>
+                </div>
+            {/each}
+        </div>
+        <button type="submit" class="submit-btn">Salvar Avaliação</button>
+    </form>
+</div>
 
 {#if criterioAtual && showDialog}
     <Dialog

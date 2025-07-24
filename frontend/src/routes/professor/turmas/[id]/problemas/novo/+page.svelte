@@ -172,7 +172,6 @@
 {#if loading}
     <LoadingSpinner message="Carregando..." />
 {:else}
-    <div class="container">
         <PageHeader
             backUrl="/professor/turmas/{turmaId}/problemas"
             backText="Voltar para problemas"
@@ -222,7 +221,6 @@
                 </Button>
             </div>
         </form>
-    </div>
 {/if}
 
 <style>

@@ -154,7 +154,7 @@
 </svelte:head>
 
 {#if registrationComplete}
-    <Container maxWidth="md" glass={true} shadow={true}>
+    <Container maxWidth="md" glass={true} shadow={true} needsContainerStyle={true}>
         <div class="success-container">
             <div class="success-icon">✓</div>
             <h1>Conta Criada!</h1>
@@ -176,7 +176,7 @@
         </div>
     </Container>
 {:else}
-    <Container maxWidth="md" glass={true} shadow={true}>
+    <Container maxWidth="md" glass={true} shadow={true} needsContainerStyle={true}>
         <div class="header">
             <h1>Criar Conta</h1>
             <p class="subtitle">Preencha os dados para se registrar</p>

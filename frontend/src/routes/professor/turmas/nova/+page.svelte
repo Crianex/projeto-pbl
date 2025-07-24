@@ -74,7 +74,6 @@
     }
 </script>
 
-<div class="container">
     <div class="header">
         <h1>Nova Turma</h1>
     </div>
@@ -172,7 +171,6 @@
             </div>
         </form>
     {/if}
-</div>
 
 <SearchAlunoDialog
     open={searchDialogOpen}

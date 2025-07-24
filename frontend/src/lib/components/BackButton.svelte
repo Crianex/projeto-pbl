@@ -1,4 +1,4 @@
- <script lang="ts">
+<script lang="ts">
     import { createEventDispatcher } from "svelte";
 
     export let text: string = "Voltar";
@@ -31,6 +31,7 @@
 
 <style>
     .back-btn {
+        width: fit-content;
         background: none;
         border: none;
         color: #666;

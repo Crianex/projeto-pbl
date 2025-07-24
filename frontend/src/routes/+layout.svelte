@@ -5,9 +5,9 @@
 
 	// Use the pathname as key to trigger transitions on route changes
 	$: key = $page.url.pathname;
-	
+
 	// Check if current page is home to avoid layout constraints
-	$: isHomePage = $page.url.pathname === '/';
+	$: isHomePage = $page.url.pathname === "/";
 </script>
 
 <div class="app">
@@ -53,8 +53,7 @@
 		flex: 1;
 		margin: 0;
 		padding: 0;
-		height: 100vh;
-		width: 100vw;
+		width: 100%;
 		position: relative;
 	}
 
@@ -73,7 +72,7 @@
 		align-items: center;
 		will-change: transform, opacity;
 	}
-	
+
 	/* Remove layout constraints for home page */
 	.page-container.home {
 		position: static;
@@ -82,7 +81,7 @@
 		justify-content: flex-start;
 		align-items: stretch;
 	}
-	
+
 	main.home {
 		height: auto;
 		min-height: 100vh;

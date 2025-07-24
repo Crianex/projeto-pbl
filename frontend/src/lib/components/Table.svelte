@@ -340,7 +340,6 @@
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        min-width: 900px;
     }
 
     thead {
@@ -578,7 +577,6 @@
     /* Responsive Design */
     @media (max-width: 1024px) {
         table {
-            min-width: 700px;
         }
 
         th {

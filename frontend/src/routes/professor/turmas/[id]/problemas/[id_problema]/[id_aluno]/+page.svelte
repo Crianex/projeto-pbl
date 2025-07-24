@@ -117,9 +117,9 @@
         try {
             loadingFiles = true;
             filesError = null;
-            
+
             const { id_problema, id_aluno } = $page.params;
-            
+
             const files: UploadedFile[] = await api.get(
                 `/problemas/get-arquivos?id_aluno=${id_aluno}&id_problema=${id_problema}`,
             );
@@ -136,20 +136,20 @@
     }
 
     function formatFileSize(bytes: number): string {
-        if (bytes === 0) return '0 Bytes';
+        if (bytes === 0) return "0 Bytes";
         const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const sizes = ["Bytes", "KB", "MB", "GB"];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
     }
 
     function formatDate(dateString: string): string {
-        return new Date(dateString).toLocaleDateString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+        return new Date(dateString).toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
         });
     }
 
@@ -241,12 +241,12 @@
     function handleAvaliarAluno() {
         const { id_problema, id_aluno, id } = $page.params;
         const currentUserId = $currentUser?.id;
-        
+
         if (!currentUserId) {
             console.error("Usuário não autenticado");
             return;
         }
-        
+
         // Redirecionar para a página de avaliação com parâmetros para avaliação de professor
         goto(
             `/avaliacao?id_problema=${id_problema}&id_professor=${currentUserId}&id_aluno_avaliado=${id_aluno}`,
@@ -270,198 +270,200 @@
     );
 </script>
 
-<Container maxWidth="xl" glass={true} shadow={true}>
-    {#if loading}
-        <div class="loading-container">
-            <div class="loading-spinner" />
+{#if loading}
+    <div class="loading-container">
+        <div class="loading-spinner" />
+    </div>
+{:else if error}
+    <div class="error-alert" role="alert">
+        <strong>Erro!</strong>
+        <span>{error}</span>
+    </div>
+{:else}
+    <div class="content-wrapper">
+        <BackButton text="Voltar" on:click={() => history.back()} />
+
+        <div class="page-title">
+            <h1>Avaliações do Aluno</h1>
         </div>
-    {:else if error}
-        <div class="error-alert" role="alert">
-            <strong>Erro!</strong>
-            <span>{error}</span>
+
+        <div class="problema-header">
+            <h3 class="problema-subtitle">
+                {problema?.nome_problema || ""}
+            </h3>
         </div>
-    {:else}
-        <div class="content-wrapper">
-            <div class="back-button-container">
-                <BackButton text="Voltar" on:click={() => history.back()} />
-            </div>
 
-            <div class="page-title">
-                <h1>Avaliações do Aluno</h1>
+        <div class="aluno-info">
+            <div class="aluno-profile">
+                <Avatar
+                    src={aluno?.link_avatar || "/avatars/default.png"}
+                    alt={`Avatar de ${aluno?.nome_completo || "Aluno"}`}
+                    size="md"
+                />
+                <span class="aluno-name">{aluno?.nome_completo || ""}</span>
             </div>
+        </div>
 
-            <div class="problema-header">
-                <h3 class="problema-subtitle">
-                    {problema?.nome_problema || ""}
-                </h3>
-            </div>
+        <!-- Seção de Avaliações Enviadas -->
+        <div class="avaliacoes-section">
+            <h2>Avaliações Enviadas</h2>
 
-            <div class="aluno-info">
-                <div class="aluno-profile">
-                    <Avatar
-                        src={aluno?.link_avatar || "/avatars/default.png"}
-                        alt={`Avatar de ${aluno?.nome_completo || "Aluno"}`}
-                        size="md"
-                    />
-                    <span class="aluno-name">{aluno?.nome_completo || ""}</span>
+            {#if paginatedAvaliacoesEnviadas.length === 0}
+                <div class="empty-state">
+                    <div class="empty-icon">📤</div>
+                    <h3>Nenhuma avaliação enviada</h3>
+                    <p>Este aluno ainda não enviou nenhuma avaliação.</p>
                 </div>
-            </div>
+            {:else}
+                <div class="table-wrapper">
+                    <Table
+                        columns={columnsEnviadas}
+                        rows={paginatedAvaliacoesEnviadas}
+                        enableSelection={false}
+                    />
+                </div>
 
-            <!-- Seção de Avaliações Enviadas -->
-            <div class="avaliacoes-section">
-                <h2>Avaliações Enviadas</h2>
-
-                {#if paginatedAvaliacoesEnviadas.length === 0}
-                    <div class="empty-state">
-                        <div class="empty-icon">📤</div>
-                        <h3>Nenhuma avaliação enviada</h3>
-                        <p>Este aluno ainda não enviou nenhuma avaliação.</p>
-                    </div>
-                {:else}
-                    <div class="table-wrapper">
-                        <Table
-                            columns={columnsEnviadas}
-                            rows={paginatedAvaliacoesEnviadas}
-                            enableSelection={false}
+                {#if totalPagesEnviadas > 1}
+                    <div class="pagination-wrapper">
+                        <Pagination
+                            currentPage={currentPageEnviadas}
+                            totalPages={totalPagesEnviadas}
+                            on:pageChange={(e) =>
+                                (currentPageEnviadas = e.detail.page)}
                         />
                     </div>
-
-                    {#if totalPagesEnviadas > 1}
-                        <div class="pagination-wrapper">
-                            <Pagination
-                                currentPage={currentPageEnviadas}
-                                totalPages={totalPagesEnviadas}
-                                on:pageChange={(e) =>
-                                    (currentPageEnviadas = e.detail.page)}
-                            />
-                        </div>
-                    {/if}
                 {/if}
-            </div>
+            {/if}
+        </div>
 
-            <!-- Seção de Avaliações Recebidas -->
-            <div class="avaliacoes-section">
-                <h2>Avaliações Recebidas</h2>
+        <!-- Seção de Avaliações Recebidas -->
+        <div class="avaliacoes-section">
+            <h2>Avaliações Recebidas</h2>
 
-                {#if paginatedAvaliacoesRecebidas.length === 0}
-                    <div class="empty-state">
-                        <div class="empty-icon">📥</div>
-                        <h3>Nenhuma avaliação recebida</h3>
-                        <p>Este aluno ainda não recebeu nenhuma avaliação.</p>
-                    </div>
-                {:else}
-                    <div class="table-wrapper">
-                        <Table
-                            columns={columnsRecebidas}
-                            rows={paginatedAvaliacoesRecebidas}
-                            enableSelection={false}
+            {#if paginatedAvaliacoesRecebidas.length === 0}
+                <div class="empty-state">
+                    <div class="empty-icon">📥</div>
+                    <h3>Nenhuma avaliação recebida</h3>
+                    <p>Este aluno ainda não recebeu nenhuma avaliação.</p>
+                </div>
+            {:else}
+                <div class="table-wrapper">
+                    <Table
+                        columns={columnsRecebidas}
+                        rows={paginatedAvaliacoesRecebidas}
+                        enableSelection={false}
+                    />
+                </div>
+
+                {#if totalPagesRecebidas > 1}
+                    <div class="pagination-wrapper">
+                        <Pagination
+                            currentPage={currentPageRecebidas}
+                            totalPages={totalPagesRecebidas}
+                            on:pageChange={(e) =>
+                                (currentPageRecebidas = e.detail.page)}
                         />
                     </div>
-
-                    {#if totalPagesRecebidas > 1}
-                        <div class="pagination-wrapper">
-                            <Pagination
-                                currentPage={currentPageRecebidas}
-                                totalPages={totalPagesRecebidas}
-                                on:pageChange={(e) =>
-                                    (currentPageRecebidas = e.detail.page)}
-                            />
-                        </div>
-                    {/if}
                 {/if}
-            </div>
+            {/if}
+        </div>
 
-            <!-- Seção de Uploads do Aluno -->
-            <div class="uploads-section">
-                <h2>Arquivos Enviados pelo Aluno</h2>
-                
-                {#if loadingFiles}
-                    <div class="loading-files">
-                        <div class="loading-spinner" />
-                        <p>Carregando arquivos...</p>
-                    </div>
-                {:else if filesError}
-                    <div class="files-error">
-                        <p>{filesError}</p>
-                    </div>
-                {:else if uploadedFiles.length === 0}
-                    <div class="empty-state">
-                        <div class="empty-icon">📁</div>
-                        <h3>Nenhum arquivo enviado</h3>
-                        <p>Este aluno ainda não enviou nenhum arquivo para este problema.</p>
-                    </div>
-                {:else}
-                    <!-- Estatísticas dos uploads -->
-                    <div class="uploads-stats">
-                        <div class="stat-card">
-                            <div class="stat-number">{uploadedFiles.length}</div>
-                            <div class="stat-label">Total de Arquivos</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number">
-                                {uploadedFiles.length > 0 ? formatDate(uploadedFiles[0].created_at || '') : 'N/A'}
-                            </div>
-                            <div class="stat-label">Último Upload</div>
-                        </div>
-                    </div>
+        <!-- Seção de Uploads do Aluno -->
+        <div class="uploads-section">
+            <h2>Arquivos Enviados pelo Aluno</h2>
 
-                    <!-- Lista de arquivos -->
-                    <div class="files-list">
-                        {#each uploadedFiles as file}
-                            <div class="file-item">
-                                <div class="file-info">
-                                    <div class="file-icon">📄</div>
-                                    <div class="file-details">
-                                        <div class="file-name">{file.nome_arquivo}</div>
-                                        <div class="file-meta">
-                                            <span class="file-type">{file.nome_tipo || 'Sem tipo'}</span>
-                                            <span class="file-date">
-                                                {file.created_at ? formatDate(file.created_at) : 'Data não disponível'}
-                                            </span>
-                                        </div>
+            {#if loadingFiles}
+                <div class="loading-files">
+                    <div class="loading-spinner" />
+                    <p>Carregando arquivos...</p>
+                </div>
+            {:else if filesError}
+                <div class="files-error">
+                    <p>{filesError}</p>
+                </div>
+            {:else if uploadedFiles.length === 0}
+                <div class="empty-state">
+                    <div class="empty-icon">📁</div>
+                    <h3>Nenhum arquivo enviado</h3>
+                    <p>
+                        Este aluno ainda não enviou nenhum arquivo para este
+                        problema.
+                    </p>
+                </div>
+            {:else}
+                <!-- Estatísticas dos uploads -->
+                <div class="uploads-stats">
+                    <div class="stat-card">
+                        <div class="stat-number">{uploadedFiles.length}</div>
+                        <div class="stat-label">Total de Arquivos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">
+                            {uploadedFiles.length > 0
+                                ? formatDate(uploadedFiles[0].created_at || "")
+                                : "N/A"}
+                        </div>
+                        <div class="stat-label">Último Upload</div>
+                    </div>
+                </div>
+
+                <!-- Lista de arquivos -->
+                <div class="files-list">
+                    {#each uploadedFiles as file}
+                        <div class="file-item">
+                            <div class="file-info">
+                                <div class="file-icon">📄</div>
+                                <div class="file-details">
+                                    <div class="file-name">
+                                        {file.nome_arquivo}
+                                    </div>
+                                    <div class="file-meta">
+                                        <span class="file-type"
+                                            >{file.nome_tipo ||
+                                                "Sem tipo"}</span
+                                        >
+                                        <span class="file-date">
+                                            {file.created_at
+                                                ? formatDate(file.created_at)
+                                                : "Data não disponível"}
+                                        </span>
                                     </div>
                                 </div>
-                                <div class="file-actions">
-                                    <a 
-                                        href={file.link_arquivo} 
-                                        target="_blank" 
-                                        class="download-btn"
-                                        title="Baixar arquivo"
-                                    >
-                                        📥 Baixar
-                                    </a>
-                                </div>
                             </div>
-                        {/each}
-                    </div>
-                {/if}
-            </div>
-
-            <!-- Botão de Avaliar Aluno -->
-            <div class="actions-section">
-                <Button
-                    variant="primary"
-                    on:click={handleAvaliarAluno}
-                    class="avaliar-button"
-                >
-                    Avaliar Aluno
-                </Button>
-            </div>
+                            <div class="file-actions">
+                                <a
+                                    href={file.link_arquivo}
+                                    target="_blank"
+                                    class="download-btn"
+                                    title="Baixar arquivo"
+                                >
+                                    📥 Baixar
+                                </a>
+                            </div>
+                        </div>
+                    {/each}
+                </div>
+            {/if}
         </div>
-    {/if}
-</Container>
+
+        <!-- Botão de Avaliar Aluno -->
+        <div class="actions-section">
+            <Button
+                variant="primary"
+                on:click={handleAvaliarAluno}
+                class="avaliar-button"
+            >
+                Avaliar Aluno
+            </Button>
+        </div>
+    </div>
+{/if}
 
 <style>
     .content-wrapper {
         display: flex;
         flex-direction: column;
-        gap: 2rem;
-    }
-
-    .back-button-container {
-        padding: 0.5rem 0;
-        padding-top: 2rem;
-        margin-bottom: 1rem;
+        gap: 1.5rem;
     }
 
     .back-button-container :global(.back-btn) {

@@ -291,7 +291,6 @@
     onMount(fetchTurma);
 </script>
 
-<div class="container">
     <div class="header">
         <h1>Editar Turma</h1>
     </div>
@@ -393,7 +392,6 @@
             </div>
         </form>
     {/if}
-</div>
 
 <SearchAlunoDialog
     open={searchDialogOpen}

@@ -91,7 +91,7 @@
 </svelte:head>
 
 {#if passwordReset}
-    <Container maxWidth="md" glass={true} shadow={true}>
+    <Container maxWidth="md" glass={true} shadow={true} needsContainerStyle={true}>
         <div class="success-container">
             <div class="success-icon">✓</div>
             <h1>Senha Redefinida!</h1>
@@ -109,7 +109,7 @@
         </div>
     </Container>
 {:else}
-    <Container maxWidth="md" glass={true} shadow={true}>
+    <Container maxWidth="md" glass={true} shadow={true} needsContainerStyle={true}>
         <div class="header">
             <h1>Nova Senha</h1>
             <p class="subtitle">Digite sua nova senha segura</p>

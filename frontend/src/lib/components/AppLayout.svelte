@@ -5,6 +5,7 @@
     import { onMount } from "svelte";
     import { fade, fly } from "svelte/transition";
     import { goto } from "$app/navigation";
+    import Container from "./Container.svelte";
 
     export let userType: "aluno" | "professor" = "aluno";
 
@@ -169,9 +170,15 @@
 
     <main
         class="main-content"
-        style="pointer-events: {sidebarOpen && isMobile ? 'none' : 'auto'}; filter: {sidebarOpen && isMobile ? 'blur(2px) grayscale(0.2)' : 'none'};"
+        style="pointer-events: {sidebarOpen && isMobile
+            ? 'none'
+            : 'auto'}; filter: {sidebarOpen && isMobile
+            ? 'blur(2px) grayscale(0.2)'
+            : 'none'};"
     >
-        <slot />
+        <div class="main-card">
+            <slot />
+        </div>
     </main>
 </div>
 
@@ -217,11 +224,11 @@
         overflow: hidden !important;
         overflow-y: hidden !important;
         z-index: 3000;
-        box-shadow: 2px 0 16px rgba(0,0,0,0.15);
-        background: rgba(255,255,255,0.98) !important;
+        box-shadow: 2px 0 16px rgba(0, 0, 0, 0.15);
+        background: rgba(255, 255, 255, 0.98) !important;
         border: none !important;
         padding-bottom: 0 !important;
-        transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         width: 250px;
         max-width: 250px;
         height: 100vh;
@@ -261,7 +268,9 @@
         border-radius: 8px;
         font-size: 1.08rem;
         font-weight: 500;
-        transition: background 0.18s, color 0.18s;
+        transition:
+            background 0.18s,
+            color 0.18s;
         width: 100%;
     }
     nav a.active {
@@ -296,7 +305,9 @@
         align-items: center;
         gap: 1.1rem;
         border-radius: 8px;
-        transition: background 0.18s, color 0.18s;
+        transition:
+            background 0.18s,
+            color 0.18s;
     }
     .logout button:hover {
         background: #fbe9e7;
@@ -310,7 +321,7 @@
         left: 0;
         width: 100vw;
         height: 100vh;
-        background: rgba(0,0,0,0.55);
+        background: rgba(0, 0, 0, 0.55);
         z-index: 2000;
         transition: opacity 0.2s;
     }
@@ -318,23 +329,62 @@
     .main-content {
         flex: 1;
         background-color: var(--color-bg-white);
-        overflow-y: auto;
-        height: 100vh;
+        overflow-y: scroll;
         margin-left: 250px;
+        display: flex;
+        align-items: flex-start;
     }
 
-    .sidebar hr, .sidebar [style*='border'], .sidebar [style*='border-bottom'], .sidebar [style*='border-top'] {
-        border: none !important;
-        background: none !important;
-        box-shadow: none !important;
-        height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        min-height: 0 !important;
-        max-height: 0 !important;
-        display: none !important;
+    .main-card {
+        background: #fff;
+        border-radius: 20px;
+        max-width: 60vw;
+        min-width: 30vw;
+        width: 100%;
+        padding: 2rem;
+        flex-direction: column;
+        box-shadow:
+            0 15px 35px rgba(0, 0, 0, 0.08),
+            0 8px 20px rgba(0, 0, 0, 0.06),
+            0 3px 8px rgba(0, 0, 0, 0.04);
+        margin: 2rem auto;
+        transition: all 0.3s ease;
     }
-
+    .main-card:hover {
+        box-shadow:
+            0 25px 50px rgba(0, 0, 0, 0.12),
+            0 15px 30px rgba(0, 0, 0, 0.08),
+            0 8px 15px rgba(0, 0, 0, 0.06);
+        transform: translateY(-2px);
+    }
+    @media (max-width: 768px) {
+        .main-card {
+            padding: 1.2rem 0.5rem;
+            margin: 1.2rem 0.2rem;
+            max-width: 100vw;
+            border-radius: 16px;
+        }
+    }
+    @media (max-width: 640px) {
+        .main-card {
+            padding-left: 1rem;
+            padding-right: 1rem;
+            padding-top: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-radius: 12px;
+        }
+    }
+    @media (max-width: 480px) {
+        .main-card {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+            max-width: 100%;
+            margin: 0;
+            border-radius: 12px;
+        }
+    }
     @media (max-width: 768px) {
         .sidebar {
             width: 70vw;
@@ -369,14 +419,14 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             z-index: 999;
         }
         .main-content {
             margin-left: 0;
             width: 100vw;
             min-width: 0;
-            box-sizing: border-box;
+            display: flex;
         }
     }
     @media (max-width: 480px) {

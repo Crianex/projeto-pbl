@@ -215,24 +215,25 @@
     .login-container {
         width: 100%;
         max-width: 420px;
-        background: var(--color-glass-white);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        padding: 3rem 2.5rem;
+        background: #fff; /* Match main-card */
+        border-radius: 20px; /* Match main-card */
+        padding: 2rem; /* Match main-card */
         box-shadow:
-            0 25px 50px var(--color-shadow-dark),
-            0 15px 35px var(--color-shadow-main),
-            0 5px 15px var(--color-shadow-light);
-        border: 1px solid var(--color-glass-border);
+            0 15px 35px rgba(0, 0, 0, 0.08),
+            0 8px 20px rgba(0, 0, 0, 0.06),
+            0 3px 8px rgba(0, 0, 0, 0.04); /* Match main-card */
+        border: none;
         transition: all 0.3s ease;
+        /* Remove glass effect */
+        backdrop-filter: none;
     }
 
     .login-container:hover {
-        transform: translateY(-2px);
         box-shadow:
-            0 30px 60px var(--color-shadow-dark),
-            0 20px 40px var(--color-shadow-dark),
-            0 10px 20px var(--color-shadow-main);
+            0 25px 50px rgba(0, 0, 0, 0.12),
+            0 15px 30px rgba(0, 0, 0, 0.08),
+            0 8px 15px rgba(0, 0, 0, 0.06);
+        transform: translateY(-2px);
     }
 
     h1 {
@@ -319,16 +320,22 @@
             max-width: 100%;
             width: 100%;
             height: 100vh;
-            padding: 2rem 1.5rem;
-            border-radius: 0;
+            padding: 1.5rem 1rem;
+            border-radius: 12px;
             margin: 0;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            background: #fff;
+            box-shadow:
+                0 8px 20px rgba(0, 0, 0, 0.06),
+                0 3px 8px rgba(0, 0, 0, 0.04);
         }
-
         .login-container:hover {
             transform: none;
+            box-shadow:
+                0 15px 30px rgba(0, 0, 0, 0.08),
+                0 8px 15px rgba(0, 0, 0, 0.06);
         }
 
         h1 {
@@ -386,7 +393,8 @@
         }
 
         .login-container {
-            padding: 1.5rem 1rem;
+            padding: 1rem 0.5rem;
+            border-radius: 12px;
         }
 
         h1 {

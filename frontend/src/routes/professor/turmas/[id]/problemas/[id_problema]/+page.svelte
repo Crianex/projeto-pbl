@@ -35,6 +35,9 @@
     let criteriosList: { nome_criterio: string; descricao_criterio: string }[] =
         [];
     let avaliacoesData: any[] = [];
+    let evaluationMatrix: {
+        [evaluatorId: number]: { [evaluatedId: number]: number };
+    } = {};
 
     // Table configuration
     let columns: Column[] = [
@@ -164,6 +167,36 @@
             problema = problemaData;
             turma = turmaData;
             avaliacoesData = fetchedAvaliacoesData;
+            // Build evaluation matrix (same as relatorios)
+            if (turma && turma.alunos) {
+                evaluationMatrix = {};
+                turma.alunos.forEach((evaluator) => {
+                    evaluationMatrix[evaluator.id] = {};
+                    turma!.alunos!.forEach((evaluated) => {
+                        evaluationMatrix[evaluator.id][evaluated.id] = 0;
+                    });
+                });
+                avaliacoesData.forEach((avaliacao) => {
+                    if (
+                        avaliacao.id_aluno_avaliador &&
+                        avaliacao.id_aluno_avaliado
+                    ) {
+                        const average = MediaCalculator.calculateSimpleMedia(
+                            avaliacao.notas,
+                        );
+                        if (
+                            evaluationMatrix[avaliacao.id_aluno_avaliador] &&
+                            evaluationMatrix[avaliacao.id_aluno_avaliador][
+                                avaliacao.id_aluno_avaliado
+                            ] !== undefined
+                        ) {
+                            evaluationMatrix[avaliacao.id_aluno_avaliador][
+                                avaliacao.id_aluno_avaliado
+                            ] = average;
+                        }
+                    }
+                });
+            }
             logger.info("Data parsed successfully", {
                 problema: problema?.nome_problema,
                 turma: turma?.nome_turma,
@@ -238,6 +271,25 @@
         currentPage = 1; // Reset to first page when searching
     }
 
+    function getReceivedAverage(studentId: number): number {
+        const receivedGrades: number[] = [];
+        if (!evaluationMatrix) return 0;
+        Object.keys(evaluationMatrix).forEach((evaluatorId) => {
+            const grade = evaluationMatrix[Number(evaluatorId)][studentId];
+            if (grade > 0 && Number(evaluatorId) !== studentId) {
+                receivedGrades.push(grade);
+            }
+        });
+        return receivedGrades.length > 0
+            ? Number(
+                  (
+                      receivedGrades.reduce((a, b) => a + b, 0) /
+                      receivedGrades.length
+                  ).toFixed(2),
+              )
+            : 0;
+    }
+
     // Filter alunos based on search term
     $: filteredAlunos = searchTerm
         ? alunos.filter((aluno) =>
@@ -270,7 +322,7 @@
             actions: "",
         };
 
-        // Add individual criteria scores
+        // Add individual criteria scores (keep as before)
         criteriosList.forEach((criterio) => {
             const key = criterio.nome_criterio.toLowerCase();
             row[key] =
@@ -279,60 +331,53 @@
                     : "Não avaliado";
         });
 
-        // Calculate overall media from individual criteria
-        row.media = aluno.medias
-            ? MediaCalculator.calculateOverallMedia(aluno.medias)
-            : "Não avaliado";
+        // Calculate overall media from evaluation matrix (same as relatorios)
+        row.media = getReceivedAverage(aluno.id) || "Não avaliado";
 
         return row;
     });
 </script>
 
-<Container>
-    {#if loading}
-        <div class="loading-container">
-            <div class="loading-spinner" />
+{#if loading}
+    <div class="loading-container">
+        <div class="loading-spinner" />
+    </div>
+{:else if error}
+    <div class="error-alert" role="alert">
+        <strong>Erro!</strong>
+        <span>{error}</span>
+    </div>
+{:else}
+    <div class="content-wrapper">
+        <div class="back-section">
+            <BackButton text="Voltar para problemas" on:click={handleBack} />
         </div>
-    {:else if error}
-        <div class="error-alert" role="alert">
-            <strong>Erro!</strong>
-            <span>{error}</span>
+        <div class="header">
+            <h1>Alunos - {problema?.nome_problema || ""}</h1>
         </div>
-    {:else}
-        <div class="content-wrapper">
-            <div class="back-section">
-                <BackButton
-                    text="Voltar para problemas"
-                    on:click={handleBack}
+
+        <div class="alunos-section">
+            <div class="search-section">
+                <SearchBar
+                    bind:value={searchTerm}
+                    placeholder="Pesquisar alunos..."
+                    showButton={false}
+                    on:search={handleSearch}
                 />
             </div>
-            <div class="header">
-                <h1>Alunos - {problema?.nome_problema || ""}</h1>
+
+            <div class="table-wrapper">
+                <Table {columns} rows={tableRows} enableSelection={false} />
             </div>
 
-            <div class="alunos-section">
-                <div class="search-section">
-                    <SearchBar
-                        bind:value={searchTerm}
-                        placeholder="Pesquisar alunos..."
-                        showButton={false}
-                        on:search={handleSearch}
-                    />
-                </div>
-
-                <div class="table-wrapper">
-                    <Table {columns} rows={tableRows} enableSelection={false} />
-                </div>
-
-                <Pagination
-                    {currentPage}
-                    {totalPages}
-                    on:pageChange={(e) => (currentPage = e.detail.page)}
-                />
-            </div>
+            <Pagination
+                {currentPage}
+                {totalPages}
+                on:pageChange={(e) => (currentPage = e.detail.page)}
+            />
         </div>
-    {/if}
-</Container>
+    </div>
+{/if}
 
 <style>
     .content-wrapper {

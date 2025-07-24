@@ -329,7 +329,10 @@
         if (grade === 0) return false;
         // Coletar todas as notas recebidas pelo avaliado (exceto autoavaliação e zeros)
         const received = Object.keys(evaluationMatrix)
-            .map((evaluatorId) => evaluationMatrix[Number(evaluatorId)][evaluatedId])
+            .map(
+                (evaluatorId) =>
+                    evaluationMatrix[Number(evaluatorId)][evaluatedId],
+            )
             .filter((g, idx) => alunos[idx]?.id !== evaluatedId && g > 0);
         if (received.length <= 1) return false;
         const avg = received.reduce((a, b) => a + b, 0) / received.length;
@@ -620,12 +623,35 @@
                                                 "-"}
                                         </td>
                                         {#each alunos as evaluated}
-                                            {@const grade = evaluationMatrix[evaluator.id]?.[evaluated.id]}
-                                            <td class="grade-cell{evaluator.id === evaluated.id ? ' self-evaluation' : ''}{grade === 0 && evaluator.id !== evaluated.id ? ' zero-grade' : ''}{isOutlier(evaluated.id, grade) ? ' outlier-grade' : ''}">
+                                            {@const grade =
+                                                evaluationMatrix[
+                                                    evaluator.id
+                                                ]?.[evaluated.id]}
+                                            <td
+                                                class="grade-cell{evaluator.id ===
+                                                evaluated.id
+                                                    ? ' self-evaluation'
+                                                    : ''}{grade === 0 &&
+                                                evaluator.id !== evaluated.id
+                                                    ? ' zero-grade'
+                                                    : ''}{isOutlier(
+                                                    evaluated.id,
+                                                    grade,
+                                                )
+                                                    ? ' outlier-grade'
+                                                    : ''}"
+                                            >
                                                 {#if evaluator.id === evaluated.id}
-                                                    <span class="grade-cell self-evaluation">X</span>
+                                                    <span
+                                                        class="grade-cell self-evaluation"
+                                                        >X</span
+                                                    >
                                                 {:else}
-                                                    {grade > 0 ? grade : grade === 0 ? 0 : '-'}
+                                                    {grade > 0
+                                                        ? grade
+                                                        : grade === 0
+                                                          ? 0
+                                                          : "-"}
                                                 {/if}
                                             </td>
                                         {/each}
@@ -639,12 +665,34 @@
                 <div class="matrix-legend">
                     <h4>Legenda:</h4>
                     <ul>
-                        <li><strong>Número:</strong> Identificação numérica do aluno na matriz</li>
-                        <li><strong>Média:</strong> Nota média recebida pelo aluno de seus colegas</li>
-                        <li><strong>Colunas numeradas (1, 2, 3...):</strong> Notas dadas para cada aluno (identificado pelo número)</li>
-                        <li><strong>X:</strong> Auto-avaliação (aluno não avalia a si mesmo)</li>
-                        <li><span style="background:#ffcccc;padding:2px 8px;border-radius:4px;">&nbsp;</span> Nota zero enviada</li>
-                        <li><span style="background:#fff9c4;padding:2px 8px;border-radius:4px;">&nbsp;</span> Nota fora do padrão dos colegas</li>
+                        <li>
+                            <strong>Número:</strong> Identificação numérica do aluno
+                            na matriz
+                        </li>
+                        <li>
+                            <strong>Média:</strong> Nota média recebida pelo aluno
+                            de seus colegas
+                        </li>
+                        <li>
+                            <strong>Colunas numeradas (1, 2, 3...):</strong> Notas
+                            dadas para cada aluno (identificado pelo número)
+                        </li>
+                        <li>
+                            <strong>X:</strong> Auto-avaliação (aluno não avalia
+                            a si mesmo)
+                        </li>
+                        <li>
+                            <span
+                                style="background:#ffcccc;padding:2px 8px;border-radius:4px;"
+                                >&nbsp;</span
+                            > Nota zero enviada
+                        </li>
+                        <li>
+                            <span
+                                style="background:#fff9c4;padding:2px 8px;border-radius:4px;"
+                                >&nbsp;</span
+                            > Nota fora do padrão dos colegas
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -666,13 +714,10 @@
     .relatorios-container {
         width: 100%;
         height: 100%;
-        padding: 1rem 0.5rem;
         display: flex;
         flex-direction: column;
         gap: 1rem;
-        background: #fafbfc;
-        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-        margin-top: 2.5rem;
+        font-family: "Inter", "Segoe UI", Arial, sans-serif;
     }
 
     .header {
@@ -745,7 +790,8 @@
         transition: border-color 0.2s;
     }
 
-    .filter-select:hover:not(:disabled), .filter-select:focus {
+    .filter-select:hover:not(:disabled),
+    .filter-select:focus {
         border-color: #6c63ff;
         outline: none;
         box-shadow: 0 0 0 2px #e0e7ff;
@@ -849,7 +895,8 @@
         background: #f8fafc;
     }
 
-    .student-name-header, .student-name {
+    .student-name-header,
+    .student-name {
         background: #f3f4fa !important;
         font-weight: 600;
         text-align: left;
@@ -862,7 +909,8 @@
         font-size: 0.93rem;
     }
 
-    .student-number-header, .student-number {
+    .student-number-header,
+    .student-number {
         background: #f3f4fa !important;
         font-weight: 600;
         text-align: center;
@@ -875,7 +923,8 @@
         font-size: 0.93rem;
     }
 
-    .average-header, .average-cell {
+    .average-header,
+    .average-cell {
         background: #e0e7ff !important;
         font-weight: 700;
         color: #6c63ff;
@@ -1026,18 +1075,21 @@
         .empty-state {
             padding: 0.5rem 0.1rem;
         }
-        .student-name-header, .student-name {
+        .student-name-header,
+        .student-name {
             min-width: 70px;
             max-width: 90px;
             font-size: 0.85rem;
         }
-        .student-number-header, .student-number {
+        .student-number-header,
+        .student-number {
             min-width: 25px;
             max-width: 35px;
             left: 70px;
             font-size: 0.85rem;
         }
-        .average-header, .average-cell {
+        .average-header,
+        .average-cell {
             min-width: 35px;
             max-width: 45px;
             left: 95px;

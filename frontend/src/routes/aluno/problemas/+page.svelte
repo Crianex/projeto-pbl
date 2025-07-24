@@ -106,63 +106,61 @@
     <meta name="description" content="Lista de problemas disponíveis" />
 </svelte:head>
 
-<div class="page-wrapper">
-    <Container maxWidth="xl" glass={true} shadow={true}>
-        <div class="header" in:fade={{ duration: 300, delay: 50 }}>
-            <h1>Meus Problemas</h1>
-            <p class="subtitle">Explore e resolva os problemas disponíveis</p>
-        </div>
+<div style="max-width:1280px;width:100%;margin:0 auto;">
+    <div class="header" in:fade={{ duration: 300, delay: 50 }}>
+        <h1>Meus Problemas</h1>
+        <p class="subtitle">Explore e resolva os problemas disponíveis</p>
+    </div>
 
-        <div class="content" in:fade={{ duration: 400, delay: 200 }}>
-            {#if !loading && !user.id_turma}
-                <div class="empty-section">
-                    <div class="empty-content">
-                        <div class="empty-icon">🎓</div>
-                        <h3>Você ainda não está em uma turma</h3>
-                        <p>
-                            Para visualizar problemas, você precisa estar
-                            matriculado em uma turma. Entre em contato com seu
-                            professor para ser adicionado.
-                        </p>
-                        <Button variant="secondary" on:click={fetchProblems}>
-                            Atualizar
-                        </Button>
-                    </div>
+    <div class="content" in:fade={{ duration: 400, delay: 200 }}>
+        {#if !loading && !user.id_turma}
+            <div class="empty-section">
+                <div class="empty-content">
+                    <div class="empty-icon">🎓</div>
+                    <h3>Você ainda não está em uma turma</h3>
+                    <p>
+                        Para visualizar problemas, você precisa estar
+                        matriculado em uma turma. Entre em contato com seu
+                        professor para ser adicionado.
+                    </p>
+                    <Button variant="secondary" on:click={fetchProblems}>
+                        Atualizar
+                    </Button>
                 </div>
-            {:else if !loading && error}
-                <div class="error-section">
-                    <div class="error-content">
-                        <div class="error-icon">⚠️</div>
-                        <h3>Ops! Algo deu errado</h3>
-                        <p>Não foi possível carregar os problemas.</p>
-                        <Button
-                            variant="primary"
-                            on:click={fetchProblems}
-                            {loading}
-                        >
-                            Tentar Novamente
-                        </Button>
-                    </div>
+            </div>
+        {:else if !loading && error}
+            <div class="error-section">
+                <div class="error-content">
+                    <div class="error-icon">⚠️</div>
+                    <h3>Ops! Algo deu errado</h3>
+                    <p>Não foi possível carregar os problemas.</p>
+                    <Button
+                        variant="primary"
+                        on:click={fetchProblems}
+                        {loading}
+                    >
+                        Tentar Novamente
+                    </Button>
                 </div>
-            {:else if !loading && problems.length === 0}
-                <div class="empty-section">
-                    <div class="empty-content">
-                        <div class="empty-icon">📚</div>
-                        <h3>Nenhum problema disponível</h3>
-                        <p>
-                            Não há problemas cadastrados no momento. Volte mais
-                            tarde ou entre em contato com seu professor.
-                        </p>
-                        <Button variant="secondary" on:click={fetchProblems}>
-                            Atualizar
-                        </Button>
-                    </div>
+            </div>
+        {:else if !loading && problems.length === 0}
+            <div class="empty-section">
+                <div class="empty-content">
+                    <div class="empty-icon">📚</div>
+                    <h3>Nenhum problema disponível</h3>
+                    <p>
+                        Não há problemas cadastrados no momento. Volte mais
+                        tarde ou entre em contato com seu professor.
+                    </p>
+                    <Button variant="secondary" on:click={fetchProblems}>
+                        Atualizar
+                    </Button>
                 </div>
-            {:else}
-                <Table rows={problems} {columns} {loading} />
-            {/if}
-        </div>
-    </Container>
+            </div>
+        {:else}
+            <Table rows={problems} {columns} {loading} />
+        {/if}
+    </div>
 </div>
 
 {#if showToast}
@@ -181,12 +179,9 @@
     }
 
     .page-wrapper {
-        min-height: 100vh;
-        padding: 2rem;
         display: flex;
         justify-content: center;
         align-items: flex-start;
-        box-sizing: border-box;
     }
 
     /* Responsive adjustments for mobile */

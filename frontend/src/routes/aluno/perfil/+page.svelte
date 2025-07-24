@@ -106,22 +106,20 @@
     }
 </script>
 
-<Container>
-    <div>
-        {#if !isEditing}
-            <ProfileView onEdit={handleEditClick} />
-        {:else}
-            <ProfileForm
-                {loading}
-                {avatarPreview}
-                onSave={handleSave}
-                onCancel={handleCancelEdit}
-                onAvatarUpload={handleAvatarUpload}
-                onAvatarRemove={handleAvatarRemove}
-            />
-        {/if}
-    </div>
-</Container>
+<div>
+    {#if !isEditing}
+        <ProfileView onEdit={handleEditClick} />
+    {:else}
+        <ProfileForm
+            {loading}
+            {avatarPreview}
+            onSave={handleSave}
+            onCancel={handleCancelEdit}
+            onAvatarUpload={handleAvatarUpload}
+            onAvatarRemove={handleAvatarRemove}
+        />
+    {/if}
+</div>
 
 {#if showToast}
     <Toast
