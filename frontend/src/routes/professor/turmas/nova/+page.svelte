@@ -380,4 +380,59 @@
             box-sizing: border-box;
         }
     }
+
+    @media (max-width: 480px) {
+        .container {
+            padding: 0.1rem;
+            margin-top: 1.2rem;
+        }
+        .header {
+            margin-top: 0.05rem;
+            margin-bottom: 0.2rem;
+        }
+        .header h1 {
+            font-size: 0.93rem;
+        }
+        .form {
+            padding: 0.2rem 0.05rem;
+            border-radius: 6px;
+        }
+        .form-group {
+            margin-bottom: 0.5rem;
+        }
+        .form-group input {
+            padding: 0.2rem;
+            font-size: 0.91rem;
+        }
+        .alunos-section {
+            margin-bottom: 0.5rem;
+        }
+        .alunos-section h2 {
+            font-size: 0.91rem;
+            margin-bottom: 0.2rem;
+        }
+        .alunos-list {
+            margin-bottom: 0.2rem;
+        }
+        .aluno-item {
+            padding: 0.2rem 0.01rem;
+            font-size: 0.91rem;
+        }
+        .aluno-info {
+            gap: 0.1rem;
+        }
+        .avatar {
+            width: 18px;
+            height: 18px;
+        }
+        .actions {
+            gap: 0.1rem;
+            margin-top: 0.2rem;
+        }
+        .actions button,
+        .form :global(button) {
+            padding: 0.3rem 0.1rem;
+            font-size: 0.91rem;
+        }
+    }
 </style>
