@@ -197,7 +197,12 @@
         </div>
     </Container>
 {:else}
-    <Container maxWidth="lg" glass={true} shadow={true}>
+    <Container
+        maxWidth="lg"
+        glass={true}
+        shadow={true}
+        needsContainerStyle={true}
+    >
         <div class="header">
             <h1>Criar Conta</h1>
             <p class="subtitle">Preencha os dados para se registrar</p>
