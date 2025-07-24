@@ -274,74 +274,78 @@ function goToFreeTrial() {
     @media (max-width: 768px) {
         .header-content {
             flex-direction: column;
-            gap: 1rem;
+            align-items: center;
+            gap: 0.5rem;
             text-align: center;
         }
-
         .header-buttons {
-            flex-direction: column;
+            flex-direction: row;
+            justify-content: center;
+            gap: 0.5rem;
             width: 100%;
+            margin-top: 0.5rem;
         }
-
+        .logo {
+            margin-bottom: 0.25rem;
+        }
         .hero {
-            padding: 2rem 0;
+            padding: 0.5rem 0 1rem 0;
         }
-
         .hero-content {
-            gap: 2rem;
-            padding: 0 1rem;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            text-align: center;
         }
-
-        .hero-title {
-            font-size: 2.5rem;
+        .hero-text {
+            gap: 1rem;
+            align-items: center;
         }
-
-        .hero-description {
-            font-size: 1.1rem;
-        }
-
         .hero-buttons {
             flex-direction: column;
             align-items: stretch;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
         }
-
+        .hero-buttons .button {
+            width: 100%;
+            min-width: 0;
+            font-size: 1.1rem;
+        }
+        .hero-illustration {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
         .illustration {
-            max-width: 280px;
+            max-width: 180px;
         }
-
-        .features-content {
-            padding: 0 1rem;
+        .features {
+            padding: 1.2rem 0 0.5rem 0;
         }
-
         .features-title {
-            font-size: 2rem;
+            margin-bottom: 1.2rem;
         }
-
         .features-grid {
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
+            gap: 0.75rem;
+        }
+        .footer {
+            padding: 0.5rem 0;
         }
     }
-
     @media (max-width: 480px) {
-        .logo h1 {
-            font-size: 1.2rem;
+        .header-buttons {
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
         }
-
-        .hero-title {
-            font-size: 2rem;
+        .hero-buttons {
+            gap: 0.5rem;
         }
-
-        .hero-description {
-            font-size: 1rem;
+        .features {
+            padding: 0.5rem 0 0.25rem 0;
         }
-
-        .illustration {
-            max-width: 240px;
-        }
-
         .features-title {
-            font-size: 1.8rem;
+            margin-bottom: 0.75rem;
         }
     }
 </style>
