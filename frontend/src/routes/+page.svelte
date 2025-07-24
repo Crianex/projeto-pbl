@@ -1,71 +1,347 @@
 <script lang="ts">
 import Button from "$lib/components/Button.svelte";
-import Container from "$lib/components/Container.svelte";
+import CardSection from "$lib/components/CardSection.svelte";
 import { goto } from "$app/navigation";
+import HomepageSvg from "$lib/images/homepage.svg";
 
 function goToLogin() {
     goto("/login");
 }
+
+function goToRegister() {
+    goto("/register");
+}
+
+function goToFreeTrial() {
+    // Placeholder para trial gratuito - pode redirecionar para registro
+    goto("/register");
+}
 </script>
 
 <svelte:head>
-    <title>Home</title>
-    <meta name="description" content="Página inicial do sistema" />
+    <title>Gerenciamento de avaliações PBL</title>
+    <meta name="description" content="Sistema para facilitar a vida de estudantes e instituições que aplicam o método de Aprendizagem Baseada em Problemas (PBL)" />
 </svelte:head>
 
-<Container maxWidth="sm" glass={true} shadow={true} center={true}>
-    <section class="home-section">
-        <h1 class="home-title">
-            Home ainda não implementada
-        </h1>
-        <Button variant="primary" on:click={goToLogin} class="home-login-btn">
-            Ir para Login
-        </Button>
+<div class="home-page">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <h1>Gerenciamento de avaliações PBL</h1>
+            </div>
+            <div class="header-buttons">
+                <Button variant="ghost" on:click={goToLogin}>
+                    Log In
+                </Button>
+                <Button variant="primary" on:click={goToFreeTrial}>
+                    Start Free Trial
+                </Button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h2 class="hero-title">Avaliações mais rápidas</h2>
+                <p class="hero-description">
+                    Sistema para facilitar a vida de estudantes e instituições que aplicam o método de Aprendizagem Baseada em Problemas (PBL)
+                </p>
+                <div class="hero-buttons">
+                    <Button variant="primary" size="large" on:click={goToRegister}>
+                        Criar conta
+                    </Button>
+                    <Button variant="secondary" size="large" on:click={goToLogin}>
+                        Login
+                    </Button>
+                </div>
+            </div>
+            <div class="hero-illustration">
+                <img src={HomepageSvg} alt="Ilustração PBL" class="illustration" />
+            </div>
+        </div>
     </section>
-</Container>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="features-content">
+            <h3 class="features-title">Principais funcionalidades</h3>
+            <div class="features-grid">
+                <CardSection 
+                    title="Gestão de Avaliações" 
+                    description="Crie e gerencie avaliações de forma intuitiva e eficiente"
+                    interactive={true}
+                />
+                <CardSection 
+                    title="Relatórios Detalhados" 
+                    description="Acompanhe o progresso dos estudantes com relatórios completos"
+                    interactive={true}
+                />
+                <CardSection 
+                    title="Interface Moderna" 
+                    description="Design responsivo e fácil de usar em qualquer dispositivo"
+                    interactive={true}
+                />
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>/cria._nex></p>
+        </div>
+    </footer>
+</div>
 
 <style>
-    .home-section {
+    .home-page {
+        min-height: 100vh;
         display: flex;
         flex-direction: column;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    /* Header Styles */
+    .header {
+        padding: 1rem 0;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .header-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+        display: flex;
+        justify-content: space-between;
         align-items: center;
+    }
+
+    .logo h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+        color: white;
+    }
+
+    .header-buttons {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    /* Hero Styles */
+    .hero {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        padding: 4rem 0;
+    }
+
+    .hero-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+        align-items: center;
+    }
+
+    .hero-text {
+        display: flex;
+        flex-direction: column;
         gap: 2rem;
-        padding: 3rem 0;
     }
-    .home-title {
-        text-align: center;
-        font-size: 2.2rem;
+
+    .hero-title {
+        font-size: 3.5rem;
         font-weight: 700;
-        margin-bottom: 1rem;
-        word-break: break-word;
+        line-height: 1.2;
+        margin: 0;
+        background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
-    .home-login-btn {
-        min-width: 180px;
-        font-size: 1.1rem;
+
+    .hero-description {
+        font-size: 1.25rem;
+        line-height: 1.6;
+        margin: 0;
+        opacity: 0.9;
     }
-    @media (max-width: 640px) {
-        .home-section {
-            padding: 1.5rem 0.5rem;
-            gap: 1.2rem;
+
+    .hero-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-illustration {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .illustration {
+        width: 100%;
+        max-width: 400px;
+        height: auto;
+        filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.2));
+        animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
         }
-        .home-title {
-            font-size: 1.3rem;
-            margin-bottom: 0.5rem;
+        50% {
+            transform: translateY(-20px);
         }
-        .home-login-btn {
-            min-width: 120px;
+    }
+
+    /* Features Styles */
+    .features {
+        padding: 4rem 0;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+    }
+
+    .features-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .features-title {
+        font-size: 2.5rem;
+        font-weight: 600;
+        text-align: center;
+        margin: 0 0 3rem 0;
+        color: white;
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+    }
+
+    /* Footer Styles */
+    .footer {
+        padding: 2rem 0;
+        background: rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .footer-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+        text-align: center;
+    }
+
+    .footer-content p {
+        margin: 0;
+        opacity: 0.7;
+        font-family: 'Courier New', monospace;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .hero-content {
+            grid-template-columns: 1fr;
+            gap: 3rem;
+            text-align: center;
+        }
+        
+        .hero-title {
+            font-size: 3rem;
+        }
+        
+        .illustration {
+            max-width: 350px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .header-content {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .header-buttons {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .hero {
+            padding: 2rem 0;
+        }
+
+        .hero-content {
+            gap: 2rem;
+            padding: 0 1rem;
+        }
+
+        .hero-title {
+            font-size: 2.5rem;
+        }
+
+        .hero-description {
+            font-size: 1.1rem;
+        }
+
+        .hero-buttons {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .illustration {
+            max-width: 280px;
+        }
+
+        .features-content {
+            padding: 0 1rem;
+        }
+
+        .features-title {
+            font-size: 2rem;
+        }
+
+        .features-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .logo h1 {
+            font-size: 1.2rem;
+        }
+
+        .hero-title {
+            font-size: 2rem;
+        }
+
+        .hero-description {
             font-size: 1rem;
-            padding: 0.75rem 1rem;
         }
-    }
-    @media (max-width: 400px) {
-        .home-title {
-            font-size: 1rem;
+
+        .illustration {
+            max-width: 240px;
         }
-        .home-login-btn {
-            min-width: 90px;
-            font-size: 0.95rem;
-            padding: 0.5rem 0.75rem;
+
+        .features-title {
+            font-size: 1.8rem;
         }
     }
 </style>

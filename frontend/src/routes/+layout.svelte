@@ -4,13 +4,17 @@
 
 	// Use the pathname as key to trigger transitions on route changes
 	$: key = $page.url.pathname;
+	
+	// Check if current page is home to avoid layout constraints
+	$: isHomePage = $page.url.pathname === '/';
 </script>
 
 <div class="app">
-	<main>
+	<main class:home={isHomePage}>
 		{#key key}
 			<div
 				class="page-container"
+				class:home={isHomePage}
 				in:fade={{ duration: 500 }}
 				out:fade={{ duration: 500 }}
 			>
@@ -52,6 +56,7 @@
 		position: relative;
 	}
 
+	/* Default layout for non-home pages */
 	.page-container {
 		position: absolute;
 		top: 0;
@@ -64,5 +69,19 @@
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
+	}
+	
+	/* Remove layout constraints for home page */
+	.page-container.home {
+		position: static;
+		height: auto;
+		min-height: 100vh;
+		justify-content: flex-start;
+		align-items: stretch;
+	}
+	
+	main.home {
+		height: auto;
+		min-height: 100vh;
 	}
 </style>

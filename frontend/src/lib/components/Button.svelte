@@ -1,6 +1,6 @@
 <script lang="ts">
-    export let variant: "primary" | "secondary" | "danger" = "primary";
-    export let size: "sm" | "md" | "icon" = "md";
+    export let variant: "primary" | "secondary" | "danger" | "ghost" = "primary";
+    export let size: "sm" | "md" | "large" | "icon" = "md";
     export let disabled = false;
     export let type: "button" | "submit" | "reset" = "button";
     export let loading = false;
@@ -120,6 +120,21 @@
         background: #b91c1c;
     }
 
+    .ghost {
+        background: transparent;
+        color: white;
+        border-color: transparent;
+    }
+
+    .ghost:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .ghost:active:not(:disabled) {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
     /* Size variants */
     .sm {
         padding: 0.375rem 0.75rem;
@@ -131,6 +146,12 @@
         padding: 0.5rem 1rem;
         min-height: 2.5rem;
         font-size: 0.875rem;
+    }
+
+    .large {
+        padding: 0.75rem 1.5rem;
+        min-height: 3rem;
+        font-size: 1rem;
     }
 
     .icon {
@@ -169,6 +190,12 @@
             font-size: 0.8rem;
         }
 
+        .large {
+            padding: 0.5rem 1rem;
+            min-height: 2.5rem;
+            font-size: 0.9rem;
+        }
+
         .icon {
             padding: 0.375rem;
             min-height: 2.25rem;
@@ -187,6 +214,12 @@
             padding: 0.375rem 0.75rem;
             min-height: 2.25rem;
             font-size: 0.8rem;
+        }
+
+        .large {
+            padding: 0.5rem 1rem;
+            min-height: 2.5rem;
+            font-size: 0.9rem;
         }
 
         .icon {
