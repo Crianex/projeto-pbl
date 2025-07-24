@@ -5,6 +5,7 @@ import { goto } from "$app/navigation";
 import { fade, fly } from "svelte/transition";
 import { quintOut } from "svelte/easing";
 import HomepageSvg from "$lib/images/homepage.svg";
+import LogoSvg from "$lib/images/logounrv.svg";
 
 function goToLogin() {
     goto("/login");
@@ -30,7 +31,8 @@ function goToFreeTrial() {
     <header class="header" in:fly={{ y: -20, duration: 600, delay: 100, easing: quintOut }}>
         <div class="header-content">
             <div class="logo">
-                <h1>Gerenciamento de avaliações PBL</h1>
+                <img src={LogoSvg} alt="Logo UNRV" class="logo-image" />
+                <h1 class="header-title">Gerenciamento de avaliações PBL</h1>
             </div>
             <div class="header-buttons">
                 <Button variant="ghost" on:click={goToLogin}>
@@ -69,28 +71,25 @@ function goToFreeTrial() {
     <!-- Features Section -->
     <section class="features" in:fly={{ y: 40, duration: 800, delay: 600, easing: quintOut }}>
         <div class="features-content">
-            <h3 class="features-title">Principais funcionalidades</h3>
+            <h3 class="features-title">Uma solução criada para os estudantes poderem</h3>
             <div class="features-grid">
-                <div in:fly={{ y: 20, duration: 600, delay: 800, easing: quintOut }}>
-                    <CardSection 
-                        title="Gestão de Avaliações" 
-                        description="Crie e gerencie avaliações de forma intuitiva e eficiente"
-                        interactive={true}
-                    />
+                <div class="feature-card" in:fly={{ y: 20, duration: 600, delay: 800, easing: quintOut }}>
+                    <div class="feature-icon">😊</div>
+                    <div class="feature-content">
+                        <p class="feature-text">Avaliar os colegas em <strong class="feature-highlight">5 min</strong></p>
+                    </div>
                 </div>
-                <div in:fly={{ y: 20, duration: 600, delay: 900, easing: quintOut }}>
-                    <CardSection 
-                        title="Relatórios Detalhados" 
-                        description="Acompanhe o progresso dos estudantes com relatórios completos"
-                        interactive={true}
-                    />
+                <div class="feature-card" in:fly={{ y: 20, duration: 600, delay: 900, easing: quintOut }}>
+                    <div class="feature-icon">📄</div>
+                    <div class="feature-content">
+                        <p class="feature-text">Enviar documentos e trabalhos <strong class="feature-highlight">na plataforma</strong></p>
+                    </div>
                 </div>
-                <div in:fly={{ y: 20, duration: 600, delay: 1000, easing: quintOut }}>
-                    <CardSection 
-                        title="Interface Moderna" 
-                        description="Design responsivo e fácil de usar em qualquer dispositivo"
-                        interactive={true}
-                    />
+                <div class="feature-card" in:fly={{ y: 20, duration: 600, delay: 1000, easing: quintOut }}>
+                    <div class="feature-icon">📈</div>
+                    <div class="feature-content">
+                        <p class="feature-text">Visualizar as avaliações recebidas <strong class="feature-highlight">instantaneamente</strong></p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -99,7 +98,8 @@ function goToFreeTrial() {
     <!-- Footer -->
     <footer class="footer" in:fly={{ y: 20, duration: 600, delay: 1200, easing: quintOut }}>
         <div class="footer-content">
-            <p>/cria._nex></p>
+            <p class="project-text">um projeto</p>
+            <p class="project-name">/cria._nex></p>
         </div>
     </footer>
 </div>
@@ -109,7 +109,7 @@ function goToFreeTrial() {
         min-height: 100vh;
         display: flex;
         flex-direction: column;
-        background: var(--color-bg-hero-gradient);
+        background: var(--color-nature-gradient);
         color: var(--color-text-white);
         overflow-x: hidden;
     }
@@ -117,9 +117,9 @@ function goToFreeTrial() {
     /* Header Styles */
     .header {
         padding: 1rem 0;
-        background: var(--color-glass-light);
+        background: var(--color-text-white);
         backdrop-filter: blur(10px);
-        border-bottom: 1px solid var(--color-glass-border);
+        border-bottom: 1px solid var(--color-nature-background-light);
     }
 
     .header-content {
@@ -131,11 +131,25 @@ function goToFreeTrial() {
         align-items: center;
     }
 
-    .logo h1 {
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .logo-image {
+        width: 40px;
+        height: 40px;
+    }
+
+
+
+    .header-title {
         font-size: 1.5rem;
         font-weight: 600;
         margin: 0;
-        color: var(--color-text-white);
+        color: var(--color-nature-main);
+        margin-left: 1rem;
     }
 
     .header-buttons {
@@ -146,6 +160,7 @@ function goToFreeTrial() {
 
     /* Hero Styles */
     .hero {
+        background: var(--color-nature-background-light);
         flex: 1;
         display: flex;
         align-items: center;
@@ -173,13 +188,11 @@ function goToFreeTrial() {
         font-weight: 700;
         line-height: 1.2;
         margin: 0;
-        background: var(--color-bg-text-gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: var(--color-font-heading-dark);
     }
 
     .hero-description {
+        color: var(--color-font-body-dark);
         font-size: 1.25rem;
         line-height: 1.6;
         margin: 0;
@@ -202,7 +215,7 @@ function goToFreeTrial() {
         width: 100%;
         max-width: 400px;
         height: auto;
-        filter: drop-shadow(0 20px 40px var(--color-shadow-dark));
+        filter: drop-shadow(0 20px 40px var(--color-nature-shadow));
         animation: float 6s ease-in-out infinite;
     }
 
@@ -218,7 +231,7 @@ function goToFreeTrial() {
     /* Features Styles */
     .features {
         padding: 4rem 0;
-        background: var(--color-glass-light);
+        background: var(--color-text-white);
         backdrop-filter: blur(10px);
     }
 
@@ -233,7 +246,7 @@ function goToFreeTrial() {
         font-weight: 600;
         text-align: center;
         margin: 0 0 3rem 0;
-        color: var(--color-text-white);
+        color: var(--color-nature-dark);
     }
 
     .features-grid {
@@ -242,12 +255,48 @@ function goToFreeTrial() {
         gap: 2rem;
     }
 
+    .feature-card {
+        background: var(--color-nature-background-light);
+        border: 1px solid var(--color-border-light);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px var(--color-nature-shadow-light);
+    }
+
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    .feature-content {
+        text-align: center;
+    }
+
+    .feature-text {
+        color: var(--color-font-body-dark);
+        font-size: 1.1rem;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .feature-highlight {
+        color: var(--color-nature-main);
+        font-weight: 700;
+    }
+
     /* Footer Styles */
     .footer {
         padding: 2rem 0;
-        background: var(--color-shadow-dark);
+        background: var(--color-nature-dark);
         backdrop-filter: blur(10px);
-        border-top: 1px solid var(--color-glass-border);
+        border-top: 1px solid var(--color-nature-glass-border);
     }
 
     .footer-content {
@@ -261,6 +310,19 @@ function goToFreeTrial() {
         margin: 0;
         opacity: 0.7;
         font-family: 'Courier New', monospace;
+        color: var(--color-text-white);
+    }
+
+    .footer-content .project-text {
+        font-size: 0.9rem;
+        color: var(--color-text-light);
+        margin-bottom: 0.5rem;
+    }
+
+    .footer-content .project-name {
+        font-size: 1.1rem;
+        color: #ff6b9d;
+        font-weight: 600;
     }
 
     /* Responsive Design */
@@ -287,6 +349,17 @@ function goToFreeTrial() {
             gap: 0.5rem;
             text-align: center;
         }
+
+        .logo {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .header-title {
+            margin-left: 0;
+            margin-top: 0.5rem;
+        }
+
         .header-buttons {
             flex-direction: row;
             justify-content: center;

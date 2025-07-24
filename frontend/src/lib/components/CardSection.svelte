@@ -44,19 +44,19 @@
 		display: block;
 		text-decoration: none;
 		color: inherit;
-		border: 1px solid rgba(255, 255, 255, 0.2);
+		border: 1px solid var(--color-nature-glass-border);
 		backdrop-filter: blur(10px);
 		box-sizing: border-box;
 		box-shadow:
-			0 8px 20px rgba(0, 0, 0, 0.06),
-			0 3px 8px rgba(0, 0, 0, 0.04);
+			0 8px 20px var(--color-nature-shadow-light),
+			0 3px 8px var(--color-nature-shadow-light);
 	}
 
 	.card-section:hover {
 		transform: translateY(-2px);
 		box-shadow:
-			0 15px 30px rgba(0, 0, 0, 0.08),
-			0 8px 15px rgba(0, 0, 0, 0.06);
+			0 15px 30px var(--color-nature-shadow),
+			0 8px 15px var(--color-nature-shadow-light);
 	}
 
 	.content {
@@ -69,7 +69,7 @@
 	}
 
 	.icon :global(svg) {
-		color: #1a1a1a;
+		color: var(--color-nature-main);
 	}
 
 	.title {

@@ -17,6 +17,29 @@
 	--color-secondary-light: #8b6bb1;
 	--color-secondary-dark: #5e3a82;
 	
+	/* Sistema de Cores Verde (Nature) */
+	--color-nature-main: #168F41;
+	--color-nature-light: #22C55E;
+	--color-nature-dark: #014619;
+	--color-nature-lighter: #4ADE80;
+	--color-nature-darker: #052E16;
+	--color-nature-gradient: linear-gradient(135deg, #168F41 0%, #014619 100%);
+	--color-nature-light-gradient: linear-gradient(135deg, #4ADE80 0%, #168F41 100%);
+	--color-nature-background: rgba(22, 143, 65, 0.1);
+	--color-nature-background-light: #E3FBEC;
+	--color-nature-background-dark: rgba(22, 143, 65, 0.05);
+	--color-nature-border: rgba(22, 143, 65, 0.2);
+	--color-nature-border-light: rgba(22, 143, 65, 0.1);
+	--color-nature-shadow: rgba(22, 143, 65, 0.3);
+	--color-nature-shadow-light: rgba(22, 143, 65, 0.15);
+	
+	/* Glass Effect Verde */
+	--color-nature-glass-white: rgba(227, 251, 236, 0.95);
+	--color-nature-glass-light: rgba(227, 251, 236, 0.1);
+	--color-nature-glass-medium: rgba(227, 251, 236, 0.2);
+	--color-nature-glass-border: rgba(227, 251, 236, 0.3);
+	--color-nature-glass-backdrop: rgba(227, 251, 236, 0.75);
+	
 	/* Cores de Estado */
 	--color-success-main: #48bb78;
 	--color-success-light: #68d391;
@@ -51,6 +74,42 @@
 	--color-text-light: #a0aec0;
 	--color-text-white: #ffffff;
 	--color-text-black: rgba(0, 0, 0, 0.7);
+	
+	/* Cores de Fontes e Tipografia */
+	--color-font-heading: #1a202c;
+	--color-font-heading-light: #2d3748;
+	--color-font-heading-dark: #000000;
+	--color-font-body: #4a5568;
+	--color-font-body-light: #718096;
+	--color-font-body-dark: #2d3748;
+	--color-font-caption: #a0aec0;
+	--color-font-caption-light: #cbd5e0;
+	--color-font-link: #3182ce;
+	--color-font-link-hover: #2c5282;
+	--color-font-link-active: #1a365d;
+	--color-font-code: #2d3748;
+	--color-font-code-bg: #f7fafc;
+	--color-font-quote: #4a5568;
+	--color-font-quote-bg: #f7fafc;
+	--color-font-quote-border: #e2e8f0;
+	
+	/* Cores de Fontes Verde (Nature) */
+	--color-font-nature-heading: #014619;
+	--color-font-nature-heading-light: #168F41;
+	--color-font-nature-heading-dark: #052E16;
+	--color-font-nature-body: #1a5d1a;
+	--color-font-nature-body-light: #22C55E;
+	--color-font-nature-body-dark: #014619;
+	--color-font-nature-caption: #4ADE80;
+	--color-font-nature-caption-light: #86efac;
+	--color-font-nature-link: #168F41;
+	--color-font-nature-link-hover: #014619;
+	--color-font-nature-link-active: #052E16;
+	--color-font-nature-code: #014619;
+	--color-font-nature-code-bg: #E3FBEC;
+	--color-font-nature-quote: #168F41;
+	--color-font-nature-quote-bg: #E3FBEC;
+	--color-font-nature-quote-border: #22C55E;
 	
 	/* Cores de Background */
 	--color-bg-white: #ffffff;
@@ -134,15 +193,33 @@
 	--color-button-danger: var(--color-error-main);
 	--color-button-ghost: transparent;
 	
+	/* Botões e Componentes Verde (Nature) */
+	--color-button-nature: var(--color-nature-main);
+	--color-button-nature-hover: var(--color-nature-light);
+	--color-button-nature-active: var(--color-nature-dark);
+	--color-button-nature-secondary: var(--color-nature-background-light);
+	--color-button-nature-ghost: var(--color-nature-glass-light);
+	
 	--color-input-background: var(--color-bg-white);
 	--color-input-border: var(--color-border-light);
 	--color-input-focus: var(--color-primary-main);
 	--color-input-error: var(--color-error-main);
 	
+	/* Inputs e Forms Verde */
+	--color-input-nature-focus: var(--color-nature-main);
+	--color-input-nature-border: var(--color-nature-border);
+	--color-input-nature-background: var(--color-nature-background-light);
+	
 	--color-table-header: var(--color-bg-light);
 	--color-table-border: var(--color-border-light);
 	--color-table-hover: var(--color-bg-light);
 	--color-table-selected: var(--color-primary-background);
+	
+	/* Tabelas Verde */
+	--color-table-nature-header: var(--color-nature-background-light);
+	--color-table-nature-border: var(--color-nature-border-light);
+	--color-table-nature-hover: var(--color-nature-background-dark);
+	--color-table-nature-selected: var(--color-nature-background);
 	
 	/* Dimensões e espaçamentos */
 	--column-width: 42rem;
@@ -298,3 +375,31 @@ input {
 	width: 1px;
 	white-space: nowrap;
 }
+
+/* Classes Utilitárias para Cores de Fonte */
+.text-heading { color: var(--color-font-heading); }
+.text-heading-light { color: var(--color-font-heading-light); }
+.text-heading-dark { color: var(--color-font-heading-dark); }
+.text-body { color: var(--color-font-body); }
+.text-body-light { color: var(--color-font-body-light); }
+.text-body-dark { color: var(--color-font-body-dark); }
+.text-caption { color: var(--color-font-caption); }
+.text-caption-light { color: var(--color-font-caption-light); }
+.text-link { color: var(--color-font-link); }
+.text-link:hover { color: var(--color-font-link-hover); }
+.text-code { color: var(--color-font-code); background: var(--color-font-code-bg); }
+.text-quote { color: var(--color-font-quote); background: var(--color-font-quote-bg); border-left: 3px solid var(--color-font-quote-border); }
+
+/* Classes Utilitárias para Cores de Fonte Verde (Nature) */
+.text-nature-heading { color: var(--color-font-nature-heading); }
+.text-nature-heading-light { color: var(--color-font-nature-heading-light); }
+.text-nature-heading-dark { color: var(--color-font-nature-heading-dark); }
+.text-nature-body { color: var(--color-font-nature-body); }
+.text-nature-body-light { color: var(--color-font-nature-body-light); }
+.text-nature-body-dark { color: var(--color-font-nature-body-dark); }
+.text-nature-caption { color: var(--color-font-nature-caption); }
+.text-nature-caption-light { color: var(--color-font-nature-caption-light); }
+.text-nature-link { color: var(--color-font-nature-link); }
+.text-nature-link:hover { color: var(--color-font-nature-link-hover); }
+.text-nature-code { color: var(--color-font-nature-code); background: var(--color-font-nature-code-bg); }
+.text-nature-quote { color: var(--color-font-nature-quote); background: var(--color-font-nature-quote-bg); border-left: 3px solid var(--color-font-nature-quote-border); }
