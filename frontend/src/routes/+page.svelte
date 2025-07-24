@@ -1,43 +1,44 @@
 <script lang="ts">
-import Button from "$lib/components/Button.svelte";
-import CardSection from "$lib/components/CardSection.svelte";
-import { goto } from "$app/navigation";
-import { fade, fly } from "svelte/transition";
-import { quintOut } from "svelte/easing";
-import HomepageSvg from "$lib/images/homepage.svg";
-import LogoSvg from "$lib/images/logounrv.svg";
+    import Button from "$lib/components/Button.svelte";
+    import CardSection from "$lib/components/CardSection.svelte";
+    import { goto } from "$app/navigation";
+    import { fade, fly } from "svelte/transition";
+    import { quintOut } from "svelte/easing";
+    import HomepageSvg from "$lib/images/homepage.svg";
+    import LogoSvg from "$lib/images/logounrv.svg";
 
-function goToLogin() {
-    goto("/login");
-}
+    function goToLogin() {
+        goto("/login");
+    }
 
-function goToRegister() {
-    goto("/register");
-}
+    function goToRegister() {
+        goto("/register");
+    }
 
-function goToFreeTrial() {
-    // Placeholder para trial gratuito - pode redirecionar para registro
-    goto("/register");
-}
+    function goToFreeTrial() {
+        // Placeholder para trial gratuito - pode redirecionar para registro
+        goto("/register");
+    }
 </script>
 
 <svelte:head>
     <title>Gerenciamento de avaliações PBL</title>
-    <meta name="description" content="Sistema para facilitar a vida de estudantes e instituições que aplicam o método de Aprendizagem Baseada em Problemas (PBL)" />
+    <meta
+        name="description"
+        content="Sistema para facilitar a vida de estudantes e instituições que aplicam o método de Aprendizagem Baseada em Problemas (PBL)"
+    />
 </svelte:head>
 
 <div class="home-page">
     <!-- Header -->
-    <header class="header" in:fly={{ y: -20, duration: 600, delay: 100, easing: quintOut }}>
+    <header class="header">
         <div class="header-content">
             <div class="logo">
                 <img src={LogoSvg} alt="Logo UNRV" class="logo-image" />
                 <h1 class="header-title">Gerenciamento de avaliações PBL</h1>
             </div>
             <div class="header-buttons">
-                <Button variant="ghost" on:click={goToLogin}>
-                    Log In
-                </Button>
+                <Button variant="ghost" on:click={goToLogin}>Log In</Button>
                 <Button variant="primary" on:click={goToFreeTrial}>
                     Start Free Trial
                 </Button>
@@ -46,49 +47,81 @@ function goToFreeTrial() {
     </header>
 
     <!-- Hero Section -->
-    <section class="hero" in:fly={{ y: 30, duration: 800, delay: 200, easing: quintOut }}>
+    <section class="hero">
         <div class="hero-content">
             <div class="hero-text">
                 <h2 class="hero-title">Avaliações mais rápidas</h2>
                 <p class="hero-description">
-                    Sistema para facilitar a vida de estudantes e instituições que aplicam o método de Aprendizagem Baseada em Problemas (PBL)
+                    Sistema para facilitar a vida de estudantes e instituições
+                    que aplicam o método de Aprendizagem Baseada em Problemas
+                    (PBL)
                 </p>
                 <div class="hero-buttons">
-                    <Button variant="primary" size="large" on:click={goToRegister}>
+                    <Button
+                        variant="primary"
+                        size="large"
+                        on:click={goToRegister}
+                    >
                         Criar conta
                     </Button>
-                    <Button variant="secondary" size="large" on:click={goToLogin}>
+                    <Button
+                        variant="secondary"
+                        size="large"
+                        on:click={goToLogin}
+                    >
                         Login
                     </Button>
                 </div>
             </div>
-            <div class="hero-illustration" in:fly={{ x: 30, duration: 1000, delay: 400, easing: quintOut }}>
-                <img src={HomepageSvg} alt="Ilustração PBL" class="illustration" />
+            <div
+                class="hero-illustration"
+                in:fly={{ x: 30, duration: 1000, delay: 400, easing: quintOut }}
+            >
+                <img
+                    src={HomepageSvg}
+                    alt="Ilustração PBL"
+                    class="illustration"
+                />
             </div>
         </div>
     </section>
 
     <!-- Features Section -->
-    <section class="features" in:fly={{ y: 40, duration: 800, delay: 600, easing: quintOut }}>
+    <section class="features">
         <div class="features-content">
-            <h3 class="features-title">Uma solução criada para os estudantes poderem</h3>
+            <h3 class="features-title">
+                Uma solução criada para os estudantes poderem
+            </h3>
             <div class="features-grid">
-                <div class="feature-card" in:fly={{ y: 20, duration: 600, delay: 800, easing: quintOut }}>
+                <div class="feature-card">
                     <div class="feature-icon">😊</div>
                     <div class="feature-content">
-                        <p class="feature-text">Avaliar os colegas em <strong class="feature-highlight">5 min</strong></p>
+                        <p class="feature-text">
+                            Avaliar os colegas em <strong
+                                class="feature-highlight">5 min</strong
+                            >
+                        </p>
                     </div>
                 </div>
-                <div class="feature-card" in:fly={{ y: 20, duration: 600, delay: 900, easing: quintOut }}>
+                <div class="feature-card">
                     <div class="feature-icon">📄</div>
                     <div class="feature-content">
-                        <p class="feature-text">Enviar documentos e trabalhos <strong class="feature-highlight">na plataforma</strong></p>
+                        <p class="feature-text">
+                            Enviar documentos e trabalhos <strong
+                                class="feature-highlight">na plataforma</strong
+                            >
+                        </p>
                     </div>
                 </div>
-                <div class="feature-card" in:fly={{ y: 20, duration: 600, delay: 1000, easing: quintOut }}>
+                <div class="feature-card">
                     <div class="feature-icon">📈</div>
                     <div class="feature-content">
-                        <p class="feature-text">Visualizar as avaliações recebidas <strong class="feature-highlight">instantaneamente</strong></p>
+                        <p class="feature-text">
+                            Visualizar as avaliações recebidas <strong
+                                class="feature-highlight"
+                                >instantaneamente</strong
+                            >
+                        </p>
                     </div>
                 </div>
             </div>
@@ -96,7 +129,7 @@ function goToFreeTrial() {
     </section>
 
     <!-- Footer -->
-    <footer class="footer" in:fly={{ y: 20, duration: 600, delay: 1200, easing: quintOut }}>
+    <footer class="footer">
         <div class="footer-content">
             <p class="project-text">um projeto</p>
             <p class="project-name">/cria._nex></p>
@@ -141,8 +174,6 @@ function goToFreeTrial() {
         width: 40px;
         height: 40px;
     }
-
-
 
     .header-title {
         font-size: 1.5rem;
@@ -220,7 +251,8 @@ function goToFreeTrial() {
     }
 
     @keyframes float {
-        0%, 100% {
+        0%,
+        100% {
             transform: translateY(0px);
         }
         50% {
@@ -309,7 +341,7 @@ function goToFreeTrial() {
     .footer-content p {
         margin: 0;
         opacity: 0.7;
-        font-family: 'Courier New', monospace;
+        font-family: "Courier New", monospace;
         color: var(--color-text-white);
     }
 
@@ -332,11 +364,11 @@ function goToFreeTrial() {
             gap: 3rem;
             text-align: center;
         }
-        
+
         .hero-title {
             font-size: 3rem;
         }
-        
+
         .illustration {
             max-width: 350px;
         }

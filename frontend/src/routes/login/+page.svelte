@@ -320,7 +320,7 @@
             max-width: 100%;
             width: 100%;
             height: 100vh;
-            padding: 1.5rem 1rem;
+            padding: 1.5rem 1.5rem; /* Increased left/right padding for mobile */
             border-radius: 12px;
             margin: 0;
             display: flex;
@@ -393,8 +393,10 @@
         }
 
         .login-container {
-            padding: 1rem 0.5rem;
+            padding: 1rem 1rem; /* Increased left/right padding for smaller mobile */
             border-radius: 12px;
+            width: 80%;
+            height: fit-content;
         }
 
         h1 {

@@ -17,7 +17,6 @@
 			<div
 				class="page-container"
 				class:home={isHomePage}
-				in:fly={{ y: 20, duration: 400, easing: quintOut }}
 				out:fade={{ duration: 300 }}
 			>
 				<slot></slot>

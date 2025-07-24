@@ -155,7 +155,8 @@
         alunos.forEach((evaluator) => {
             evaluationMatrix[evaluator.id] = {};
             alunos.forEach((evaluated) => {
-                evaluationMatrix[evaluator.id][evaluated.id] = 0;
+                // Não inicialize com 0, deixe undefined
+                // evaluationMatrix[evaluator.id][evaluated.id] = undefined;
             });
         });
 
@@ -169,19 +170,14 @@
                     `Evaluation ${index}: ${avaliacao.id_aluno_avaliador} -> ${avaliacao.id_aluno_avaliado} = ${average}`,
                 );
 
-                // Check if student IDs exist in matrix
-                if (
-                    evaluationMatrix[avaliacao.id_aluno_avaliador] &&
-                    evaluationMatrix[avaliacao.id_aluno_avaliador][
-                        avaliacao.id_aluno_avaliado
-                    ] !== undefined
-                ) {
+                // Check if evaluator exists in matrix
+                if (evaluationMatrix[avaliacao.id_aluno_avaliador]) {
                     evaluationMatrix[avaliacao.id_aluno_avaliador][
                         avaliacao.id_aluno_avaliado
                     ] = average;
                 } else {
                     console.warn(
-                        `Student IDs not found in matrix: evaluator=${avaliacao.id_aluno_avaliador}, evaluated=${avaliacao.id_aluno_avaliado}`,
+                        `Evaluator ID not found in matrix: evaluator=${avaliacao.id_aluno_avaliador}`,
                     );
                 }
             }
@@ -350,6 +346,22 @@
     // Make statistics reactive to evaluationMatrix and alunos changes
     $: statistics = getMatrixStatistics(evaluationMatrix, alunos);
 
+    // 1. Add a derived variable for professor evaluations and a helper to get professor's grade for each student
+
+    $: professor = selectedTurma?.professor;
+    $: professorAvaliacao = avaliacoes.filter((a) => a.id_professor);
+
+    function getProfessorGradeFor(studentId: number): number | null {
+        console.log("Professor avaliações:", professorAvaliacao);
+        const avaliacao = professorAvaliacao.find(
+            (a) => a.id_aluno_avaliado === studentId,
+        );
+        if (!avaliacao) return null;
+        const avg = MediaCalculator.calculateSimpleMedia(avaliacao.notas);
+        console.log("Avaliação do professor:", avaliacao);
+        return avg;
+    }
+
     // CSV Export
     function exportMatrixAsCSV() {
         if (!alunos.length || !Object.keys(evaluationMatrix).length) return;
@@ -375,6 +387,25 @@
             });
             csv += row.join(",") + "\n";
         });
+        // Add professor row
+        if (professor) {
+            const row = [
+                `"${professor.nome_completo?.split(" ").slice(0, 2).join(" ") || "Professor"}"`,
+                "Prof.",
+                "-",
+            ];
+            alunos.forEach((evaluated) => {
+                if (professor.id === evaluated.id) {
+                    row.push("X");
+                } else {
+                    const grade = getProfessorGradeFor(
+                        evaluated.id,
+                    )?.toString()!;
+                    row.push(grade);
+                }
+            });
+            csv += row.join(",") + "\n";
+        }
         const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
@@ -553,6 +584,102 @@
             });
             y -= rowHeight;
         });
+        // Professor row
+        if (professor) {
+            x = leftMargin;
+            const name =
+                professor.nome_completo?.split(" ").slice(0, 2).join(" ") ||
+                "Professor";
+            const nameLines = wrapText(
+                name,
+                nameColWidth - 10,
+                font,
+                nameFontSize,
+            );
+            const rowHeight = Math.max(
+                cellHeight,
+                nameLines.length * (nameFontSize + 2) + 8,
+            );
+            page.drawRectangle({
+                x,
+                y,
+                width: nameColWidth,
+                height: rowHeight,
+                borderColor,
+                borderWidth: 1,
+            });
+            nameLines.forEach((line, i) => {
+                page.drawText(line, {
+                    x: x + 10,
+                    y: y + rowHeight - 14 - i * (nameFontSize + 2),
+                    size: nameFontSize,
+                    font,
+                    color: rgb(0, 0, 0),
+                });
+            });
+            x += nameColWidth;
+            // Número
+            page.drawRectangle({
+                x,
+                y,
+                width: otherColWidth,
+                height: rowHeight,
+                borderColor,
+                borderWidth: 1,
+            });
+            page.drawText("Prof.", {
+                x: x + 10,
+                y: y + rowHeight / 2 - 6,
+                size: 13,
+                font,
+                color: rgb(0, 0, 0),
+            });
+            x += otherColWidth;
+            // Média
+            page.drawRectangle({
+                x,
+                y,
+                width: otherColWidth,
+                height: rowHeight,
+                borderColor,
+                borderWidth: 1,
+            });
+            page.drawText("-", {
+                x: x + 24,
+                y: y + rowHeight / 2 - 6,
+                size: 13,
+                font,
+                color: rgb(0, 0, 0),
+            });
+            x += otherColWidth;
+            // Grades
+            alunos.forEach((evaluated) => {
+                page.drawRectangle({
+                    x,
+                    y,
+                    width: otherColWidth,
+                    height: rowHeight,
+                    borderColor,
+                    borderWidth: 1,
+                });
+                let text: string;
+                if (professor.id === evaluated.id) {
+                    text = "X";
+                } else {
+                    const grade = getProfessorGradeFor(evaluated.id);
+                    text = grade !== null ? `${grade}` : "-";
+                }
+                page.drawText(text, {
+                    x: x + 30,
+                    y: y + rowHeight / 2 - 6,
+                    size: 13,
+                    font,
+                    color: rgb(0, 0, 0),
+                });
+                x += otherColWidth;
+            });
+            y -= rowHeight;
+        }
         // Download
         const pdfBytes = await pdfDoc.save();
         const blob = new Blob([pdfBytes], { type: "application/pdf" });
@@ -787,36 +914,71 @@
                                                 evaluationMatrix[
                                                     evaluator.id
                                                 ]?.[evaluated.id]}
-                                            <td
-                                                class="grade-cell{evaluator.id ===
-                                                evaluated.id
-                                                    ? ' self-evaluation'
-                                                    : ''}{grade === 0 &&
-                                                evaluator.id !== evaluated.id
-                                                    ? ' zero-grade'
-                                                    : ''}{isOutlier(
-                                                    evaluated.id,
-                                                    grade,
-                                                )
-                                                    ? ' outlier-grade'
-                                                    : ''}"
-                                            >
-                                                {#if evaluator.id === evaluated.id}
-                                                    <span
-                                                        class="grade-cell self-evaluation"
-                                                        >X</span
-                                                    >
-                                                {:else}
-                                                    {grade > 0
-                                                        ? grade
-                                                        : grade === 0
-                                                          ? 0
-                                                          : "-"}
-                                                {/if}
-                                            </td>
+                                            {#if evaluator.id === evaluated.id}
+                                                <td
+                                                    class="grade-cell self-evaluation"
+                                                >
+                                                    <span>X</span>
+                                                </td>
+                                            {:else if grade === undefined || grade === null}
+                                                <td class="grade-cell">N</td>
+                                            {:else if grade > 0}
+                                                <td
+                                                    class="grade-cell{isOutlier(
+                                                        evaluated.id,
+                                                        grade,
+                                                    )
+                                                        ? ' outlier-grade'
+                                                        : ''}">{grade}</td
+                                                >
+                                            {:else if grade === 0}
+                                                <td
+                                                    class="grade-cell zero-grade"
+                                                    >0</td
+                                                >
+                                            {:else}
+                                                <td class="grade-cell">N</td>
+                                            {/if}
                                         {/each}
                                     </tr>
                                 {/each}
+                                <tr class="professor-row">
+                                    <td
+                                        class="student-name"
+                                        title={professor?.nome_completo}
+                                    >
+                                        {professor
+                                            ? professor.nome_completo
+                                                  ?.split(" ")
+                                                  .slice(0, 2)
+                                                  .join(" ")
+                                            : "Professor"}
+                                    </td>
+                                    <td class="student-number">Prof.</td>
+                                    <td class="average-cell">-</td>
+                                    {#each alunos as evaluated}
+                                        {#if professor && evaluated.id === professor.id}
+                                            <td
+                                                class="grade-cell professor-grade self-evaluation"
+                                            >
+                                                <span>X</span>
+                                            </td>
+                                        {:else if getProfessorGradeFor(evaluated.id) === null}
+                                            <td
+                                                class="grade-cell professor-grade"
+                                                >N</td
+                                            >
+                                        {:else}
+                                            <td
+                                                class="grade-cell professor-grade"
+                                            >
+                                                {getProfessorGradeFor(
+                                                    evaluated.id,
+                                                )}
+                                            </td>
+                                        {/if}
+                                    {/each}
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -840,6 +1002,9 @@
                         <li>
                             <strong>X:</strong> Auto-avaliação (aluno não avalia
                             a si mesmo)
+                        </li>
+                        <li>
+                            <strong>N:</strong> Avaliação não enviada para o colega
                         </li>
                         <li>
                             <span
@@ -1119,6 +1284,16 @@
     .grade-cell.outlier-grade {
         background: #fff9c4 !important;
         color: #bfa600 !important;
+        font-weight: 600;
+    }
+
+    .professor-row {
+        background: #e3f2fd !important;
+        font-weight: 600;
+    }
+    .grade-cell.professor-grade {
+        background: #e3f2fd !important;
+        color: #1976d2 !important;
         font-weight: 600;
     }
 

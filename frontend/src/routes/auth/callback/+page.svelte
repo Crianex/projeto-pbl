@@ -246,7 +246,7 @@
         display: flex;
         justify-content: center;
         gap: 2rem;
-        margin-top: 3rem;
+        margin-top: 1rem;
         flex-wrap: wrap;
     }
 

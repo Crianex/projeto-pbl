@@ -117,12 +117,7 @@
     {/if}
 
     {#if !isMobile || sidebarOpen}
-        <aside
-            class="sidebar"
-            class:open={sidebarOpen}
-            class:mobile={isMobile}
-            transition:fly={{ x: -300, duration: 300 }}
-        >
+        <aside class="sidebar" class:open={sidebarOpen} class:mobile={isMobile}>
             <div class="sidebar-content">
                 <nav>
                     {#each navItems as item}
@@ -397,11 +392,15 @@
         }
     }
     @media (max-width: 768px) {
-        .sidebar, .sidebar-content, nav, .logout {
+        .sidebar,
+        .sidebar-content,
+        nav,
+        .logout {
             align-items: flex-start;
             text-align: left;
         }
-        nav a, .logout button {
+        nav a,
+        .logout button {
             justify-content: flex-start;
             text-align: left;
         }

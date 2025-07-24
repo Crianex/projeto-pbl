@@ -11,6 +11,7 @@
     import { Parsers } from "$lib/interfaces/parsers";
     import type { ProblemaModel } from "$lib/interfaces/interfaces";
     import { DateUtils, Utils } from "$lib/utils/utils";
+    import BackButton from "$lib/components/BackButton.svelte";
 
     const turmaId = $page.params.id;
 
@@ -109,24 +110,10 @@
 
 <div class="header">
     <div class="title-section">
-        <a href="/professor/turmas" class="back-link">
-            <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-            >
-                <path
-                    d="M19 12H5M12 19l-7-7 7-7"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                />
-            </svg>
-            Voltar para turmas
-        </a>
+        <BackButton
+            on:click={() => goto(`/professor/turmas/${turmaId}`)}
+            text="Voltar para turmas"
+        />
         <h1>Problemas - {turma.nome_turma}</h1>
     </div>
     <Button variant="primary" on:click={handleCreateProblema}>
