@@ -13,34 +13,37 @@
     let errorMessage = "";
     let showToast = false;
     let toastMessage = "";
-    let toastType: 'success' | 'error' = 'success';
+    let toastType: "success" | "error" = "success";
 
     async function handleForgotPassword() {
         if (!email) return;
-        
+
         loading = true;
         errorMessage = "";
-        
+
         try {
             logger.info("Attempting password reset", { email });
-            
+
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
                 redirectTo: `${window.location.origin}/reset-password`,
             });
-            
+
             if (error) throw error;
-            
+
             emailSent = true;
-            toastType = 'success';
+            toastType = "success";
             toastMessage = "E-mail de recuperação enviado com sucesso!";
             showToast = true;
-            
+
             logger.info("Password reset email sent successfully");
-            
         } catch (error: any) {
-            logger.error("Password reset failed", { error: error.message, email });
-            errorMessage = error.message || "Erro ao enviar e-mail de recuperação";
-            toastType = 'error';
+            logger.error("Password reset failed", {
+                error: error.message,
+                email,
+            });
+            errorMessage =
+                error.message || "Erro ao enviar e-mail de recuperação";
+            toastType = "error";
             toastMessage = errorMessage;
             showToast = true;
         } finally {
@@ -63,11 +66,15 @@
                 Enviamos um link de recuperação para <strong>{email}</strong>
             </p>
             <p class="instructions">
-                Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
+                Verifique sua caixa de entrada e siga as instruções para
+                redefinir sua senha.
             </p>
-            
+
             <div class="actions">
-                <Button variant="secondary" on:click={() => emailSent = false}>
+                <Button
+                    variant="secondary"
+                    on:click={() => (emailSent = false)}
+                >
                     Enviar para outro e-mail
                 </Button>
                 <a href="/login" class="back-link">Voltar para o login</a>
@@ -99,11 +106,11 @@
             </div>
 
             <div class="button-group">
-                <Button 
+                <Button
                     type="submit"
-                    variant="primary" 
+                    variant="primary"
                     disabled={!email || loading}
-                    loading={loading}
+                    {loading}
                 >
                     {loading ? "Enviando..." : "Enviar link de recuperação"}
                 </Button>
@@ -117,15 +124,18 @@
 {/if}
 
 {#if loading}
-    <LoadingSpinner overlay={true} text="Enviando e-mail de recuperação..." />
+    <LoadingSpinner
+        overlay={true}
+        message="Enviando e-mail de recuperação..."
+    />
 {/if}
 
 {#if showToast}
-    <Toast 
+    <Toast
         type={toastType}
-        title={toastType === 'success' ? 'Sucesso!' : 'Erro!'}
+        title={toastType === "success" ? "Sucesso!" : "Erro!"}
         message={toastMessage}
-        on:dismiss={() => showToast = false}
+        on:dismiss={() => (showToast = false)}
     />
 {/if}
 
@@ -134,8 +144,14 @@
         margin: 0;
         padding: 0;
         min-height: 100vh;
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #e9ecef 100%);
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        background: linear-gradient(
+            135deg,
+            #ffffff 0%,
+            #f8f9fa 50%,
+            #e9ecef 100%
+        );
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+            sans-serif;
     }
 
     :global(main) {
@@ -229,22 +245,23 @@
         font-size: 2.25rem;
         font-weight: bold;
         margin: 0 0 1.5rem 0;
-        box-shadow: 
+        box-shadow:
             0 15px 35px rgba(72, 187, 120, 0.3),
             0 8px 20px rgba(72, 187, 120, 0.2);
         animation: successPulse 2s ease-in-out infinite;
     }
 
     @keyframes successPulse {
-        0%, 100% {
+        0%,
+        100% {
             transform: scale(1);
-            box-shadow: 
+            box-shadow:
                 0 15px 35px rgba(72, 187, 120, 0.3),
                 0 8px 20px rgba(72, 187, 120, 0.2);
         }
         50% {
             transform: scale(1.05);
-            box-shadow: 
+            box-shadow:
                 0 20px 40px rgba(72, 187, 120, 0.4),
                 0 12px 25px rgba(72, 187, 120, 0.3);
         }
@@ -632,7 +649,9 @@
             margin-bottom: 0.5rem;
         }
 
-        .subtitle, .success-message, .instructions {
+        .subtitle,
+        .success-message,
+        .instructions {
             font-size: 0.825rem;
         }
 

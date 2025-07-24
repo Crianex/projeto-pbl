@@ -44,6 +44,7 @@ export interface Problema {
     media_geral: number | null;
     criterios: string;
     definicao_arquivos_de_avaliacao: string;
+    data_e_hora_criterios_e_arquivos: string;
 }
 
 export interface Professor {

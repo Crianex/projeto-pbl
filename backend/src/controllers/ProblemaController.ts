@@ -116,23 +116,24 @@ export const ProblemaController: EndpointController = {
         }),
 
         'create': new Pair(RequestType.POST, async (req: Request, res: Response) => {
-            const { nome_problema, data_inicio, data_fim, id_turma, criterios, definicao_arquivos_de_avaliacao } = req.body;
-            if (!nome_problema || !data_inicio || !data_fim || !id_turma || !criterios || !definicao_arquivos_de_avaliacao) {
-                logger.error('Missing required fields');
-                return res.status(400).json({ error: 'Missing required fields' });
+            const requiredFields = ['nome_problema', 'id_turma', 'criterios', 'definicao_arquivos_de_avaliacao', 'data_e_hora_criterios_e_arquivos'];
+            const missingFields = requiredFields.filter(field => !req.body[field]);
+            if (missingFields.length > 0) {
+                logger.error(`Missing required fields: ${missingFields.join(', ')}`);
+                return res.status(400).json({ error: `Missing required fields: ${missingFields.join(', ')}` });
             }
+            const { nome_problema, id_turma, criterios, definicao_arquivos_de_avaliacao, data_e_hora_criterios_e_arquivos } = req.body;
             logger.info(`Creating new problema: ${nome_problema} for turma ${id_turma}`);
 
             const { data, error } = await supabase
                 .from('problemas')
                 .insert([{
                     nome_problema,
-                    data_inicio,
-                    data_fim,
                     id_turma,
                     criterios: criterios || '{}',
                     media_geral: 0,
-                    definicao_arquivos_de_avaliacao: definicao_arquivos_de_avaliacao || '[]'
+                    definicao_arquivos_de_avaliacao: definicao_arquivos_de_avaliacao || '[]',
+                    data_e_hora_criterios_e_arquivos: data_e_hora_criterios_e_arquivos || '{}'
                 }])
                 .select(`
                     *,
@@ -155,18 +156,18 @@ export const ProblemaController: EndpointController = {
                 logger.error('No id_problema provided');
                 return res.status(400).json({ error: 'No id_problema provided' });
             }
-            const { nome_problema, data_inicio, data_fim, id_turma, criterios, media_geral } = req.body;
+            const { nome_problema, id_turma, criterios, media_geral, definicao_arquivos_de_avaliacao, data_e_hora_criterios_e_arquivos } = req.body;
             logger.info(`Updating problema ${id_problema} with new data: ${JSON.stringify(req.body)}`);
 
             const { data, error } = await supabase
                 .from('problemas')
                 .update({
                     nome_problema,
-                    data_inicio,
-                    data_fim,
                     id_turma,
                     criterios,
-                    media_geral
+                    media_geral,
+                    definicao_arquivos_de_avaliacao,
+                    data_e_hora_criterios_e_arquivos
                 })
                 .eq('id_problema', id_problema)
                 .select(`

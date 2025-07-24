@@ -8,7 +8,7 @@
     import Toast from "$lib/components/Toast.svelte";
     import type { Column } from "$lib/interfaces/column";
     import { api } from "$lib/utils/api";
-    import { Utils } from "$lib/utils/utils";
+    import { DateUtils, Utils } from "$lib/utils/utils";
     import type { AlunoModel, ProblemaModel } from "$lib/interfaces/interfaces";
     import { currentUser } from "$lib/utils/auth";
     import { Parsers } from "$lib/interfaces/parsers";
@@ -31,13 +31,15 @@
             key: "data_inicio",
             label: "Data de Início",
             sortable: true,
-            render: (row: ProblemaModel) => Utils.formatDate(row.data_inicio),
+            render: (row: ProblemaModel) =>
+                DateUtils.getDateStartFromProblemaModel(row),
         },
         {
             key: "data_fim",
             label: "Data de Término",
             sortable: true,
-            render: (row: ProblemaModel) => Utils.formatDate(row.data_fim),
+            render: (row: ProblemaModel) =>
+                DateUtils.getDateEndFromProblemaModel(row),
         },
         {
             key: "media_geral",

@@ -98,8 +98,8 @@
     <LoadingSpinner
         size="lg"
         color="primary"
-        text="Verificando sessão..."
-        center={true}
+        message="Verificando sessão..."
+        overlay={true}
     />
 {:else}
     <div class="login-container">

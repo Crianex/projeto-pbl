@@ -12,6 +12,8 @@
     } from "$lib/interfaces/interfaces";
     import Button from "$lib/components/Button.svelte";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
+    import jsPDF from "jspdf";
+    import "jspdf-autotable";
 
     let turmas: TurmaModel[] = [];
     let selectedTurma: TurmaModel | null = null;
@@ -331,6 +333,84 @@
 
     // Make statistics reactive to evaluationMatrix and alunos changes
     $: statistics = getMatrixStatistics(evaluationMatrix, alunos);
+
+    // CSV Export
+    function exportMatrixAsCSV() {
+        if (!alunos.length || !Object.keys(evaluationMatrix).length) return;
+        let csv = "Aluno,Número,Média";
+        alunos.forEach((aluno, idx) => {
+            csv += `,${idx + 1}`;
+        });
+        csv += "\n";
+        alunos.forEach((evaluator, evaluatorIdx) => {
+            const row = [
+                `"${evaluator.nome_completo?.split(" ").slice(0, 2).join(" ") || "N/A"}"`,
+                evaluatorIdx + 1,
+                getReceivedAverage(evaluator.id) || "-",
+            ];
+            alunos.forEach((evaluated) => {
+                if (evaluator.id === evaluated.id) {
+                    row.push("X");
+                } else {
+                    const grade =
+                        evaluationMatrix[evaluator.id]?.[evaluated.id];
+                    row.push(grade && grade > 0 ? grade : "-");
+                }
+            });
+            csv += row.join(",") + "\n";
+        });
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute(
+            "download",
+            `relatorio_${selectedProblema?.nome_problema || "matriz"}.csv`,
+        );
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // PDF Export
+    function exportMatrixAsPDF() {
+        if (!alunos.length || !Object.keys(evaluationMatrix).length) return;
+        const doc = new jsPDF();
+        const title = `Matriz de Avaliações - ${selectedProblema?.nome_problema || "Problema"}`;
+        doc.text(title, 14, 16);
+        // Build table head
+        const head = [
+            [
+                "Aluno",
+                "Número",
+                "Média",
+                ...alunos.map((_, idx) => (idx + 1).toString()),
+            ],
+        ];
+        // Build table body
+        const body = alunos.map((evaluator, evaluatorIdx) => {
+            const row = [
+                evaluator.nome_completo?.split(" ").slice(0, 2).join(" ") ||
+                    "N/A",
+                evaluatorIdx + 1,
+                getReceivedAverage(evaluator.id) || "-",
+            ];
+            alunos.forEach((evaluated) => {
+                if (evaluator.id === evaluated.id) {
+                    row.push("X");
+                } else {
+                    const grade =
+                        evaluationMatrix[evaluator.id]?.[evaluated.id];
+                    row.push(grade && grade > 0 ? grade : "-");
+                }
+            });
+            return row;
+        });
+        // @ts-ignore
+        doc.autoTable({ head, body, startY: 22 });
+        doc.save(
+            `relatorio_${selectedProblema?.nome_problema || "matriz"}.pdf`,
+        );
+    }
 </script>
 
 <div class="relatorios-container">
@@ -450,6 +530,17 @@
 
         <!-- Evaluation Matrix -->
         {#if selectedProblema && alunos.length > 0}
+            <div
+                class="export-buttons"
+                style="display: flex; gap: 1rem; margin-bottom: 1.5rem;"
+            >
+                <Button variant="secondary" on:click={exportMatrixAsCSV}>
+                    Exportar CSV
+                </Button>
+                <Button variant="secondary" on:click={exportMatrixAsPDF}>
+                    Exportar PDF
+                </Button>
+            </div>
             <div class="matrix-section">
                 <h2>Matriz de Avaliações - {selectedProblema.nome_problema}</h2>
                 <p class="matrix-subtitle">

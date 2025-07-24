@@ -10,7 +10,7 @@
     import { ProblemasService } from "$lib/services/problemas_service";
     import { Parsers } from "$lib/interfaces/parsers";
     import type { ProblemaModel } from "$lib/interfaces/interfaces";
-    import { Utils } from "$lib/utils/utils";
+    import { DateUtils, Utils } from "$lib/utils/utils";
 
     const turmaId = $page.params.id;
 
@@ -159,10 +159,8 @@
                         <h3>{problema.nome_problema}</h3>
                         <div class="problema-details">
                             <span
-                                >Período: {Utils.formatDate(
-                                    problema.data_inicio || new Date(),
-                                )} - {Utils.formatDate(
-                                    problema.data_fim || new Date(),
+                                >Período: {DateUtils.getDateFromProblemaModel(
+                                    problema,
                                 )}</span
                             >
                             <!-- <span

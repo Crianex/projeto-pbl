@@ -16,12 +16,12 @@
     let errorMessage = "";
     let showToast = false;
     let toastMessage = "";
-    let toastType: 'success' | 'error' = 'success';
+    let toastType: "success" | "error" = "success";
 
     // Validation states
     let passwordError = "";
     let confirmPasswordError = "";
-    
+
     // Password strength validation
     function validatePassword(pass: string) {
         if (pass.length < 8) {
@@ -35,41 +35,48 @@
 
     // Reactive validation
     $: passwordError = password ? validatePassword(password) : "";
-    $: confirmPasswordError = confirmPassword && password !== confirmPassword ? "Senhas não coincidem" : "";
+    $: confirmPasswordError =
+        confirmPassword && password !== confirmPassword
+            ? "Senhas não coincidem"
+            : "";
 
     async function handleResetPassword() {
-        if (passwordError || confirmPasswordError || !password || !confirmPassword) {
+        if (
+            passwordError ||
+            confirmPasswordError ||
+            !password ||
+            !confirmPassword
+        ) {
             return;
         }
-        
+
         loading = true;
         errorMessage = "";
-        
+
         try {
             logger.info("Attempting password reset");
-            
+
             const { error } = await supabase.auth.updateUser({
-                password: password
+                password: password,
             });
-            
+
             if (error) throw error;
-            
+
             passwordReset = true;
-            toastType = 'success';
+            toastType = "success";
             toastMessage = "Senha redefinida com sucesso!";
             showToast = true;
-            
+
             logger.info("Password reset successful");
-            
+
             // Redirect to login after success
             setTimeout(() => {
                 goto("/login");
             }, 3000);
-            
         } catch (error: any) {
             logger.error("Password reset failed", { error: error.message });
             errorMessage = error.message || "Erro ao redefinir senha";
-            toastType = 'error';
+            toastType = "error";
             toastMessage = errorMessage;
             showToast = true;
         } finally {
@@ -88,13 +95,12 @@
         <div class="success-container">
             <div class="success-icon">✓</div>
             <h1>Senha Redefinida!</h1>
-            <p class="success-message">
-                Sua senha foi redefinida com sucesso.
-            </p>
+            <p class="success-message">Sua senha foi redefinida com sucesso.</p>
             <p class="instructions">
-                Você será redirecionado para a página de login em alguns segundos.
+                Você será redirecionado para a página de login em alguns
+                segundos.
             </p>
-            
+
             <div class="actions">
                 <Button variant="primary" on:click={() => goto("/login")}>
                     Ir para o login
@@ -122,7 +128,7 @@
                     disabled={loading}
                     autocomplete="new-password"
                 />
-                
+
                 {#if password && !passwordError}
                     <div class="password-strength">
                         <div class="strength-indicator strong"></div>
@@ -146,11 +152,15 @@
             </div>
 
             <div class="button-group">
-                <Button 
+                <Button
                     type="submit"
-                    variant="primary" 
-                    disabled={!!passwordError || !!confirmPasswordError || !password || !confirmPassword || loading}
-                    loading={loading}
+                    variant="primary"
+                    disabled={!!passwordError ||
+                        !!confirmPasswordError ||
+                        !password ||
+                        !confirmPassword ||
+                        loading}
+                    {loading}
                 >
                     {loading ? "Redefinindo..." : "Redefinir senha"}
                 </Button>
@@ -164,15 +174,15 @@
 {/if}
 
 {#if loading}
-    <LoadingSpinner overlay={true} text="Redefinindo sua senha..." />
+    <LoadingSpinner message="Redefinindo sua senha..." />
 {/if}
 
 {#if showToast}
-    <Toast 
+    <Toast
         type={toastType}
-        title={toastType === 'success' ? 'Sucesso!' : 'Erro!'}
+        title={toastType === "success" ? "Sucesso!" : "Erro!"}
         message={toastMessage}
-        on:dismiss={() => showToast = false}
+        on:dismiss={() => (showToast = false)}
     />
 {/if}
 
@@ -181,8 +191,14 @@
         margin: 0;
         padding: 0;
         min-height: 100vh;
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #e9ecef 100%);
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        background: linear-gradient(
+            135deg,
+            #ffffff 0%,
+            #f8f9fa 50%,
+            #e9ecef 100%
+        );
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+            sans-serif;
     }
 
     :global(main) {
@@ -306,22 +322,23 @@
         font-size: 2.5rem;
         font-weight: bold;
         margin: 0 auto 2rem auto;
-        box-shadow: 
+        box-shadow:
             0 15px 35px rgba(72, 187, 120, 0.3),
             0 8px 20px rgba(72, 187, 120, 0.2);
         animation: successPulse 2s ease-in-out infinite;
     }
 
     @keyframes successPulse {
-        0%, 100% {
+        0%,
+        100% {
             transform: scale(1);
-            box-shadow: 
+            box-shadow:
                 0 15px 35px rgba(72, 187, 120, 0.3),
                 0 8px 20px rgba(72, 187, 120, 0.2);
         }
         50% {
             transform: scale(1.05);
-            box-shadow: 
+            box-shadow:
                 0 20px 40px rgba(72, 187, 120, 0.4),
                 0 12px 25px rgba(72, 187, 120, 0.3);
         }
@@ -661,7 +678,9 @@
             font-size: 1.25rem;
         }
 
-        .subtitle, .success-message, .instructions {
+        .subtitle,
+        .success-message,
+        .instructions {
             font-size: 0.825rem;
         }
 
