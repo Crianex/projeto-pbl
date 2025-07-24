@@ -148,10 +148,10 @@ export async function logout() {
             logger.info('No active session found, skipping Supabase logout');
         }
 
-        // Always clear local user state and redirect, regardless of Supabase logout result
+        // Always clear local user state and redirect to home, regardless of Supabase logout result
         currentUser.set(null);
-        await goto('/login');
-        logger.info('User logged out successfully');
+        await goto('/');
+        logger.info('User logged out successfully and redirected to home');
     } catch (error) {
         logger.error('Failed to logout:', error);
         // Even if goto fails, still clear the user state

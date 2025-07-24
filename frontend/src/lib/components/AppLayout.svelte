@@ -4,6 +4,7 @@
     import { logger } from "$lib/utils/logger";
     import { onMount } from "svelte";
     import { fade, fly } from "svelte/transition";
+    import { goto } from "$app/navigation";
 
     export let userType: "aluno" | "professor" = "aluno";
 
@@ -26,6 +27,7 @@
     async function handleLogout() {
         try {
             await logout();
+            // O redirecionamento já é feito pela função logout()
         } catch (error) {
             logger.error("Erro durante logout:", error);
             console.error("Erro durante logout:", error);
@@ -182,13 +184,13 @@
         top: 1rem;
         left: 1rem;
         z-index: 1001;
-        background: #f8f9fa;
-        border: 1px solid #e9ecef;
+        background: var(--color-layout-sidebar-bg);
+        border: 1px solid var(--color-layout-sidebar-border);
         border-radius: 6px;
         padding: 0.5rem;
         cursor: pointer;
-        color: #495057;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        color: var(--color-layout-sidebar-text);
+        box-shadow: 0 2px 4px var(--color-shadow-main);
         transition: all 0.2s ease;
     }
 
@@ -197,8 +199,8 @@
     }
 
     .mobile-menu-btn:hover {
-        background: #e9ecef;
-        color: #212529;
+        background: var(--color-layout-sidebar-hover);
+        color: var(--color-layout-sidebar-active);
     }
 
     .sidebar-overlay {
@@ -207,14 +209,14 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
+        background: var(--color-layout-overlay);
         z-index: 999;
     }
 
     .sidebar {
         width: 250px;
-        background-color: #f8f9fa;
-        border-right: 1px solid #e9ecef;
+        background-color: var(--color-layout-sidebar-bg);
+        border-right: 1px solid var(--color-layout-sidebar-border);
         padding: 2rem 1rem;
         display: flex;
         flex-direction: column;
@@ -259,7 +261,7 @@
         align-items: center;
         gap: 0.75rem;
         padding: 0.75rem 1rem;
-        color: #495057;
+        color: var(--color-layout-sidebar-text);
         text-decoration: none;
         border-radius: 6px;
         transition:
@@ -270,13 +272,13 @@
 
     nav a:hover,
     .logout button:hover {
-        background-color: #e9ecef;
-        color: #212529;
+        background-color: var(--color-layout-sidebar-hover);
+        color: var(--color-layout-sidebar-active);
     }
 
     .active {
-        background-color: #e9ecef;
-        color: #212529;
+        background-color: var(--color-layout-sidebar-hover);
+        color: var(--color-layout-sidebar-active);
         font-weight: 500;
     }
 
@@ -290,12 +292,12 @@
         border: none;
         background: none;
         cursor: pointer;
-        color: #dc3545;
+        color: var(--color-layout-logout);
     }
 
     .main-content {
         flex: 1;
-        background-color: #fff;
+        background-color: var(--color-bg-white);
         overflow-y: auto;
         height: 100vh;
         margin-left: 250px;
