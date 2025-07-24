@@ -115,20 +115,38 @@
         ></div>
     {/if}
 
-    <aside
-        class="sidebar"
-        class:open={sidebarOpen}
-        class:mobile={isMobile}
-        transition:fly={{ x: -300, duration: 300 }}
-    >
-        <div class="sidebar-content">
-            <nav>
-                {#each navItems as item}
-                    <a
-                        href={item.href}
-                        class:active={item.active}
-                        on:click={closeSidebar}
-                    >
+    {#if !isMobile || sidebarOpen}
+        <aside
+            class="sidebar"
+            class:open={sidebarOpen}
+            class:mobile={isMobile}
+            transition:fly={{ x: -300, duration: 300 }}
+        >
+            <div class="sidebar-content">
+                <nav>
+                    {#each navItems as item}
+                        <a
+                            href={item.href}
+                            class:active={item.active}
+                            on:click={closeSidebar}
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                {@html item.icon}
+                            </svg>
+                            {item.text}
+                        </a>
+                    {/each}
+                </nav>
+                <div class="logout">
+                    <button on:click={handleLogout}>
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="20"
@@ -138,34 +156,21 @@
                             stroke="currentColor"
                             stroke-width="2"
                         >
-                            {@html item.icon}
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
                         </svg>
-                        {item.text}
-                    </a>
-                {/each}
-            </nav>
-            <div class="logout">
-                <button on:click={handleLogout}>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                    >
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                        <polyline points="16 17 21 12 16 7" />
-                        <line x1="21" y1="12" x2="9" y2="12" />
-                    </svg>
-                    Sair
-                </button>
+                        Sair
+                    </button>
+                </div>
             </div>
-        </div>
-    </aside>
+        </aside>
+    {/if}
 
-    <main class="main-content">
+    <main
+        class="main-content"
+        style="pointer-events: {sidebarOpen && isMobile ? 'none' : 'auto'}; filter: {sidebarOpen && isMobile ? 'blur(2px) grayscale(0.2)' : 'none'};"
+    >
         <slot />
     </main>
 </div>
@@ -203,96 +208,111 @@
         color: var(--color-layout-sidebar-active);
     }
 
-    .sidebar-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: var(--color-layout-overlay);
-        z-index: 999;
-    }
-
     .sidebar {
-        width: 250px;
-        background-color: var(--color-layout-sidebar-bg);
-        border-right: 1px solid var(--color-layout-sidebar-border);
-        padding: 2rem 1rem;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        overflow-y: auto;
-        z-index: 1000;
-        height: 100vh;
         position: fixed;
         top: 0;
         left: 0;
-        box-sizing: border-box;
+        height: 100vh;
+        min-height: 100vh;
+        overflow: hidden !important;
+        overflow-y: hidden !important;
+        z-index: 3000;
+        box-shadow: 2px 0 16px rgba(0,0,0,0.15);
+        background: rgba(255,255,255,0.98) !important;
+        border: none !important;
+        padding-bottom: 0 !important;
+        transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+        width: 250px;
+        max-width: 250px;
+        height: 100vh;
+        min-height: 100vh;
+        overflow-y: visible;
     }
-
+    .sidebar.mobile {
+        transform: translateX(-100%);
+    }
+    .sidebar.mobile.open {
+        transform: translateX(0);
+    }
     .sidebar-content {
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         min-height: 0;
+        padding: 0.5rem 0;
     }
-
-    .sidebar.mobile {
-        transform: translateX(-100%);
-    }
-
-    .sidebar.mobile.open {
-        transform: translateX(0);
-    }
-
     nav {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 1.2rem;
         flex: 1;
-        overflow-y: auto;
-        margin-bottom: 1rem;
+        overflow: visible !important;
+        margin-bottom: 1.5rem;
+        align-items: flex-start;
     }
-
-    nav a,
-    .logout button {
+    nav a {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        padding: 0.75rem 1rem;
-        color: var(--color-layout-sidebar-text);
+        gap: 1.1rem;
+        padding: 0.9rem 1.2rem;
+        color: #222;
         text-decoration: none;
-        border-radius: 6px;
-        transition:
-            background-color 0.2s,
-            color 0.2s;
-        white-space: nowrap;
-    }
-
-    nav a:hover,
-    .logout button:hover {
-        background-color: var(--color-layout-sidebar-hover);
-        color: var(--color-layout-sidebar-active);
-    }
-
-    .active {
-        background-color: var(--color-layout-sidebar-hover);
-        color: var(--color-layout-sidebar-active);
+        border-radius: 8px;
+        font-size: 1.08rem;
         font-weight: 500;
+        transition: background 0.18s, color 0.18s;
+        width: 100%;
     }
-
+    nav a.active {
+        background: #f3f4f6;
+        color: #222;
+    }
+    nav a:hover {
+        background: #f0f0f0;
+        color: #111;
+    }
     .logout {
         flex-shrink: 0;
         margin-top: auto;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        padding-bottom: 0.5rem;
+        border: none !important;
+        background: none !important;
+        box-shadow: none !important;
     }
-
     .logout button {
         width: 100%;
         border: none;
         background: none;
         cursor: pointer;
-        color: var(--color-layout-logout);
+        color: #dc3545;
+        padding: 0.9rem 1.2rem;
+        font-size: 1.05rem;
+        display: flex;
+        align-items: center;
+        gap: 1.1rem;
+        border-radius: 8px;
+        transition: background 0.18s, color 0.18s;
+    }
+    .logout button:hover {
+        background: #fbe9e7;
+        color: #b71c1c;
+    }
+
+    .sidebar-overlay {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.55);
+        z-index: 2000;
+        transition: opacity 0.2s;
     }
 
     .main-content {
@@ -303,50 +323,76 @@
         margin-left: 250px;
     }
 
-    @media (max-width: 768px) {
-        .main-content {
-            margin-left: 0;
-            padding-top: 4rem;
-        }
-
-        .sidebar {
-            width: 280px;
-            padding: 1.5rem 0.75rem;
-        }
-
-        nav a,
-        .logout button {
-            padding: 1rem 0.75rem;
-            font-size: 1rem;
-        }
-
-        .mobile-menu-btn {
-            top: 0.75rem;
-            left: 0.75rem;
-            padding: 0.75rem;
-        }
+    .sidebar hr, .sidebar [style*='border'], .sidebar [style*='border-bottom'], .sidebar [style*='border-top'] {
+        border: none !important;
+        background: none !important;
+        box-shadow: none !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        min-height: 0 !important;
+        max-height: 0 !important;
+        display: none !important;
     }
 
-    @media (max-width: 480px) {
-        .main-content {
-            padding-top: 3.5rem;
-        }
-
+    @media (max-width: 768px) {
         .sidebar {
-            width: 100%;
-            padding: 1rem 0.5rem;
+            width: 70vw;
+            max-width: 260px;
+            background: #fff !important;
+            overflow: hidden !important;
+            overflow-y: hidden !important;
         }
-
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        .sidebar.mobile {
+            width: 70vw;
+            max-width: 260px;
+        }
+        .sidebar-content {
+            gap: 1rem;
+            padding: 0.5rem 0;
+        }
+        nav {
+            gap: 0.5rem;
+        }
         nav a,
         .logout button {
-            padding: 1.25rem 1rem;
-            font-size: 1.1rem;
+            padding: 0.75rem 0.5rem;
+            font-size: 1rem;
         }
-
-        .mobile-menu-btn {
-            top: 0.5rem;
-            left: 0.5rem;
-            padding: 0.875rem;
+        .sidebar-overlay {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        .main-content {
+            margin-left: 0;
+            width: 100vw;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+    }
+    @media (max-width: 480px) {
+        .sidebar {
+            width: 100vw;
+            max-width: 100vw;
+            padding: 0.75rem 0.25rem;
+        }
+        .sidebar.mobile {
+            width: 100vw;
+            max-width: 100vw;
+        }
+        nav a,
+        .logout button {
+            padding: 1rem 0.5rem;
+            font-size: 1.05rem;
         }
     }
 </style>

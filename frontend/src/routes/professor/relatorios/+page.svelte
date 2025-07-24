@@ -913,64 +913,85 @@
 
     @media (max-width: 768px) {
         .relatorios-container {
-            padding: 1rem;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+            gap: 1rem;
         }
-
+        .header h1 {
+            text-align: center;
+            font-size: 1.3rem;
+        }
+        .subtitle {
+            text-align: center;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
         .filters-section {
             flex-direction: column;
-            gap: 1rem;
+            gap: 0.75rem;
             align-items: stretch;
+            padding: 1rem 0.5rem;
         }
-
         .filter-group {
             min-width: 100%;
+            gap: 0.25rem;
         }
-
+        .filter-select {
+            font-size: 1rem;
+            padding: 0.5rem;
+        }
+        .matrix-section {
+            padding: 1rem 0.5rem;
+        }
+        .matrix-section h2 {
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        .matrix-subtitle {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
         .statistics-header {
-            grid-template-columns: repeat(2, 1fr);
-            padding: 1rem;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            padding: 0.5rem;
         }
-
         .stat-card {
-            padding: 0.75rem;
+            padding: 0.5rem;
         }
-
         .stat-value {
-            font-size: 1.5rem;
+            font-size: 1.1rem;
         }
-
         .stat-label {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
-
         .matrix-container {
             font-size: 0.8rem;
         }
-
-        .student-name-header,
-        .student-name {
-            min-width: 120px;
-            max-width: 120px;
+        .matrix-legend {
+            padding: 0.5rem;
+            font-size: 0.85rem;
         }
-
-        .student-number-header,
-        .student-number {
-            min-width: 50px;
-            max-width: 50px;
-            left: 120px;
+        .empty-state {
+            padding: 1.5rem 0.5rem;
         }
-
-        .average-header,
-        .average-cell {
-            min-width: 70px;
-            max-width: 70px;
-            left: 170px;
+    }
+    @media (max-width: 480px) {
+        .relatorios-container {
+            padding-left: 0.25rem;
+            padding-right: 0.25rem;
         }
-
-        .student-header {
-            min-width: 40px;
-            max-width: 40px;
-            font-size: 0.8rem;
+        .filters-section {
+            padding: 0.5rem 0.25rem;
+        }
+        .matrix-section {
+            padding: 0.5rem 0.25rem;
+        }
+        .matrix-legend {
+            padding: 0.25rem;
+        }
+        .empty-state {
+            padding: 1rem 0.25rem;
         }
     }
 </style>
