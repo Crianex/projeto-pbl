@@ -187,39 +187,46 @@
         width: 100%;
         margin: 0 auto;
         padding: 2rem;
+        margin-top: 2.5rem;
+        box-sizing: border-box;
     }
 
     .header {
-        margin-bottom: 2rem;
+        margin-bottom: 1.2rem;
+        margin-top: 0.5rem;
     }
 
     .header h1 {
-        font-size: 1.5rem;
-        font-weight: 600;
+        font-size: 1.3rem;
+        font-weight: 700;
         margin: 0;
+        text-align: left;
     }
 
     .form {
         background: white;
         padding: 2rem;
-        border-radius: 8px;
+        border-radius: 10px;
         border: 1px solid #e9ecef;
+        max-width: 480px;
+        margin: 0 auto;
+        box-sizing: border-box;
     }
 
     .form-group {
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
     }
 
     .form-group label {
         display: block;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.4rem;
         font-weight: 500;
         color: #212529;
     }
 
     .form-group input {
         width: 100%;
-        padding: 0.75rem;
+        padding: 0.65rem;
         border: 1px solid #dee2e6;
         border-radius: 4px;
         font-size: 1rem;
@@ -232,25 +239,26 @@
     }
 
     .alunos-section {
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
     }
 
     .alunos-section h2 {
         font-size: 1rem;
         font-weight: 500;
-        margin-bottom: 1rem;
+        margin-bottom: 0.7rem;
     }
 
     .alunos-list {
-        margin-bottom: 1rem;
+        margin-bottom: 0.7rem;
     }
 
     .aluno-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.75rem;
+        padding: 0.6rem 0.2rem;
         border-bottom: 1px solid #e9ecef;
+        font-size: 0.97rem;
     }
 
     .aluno-item:last-child {
@@ -260,13 +268,13 @@
     .aluno-info {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 0.5rem;
     }
 
     .aluno-details {
         display: flex;
         flex-direction: column;
-        gap: 0.25rem;
+        gap: 0.15rem;
     }
 
     .aluno-details .nome {
@@ -274,13 +282,13 @@
     }
 
     .aluno-details .email {
-        font-size: 0.875rem;
+        font-size: 0.87rem;
         color: #6c757d;
     }
 
     .avatar {
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
     }
 
@@ -288,7 +296,7 @@
         background: none;
         border: none;
         cursor: pointer;
-        padding: 0.5rem;
+        padding: 0.3rem;
         color: #dc3545;
         border-radius: 4px;
     }
@@ -299,20 +307,79 @@
 
     .actions {
         display: flex;
-        gap: 1rem;
+        gap: 0.7rem;
         justify-content: flex-end;
-        margin-top: 2rem;
+        margin-top: 1.2rem;
     }
 
     .error {
         text-align: center;
-        padding: 2rem;
+        padding: 1.2rem;
         background: white;
         border: 1px solid #e9ecef;
         border-radius: 8px;
+        color: #dc3545;
     }
 
-    .error {
-        color: #dc3545;
+    @media (max-width: 768px) {
+        .container {
+            padding: 0.5rem;
+            margin-top: 3rem;
+        }
+        .header {
+            margin-top: 0.2rem;
+            margin-bottom: 0.7rem;
+        }
+        .header h1 {
+            font-size: 1.05rem;
+            text-align: center;
+        }
+        .form {
+            padding: 0.7rem 0.3rem;
+            border-radius: 8px;
+            max-width: 100%;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group input {
+            padding: 0.45rem;
+            font-size: 0.97rem;
+        }
+        .alunos-section {
+            margin-bottom: 1rem;
+        }
+        .alunos-section h2 {
+            font-size: 0.97rem;
+            margin-bottom: 0.4rem;
+        }
+        .alunos-list {
+            margin-bottom: 0.4rem;
+        }
+        .aluno-item {
+            padding: 0.4rem 0.1rem;
+            font-size: 0.93rem;
+        }
+        .aluno-info {
+            gap: 0.3rem;
+        }
+        .avatar {
+            width: 24px;
+            height: 24px;
+        }
+        .actions {
+            gap: 0.3rem;
+            margin-top: 0.7rem;
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .actions button,
+        .form :global(button) {
+            width: 100%;
+            min-width: 0;
+            padding: 0.5rem 0.2rem;
+            font-size: 0.97rem;
+            box-sizing: border-box;
+        }
     }
 </style>
