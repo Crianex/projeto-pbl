@@ -76,7 +76,7 @@ function parseTurma(data: any): TurmaModel {
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
         id_professor: data.id_professor || null,
         nome_turma: data.nome_turma || null,
-        professor: data.professores ? parseProfessor(data.professores) : null,
+        professor: data.professor ? parseProfessor(data.professor) : null,
         alunos: data.alunos ? data.alunos.map((aluno: any) => parseAluno(aluno)) : null
     };
 }
@@ -121,7 +121,8 @@ function parseAvaliacao(data: any): AvaliacaoModel {
         id_problema: data.id_problema || null,
         aluno_avaliador: data.aluno_avaliador ? parseAluno(data.aluno_avaliador) : null,
         aluno_avaliado: data.aluno_avaliado ? parseAluno(data.aluno_avaliado) : null,
-        notas: data.notas ? JSON.parse(data.notas) : {}
+        notas: data.notas ? JSON.parse(data.notas) : {},
+        id_professor: data.id_professor || null
     };
 }
 

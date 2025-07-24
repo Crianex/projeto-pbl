@@ -39,6 +39,7 @@
     let avaliacoesRecebidas: any[] = [];
     let loading = true;
     let error: string | null = null;
+    let avaliacaoProfessor: any = null;
 
     // Variáveis para uploads do aluno
     let uploadedFiles: UploadedFile[] = [];
@@ -192,7 +193,11 @@
 
             // Processar avaliações recebidas pelo aluno
             avaliacoesRecebidas = avaliacoesData
-                .filter((av: any) => av.id_aluno_avaliado === currentAlunoId)
+                .filter(
+                    (av: any) =>
+                        av.id_aluno_avaliado === currentAlunoId &&
+                        !av.id_professor,
+                )
                 .map((av: any) => {
                     const alunoAvaliador = turma?.alunos?.find(
                         (a: any) => a.id === av.id_aluno_avaliador,
@@ -204,6 +209,12 @@
                         enviada_para: aluno?.nome_completo || "Aluno",
                     };
                 });
+
+            // Avaliação do professor
+            avaliacaoProfessor = avaliacoesData.find(
+                (av: any) =>
+                    av.id_aluno_avaliado === currentAlunoId && av.id_professor,
+            );
 
             // Carregar arquivos do aluno
             await loadAlunoFiles();
@@ -367,6 +378,46 @@
                 {/if}
             {/if}
         </div>
+
+        <!-- Seção de Avaliação pelo Professor -->
+        {#if avaliacaoProfessor && turma?.professor}
+            <div class="avaliacoes-section avaliacao-professor-section">
+                <h2>Avaliação pelo Professor</h2>
+                <div
+                    class="professor-info"
+                    style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;"
+                >
+                    <Avatar
+                        src={turma.professor.link_avatar ||
+                            "/avatars/default.png"}
+                        alt={`Avatar de ${turma.professor.nome_completo || "Professor"}`}
+                        size="md"
+                    />
+                    <span
+                        class="professor-name"
+                        style="font-weight: 600; color: #2d3748;"
+                        >{turma.professor.nome_completo || "Professor"}</span
+                    >
+                </div>
+                <div
+                    class="professor-avaliacao-notas"
+                    style="font-size: 1.1rem;"
+                >
+                    <strong>Notas:</strong>
+                    {formatNotas(avaliacaoProfessor.notas)}
+                </div>
+                <div
+                    class="professor-avaliacao-data"
+                    style="font-size: 0.9rem; color: #6c757d; margin-top: 0.5rem;"
+                >
+                    <span
+                        >Enviada em: {formatDate(
+                            avaliacaoProfessor.created_at,
+                        )}</span
+                    >
+                </div>
+            </div>
+        {/if}
 
         <!-- Seção de Uploads do Aluno -->
         <div class="uploads-section">

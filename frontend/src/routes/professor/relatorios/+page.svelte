@@ -12,8 +12,8 @@
     } from "$lib/interfaces/interfaces";
     import Button from "$lib/components/Button.svelte";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
-    import jsPDF from "jspdf";
-    import "jspdf-autotable";
+    import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+    import type { PDFFont } from "pdf-lib";
 
     let turmas: TurmaModel[] = [];
     let selectedTurma: TurmaModel | null = null;
@@ -387,45 +387,205 @@
         document.body.removeChild(link);
     }
 
-    // PDF Export
-    function exportMatrixAsPDF() {
+    // PDF Export using pdf-lib
+    async function exportMatrixAsPDF() {
         if (!alunos.length || !Object.keys(evaluationMatrix).length) return;
-        const doc = new jsPDF();
-        const title = `Matriz de Avaliações - ${selectedProblema?.nome_problema || "Problema"}`;
-        doc.text(title, 14, 16);
-        // Build table head
-        const head = [
-            [
-                "Aluno",
-                "Número",
-                "Média",
-                ...alunos.map((_, idx) => (idx + 1).toString()),
-            ],
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage([
+            Math.max(800, 120 + alunos.length * 70),
+            100 + (alunos.length + 2) * 40,
+        ]);
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        let y = page.getHeight() - 50;
+        const leftMargin = 40;
+        const cellHeight = 32;
+        // Dynamically calculate the max width needed for the name column
+        const nameFontSize = 13;
+        const namePadding = 20;
+        const maxNameWidth = Math.max(
+            ...alunos.map((a) =>
+                font.widthOfTextAtSize(
+                    a.nome_completo?.split(" ").slice(0, 2).join(" ") || "N/A",
+                    nameFontSize,
+                ),
+            ),
+        );
+        const nameColWidth = Math.ceil(maxNameWidth) + namePadding;
+        const otherColWidth = 70;
+        const headerBg = rgb(0.88, 0.91, 1);
+        const borderColor = rgb(0.8, 0.8, 0.8);
+        // Title
+        page.drawText(
+            `Matriz de Avaliações - ${selectedProblema?.nome_problema || "Problema"}`,
+            { x: leftMargin, y, size: 22, font, color: rgb(0, 0, 0) },
+        );
+        y -= 40;
+        // Table header
+        let x = leftMargin;
+        const headers = [
+            "Aluno",
+            "Número",
+            "Média",
+            ...alunos.map((_, idx) => (idx + 1).toString()),
         ];
-        // Build table body
-        const body = alunos.map((evaluator, evaluatorIdx) => {
-            const row = [
+        headers.forEach((header, i) => {
+            const colWidth = i === 0 ? nameColWidth : otherColWidth;
+            page.drawRectangle({
+                x,
+                y,
+                width: colWidth,
+                height: cellHeight,
+                color: headerBg,
+                borderColor,
+                borderWidth: 1,
+            });
+            page.drawText(header, {
+                x: x + 10,
+                y: y + 12,
+                size: 15,
+                font,
+                color: rgb(0, 0, 0),
+            });
+            x += colWidth;
+        });
+        y -= cellHeight;
+        // Table body
+        alunos.forEach((evaluator, evaluatorIdx) => {
+            x = leftMargin;
+            // Aluno name
+            const name =
                 evaluator.nome_completo?.split(" ").slice(0, 2).join(" ") ||
-                    "N/A",
-                evaluatorIdx + 1,
-                getReceivedAverage(evaluator.id) || "-",
-            ];
+                "N/A";
+            const nameLines = wrapText(
+                name,
+                nameColWidth - 10,
+                font,
+                nameFontSize,
+            );
+            const rowHeight = Math.max(
+                cellHeight,
+                nameLines.length * (nameFontSize + 2) + 8,
+            );
+            page.drawRectangle({
+                x,
+                y,
+                width: nameColWidth,
+                height: rowHeight,
+                borderColor,
+                borderWidth: 1,
+            });
+            nameLines.forEach((line, i) => {
+                page.drawText(line, {
+                    x: x + 10,
+                    y: y + rowHeight - 14 - i * (nameFontSize + 2),
+                    size: nameFontSize,
+                    font,
+                    color: rgb(0, 0, 0),
+                });
+            });
+            x += nameColWidth;
+            // Número
+            page.drawRectangle({
+                x,
+                y,
+                width: otherColWidth,
+                height: rowHeight,
+                borderColor,
+                borderWidth: 1,
+            });
+            page.drawText((evaluatorIdx + 1).toString(), {
+                x: x + 24,
+                y: y + rowHeight / 2 - 6,
+                size: 13,
+                font,
+                color: rgb(0, 0, 0),
+            });
+            x += otherColWidth;
+            // Média
+            const avg = getReceivedAverage(evaluator.id) || "-";
+            page.drawRectangle({
+                x,
+                y,
+                width: otherColWidth,
+                height: rowHeight,
+                borderColor,
+                borderWidth: 1,
+            });
+            page.drawText(avg.toString(), {
+                x: x + 24,
+                y: y + rowHeight / 2 - 6,
+                size: 13,
+                font,
+                color: rgb(0, 0, 0),
+            });
+            x += otherColWidth;
+            // Grades
             alunos.forEach((evaluated) => {
+                page.drawRectangle({
+                    x,
+                    y,
+                    width: otherColWidth,
+                    height: rowHeight,
+                    borderColor,
+                    borderWidth: 1,
+                });
+                let text = "-";
                 if (evaluator.id === evaluated.id) {
-                    row.push("X");
+                    text = "X";
                 } else {
                     const grade =
                         evaluationMatrix[evaluator.id]?.[evaluated.id];
-                    row.push(grade && grade > 0 ? grade : "-");
+                    text =
+                        grade && grade > 0
+                            ? grade.toString()
+                            : grade === 0
+                              ? "0"
+                              : "-";
                 }
+                page.drawText(text, {
+                    x: x + 30,
+                    y: y + rowHeight / 2 - 6,
+                    size: 13,
+                    font,
+                    color: rgb(0, 0, 0),
+                });
+                x += otherColWidth;
             });
-            return row;
+            y -= rowHeight;
         });
-        // @ts-ignore
-        doc.autoTable({ head, body, startY: 22 });
-        doc.save(
-            `relatorio_${selectedProblema?.nome_problema || "matriz"}.pdf`,
-        );
+        // Download
+        const pdfBytes = await pdfDoc.save();
+        const blob = new Blob([pdfBytes], { type: "application/pdf" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `relatorio_${selectedProblema?.nome_problema || "matriz"}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Helper to wrap text for the name column
+    function wrapText(
+        text: string,
+        maxWidth: number,
+        font: PDFFont,
+        fontSize: number,
+    ): string[] {
+        const words = text.split(" ");
+        let lines = [];
+        let currentLine = "";
+        for (let word of words) {
+            const testLine = currentLine ? currentLine + " " + word : word;
+            const testWidth = font.widthOfTextAtSize(testLine, fontSize);
+            if (testWidth + 4 > maxWidth && currentLine) {
+                lines.push(currentLine);
+                currentLine = word;
+            } else {
+                currentLine = testLine;
+            }
+        }
+        if (currentLine) lines.push(currentLine);
+        return lines;
     }
 </script>
 

@@ -38,6 +38,7 @@
 		"jspdf": "^3.0.1",
 		"jspdf-autotable": "^5.0.2",
 		"lodash-es": "^4.17.21",
+		"pdf-lib": "^1.17.1",
 		"tailwind-merge": "^3.3.1"
 	}
 }
