@@ -234,6 +234,11 @@
         height: 100vh;
         min-height: 100vh;
         overflow-y: visible;
+        padding-left: 1.2rem;
+        padding-right: 1.2rem;
+        display: block;
+        flex-direction: initial;
+        align-items: initial;
     }
     .sidebar.mobile {
         transform: translateX(-100%);
@@ -242,12 +247,13 @@
         transform: translateX(0);
     }
     .sidebar-content {
-        height: 100%;
+        width: 100%;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         min-height: 0;
         padding: 0.5rem 0;
+        align-items: flex-start;
     }
     nav {
         display: flex;
@@ -257,6 +263,7 @@
         overflow: visible !important;
         margin-bottom: 1.5rem;
         align-items: flex-start;
+        width: 100%;
     }
     nav a {
         display: flex;
@@ -272,6 +279,8 @@
             background 0.18s,
             color 0.18s;
         width: 100%;
+        justify-content: flex-start;
+        text-align: left;
     }
     nav a.active {
         background: #f3f4f6;
@@ -308,6 +317,8 @@
         transition:
             background 0.18s,
             color 0.18s;
+        justify-content: flex-start;
+        text-align: left;
     }
     .logout button:hover {
         background: #fbe9e7;
@@ -386,6 +397,14 @@
         }
     }
     @media (max-width: 768px) {
+        .sidebar, .sidebar-content, nav, .logout {
+            align-items: flex-start;
+            text-align: left;
+        }
+        nav a, .logout button {
+            justify-content: flex-start;
+            text-align: left;
+        }
         .sidebar {
             width: 70vw;
             max-width: 260px;
@@ -443,6 +462,12 @@
         .logout button {
             padding: 1rem 0.5rem;
             font-size: 1.05rem;
+        }
+    }
+    @media (max-width: 768px) {
+        .sidebar {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
         }
     }
 </style>

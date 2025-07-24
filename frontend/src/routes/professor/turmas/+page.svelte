@@ -563,4 +563,43 @@
             box-sizing: border-box;
         }
     }
+
+    @media (max-width: 480px) {
+        .turmas-container {
+            margin-top: 1.2rem;
+            padding: 0 0.02rem;
+        }
+        .header {
+            margin-top: 0.1rem;
+            margin-bottom: 0.3rem;
+            gap: 0.2rem;
+        }
+        .header h1 {
+            font-size: 0.95rem;
+        }
+        .turmas-list {
+            border-radius: 6px;
+            margin-bottom: 0.3rem;
+            padding: 0.05rem 0.01rem;
+        }
+        .turma-item {
+            padding: 0.3rem 0.05rem;
+            font-size: 0.91rem;
+            border-radius: 3px;
+        }
+        .actions {
+            gap: 0.05rem;
+        }
+        .pagination {
+            gap: 0.05rem;
+            margin-top: 0.2rem;
+            margin-bottom: 0.05rem;
+        }
+        .search-bar button,
+        .search-bar .create-turma-button,
+        .header :global(button) {
+            padding: 0.3rem 0.1rem;
+            font-size: 0.91rem;
+        }
+    }
 </style>

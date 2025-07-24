@@ -453,4 +453,45 @@
             box-sizing: border-box;
         }
     }
+
+    @media (max-width: 480px) {
+        .container {
+            padding: 0.1rem;
+            margin-top: 1.2rem;
+        }
+        .header {
+            gap: 0.1rem;
+            margin-bottom: 0.2rem;
+        }
+        .header h1 {
+            font-size: 0.93rem;
+        }
+        .title-section {
+            gap: 0.05rem;
+        }
+        .problemas-list {
+            gap: 0.15rem;
+        }
+        .problema-item {
+            padding: 0.2rem 0.05rem;
+            border-radius: 6px;
+            font-size: 0.91rem;
+        }
+        .problema-info h3 {
+            font-size: 0.91rem;
+            margin-bottom: 0.05rem;
+        }
+        .problema-details {
+            gap: 0.1rem;
+            font-size: 0.88rem;
+        }
+        .actions {
+            gap: 0.05rem;
+        }
+        .header :global(button),
+        .header Button {
+            padding: 0.3rem 0.1rem;
+            font-size: 0.91rem;
+        }
+    }
 </style>
