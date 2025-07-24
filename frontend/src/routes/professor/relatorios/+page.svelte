@@ -322,6 +322,19 @@
         return result;
     }
 
+    // Função para detectar outlier
+    function isOutlier(evaluatedId: number, grade: number): boolean {
+        if (grade === 0) return false;
+        // Coletar todas as notas recebidas pelo avaliado (exceto autoavaliação e zeros)
+        const received = Object.keys(evaluationMatrix)
+            .map((evaluatorId) => evaluationMatrix[Number(evaluatorId)][evaluatedId])
+            .filter((g, idx) => alunos[idx]?.id !== evaluatedId && g > 0);
+        if (received.length <= 1) return false;
+        const avg = received.reduce((a, b) => a + b, 0) / received.length;
+        // Outlier se diferença absoluta for maior que 2 pontos
+        return Math.abs(grade - avg) > 2;
+    }
+
     // Force reactive updates when matrix or alunos change
     $: if (evaluationMatrix && alunos) {
         console.log("Reactive update triggered - matrix and alunos changed");
@@ -515,25 +528,13 @@
                                             {getReceivedAverage(evaluator.id) ||
                                                 "-"}
                                         </td>
-                                        {#each alunos as evaluated, evaluatedIndex}
-                                            <td
-                                                class="grade-cell"
-                                                class:self-evaluation={evaluator.id ===
-                                                    evaluated.id}
-                                                class:no-grade={evaluationMatrix[
-                                                    evaluator.id
-                                                ]?.[evaluated.id] === 0 &&
-                                                    evaluator.id !==
-                                                        evaluated.id}
-                                            >
+                                        {#each alunos as evaluated}
+                                            {@const grade = evaluationMatrix[evaluator.id]?.[evaluated.id]}
+                                            <td class="grade-cell{evaluator.id === evaluated.id ? ' self-evaluation' : ''}{grade === 0 && evaluator.id !== evaluated.id ? ' zero-grade' : ''}{isOutlier(evaluated.id, grade) ? ' outlier-grade' : ''}">
                                                 {#if evaluator.id === evaluated.id}
-                                                    X
-                                                {:else if evaluationMatrix[evaluator.id]?.[evaluated.id]}
-                                                    {evaluationMatrix[
-                                                        evaluator.id
-                                                    ][evaluated.id]}
+                                                    <span class="grade-cell self-evaluation">X</span>
                                                 {:else}
-                                                    -
+                                                    {grade > 0 ? grade : grade === 0 ? 0 : '-'}
                                                 {/if}
                                             </td>
                                         {/each}
@@ -547,22 +548,12 @@
                 <div class="matrix-legend">
                     <h4>Legenda:</h4>
                     <ul>
-                        <li>
-                            <strong>Número:</strong> Identificação numérica do aluno
-                            na matriz
-                        </li>
-                        <li>
-                            <strong>Média:</strong> Nota média recebida pelo aluno
-                            de seus colegas
-                        </li>
-                        <li>
-                            <strong>Colunas numeradas (1, 2, 3...):</strong> Notas
-                            dadas para cada aluno (identificado pelo número)
-                        </li>
-                        <li>
-                            <strong>X:</strong> Auto-avaliação (aluno não avalia
-                            a si mesmo)
-                        </li>
+                        <li><strong>Número:</strong> Identificação numérica do aluno na matriz</li>
+                        <li><strong>Média:</strong> Nota média recebida pelo aluno de seus colegas</li>
+                        <li><strong>Colunas numeradas (1, 2, 3...):</strong> Notas dadas para cada aluno (identificado pelo número)</li>
+                        <li><strong>X:</strong> Auto-avaliação (aluno não avalia a si mesmo)</li>
+                        <li><span style="background:#ffcccc;padding:2px 8px;border-radius:4px;">&nbsp;</span> Nota zero enviada</li>
+                        <li><span style="background:#fff9c4;padding:2px 8px;border-radius:4px;">&nbsp;</span> Nota fora do padrão dos colegas</li>
                     </ul>
                 </div>
             </div>
@@ -824,8 +815,7 @@
     }
 
     .grade-cell {
-        background: white;
-        font-weight: 500;
+        background: white !important;
     }
 
     .grade-cell.self-evaluation {
@@ -906,6 +896,19 @@
         border: 1px solid #e9ecef;
         border-radius: 8px;
         color: #6c757d;
+    }
+
+    .grade-cell.zero-grade {
+        background: #ffcccc !important;
+        color: #222 !important;
+    }
+    .grade-cell.outlier-grade {
+        background: #fff9c4 !important;
+        color: #222 !important;
+    }
+    .grade-cell.zero-grade.outlier-grade {
+        background: #ffcccc !important;
+        color: #222 !important;
     }
 
     @media (max-width: 768px) {
