@@ -135,6 +135,12 @@ box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2); /* por */ box-shadow: 0 4px 20p
 | `#f6ad55` | `var(--color-warning-main)` | Warning |
 | `#3b82f6` | `var(--color-info-main)` | Info |
 | `rgba(255, 255, 255, 0.95)` | `var(--color-glass-white)` | Glass effect |
+| **Sistema Verde (Nature)** | | |
+| `#168F41` | `var(--color-nature-main)` | Verde principal |
+| `#22C55E` | `var(--color-nature-light)` | Verde claro |
+| `#014619` | `var(--color-nature-dark)` | Verde escuro |
+| `#E3FBEC` | `var(--color-nature-background-light)` | Background verde claro |
+| `rgba(227, 251, 236, 0.95)` | `var(--color-nature-glass-white)` | Glass verde |
 
 ## 🚨 Cores Que Precisam Ser Adicionadas
 

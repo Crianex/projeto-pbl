@@ -2,6 +2,7 @@
 	import { page } from "$app/stores";
 	import { fade, fly } from "svelte/transition";
 	import { quintOut } from "svelte/easing";
+	import "../app.css";
 
 	// Use the pathname as key to trigger transitions on route changes
 	$: key = $page.url.pathname;

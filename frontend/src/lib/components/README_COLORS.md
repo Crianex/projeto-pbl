@@ -23,6 +23,17 @@ Este documento descreve o sistema de cores centralizado implementado no projeto,
 --color-secondary-main: #764ba2;
 --color-secondary-light: #8b6bb1;
 --color-secondary-dark: #5e3a82;
+
+/* Sistema de Cores Verde (Nature) */
+--color-nature-main: #168F41;
+--color-nature-light: #22C55E;
+--color-nature-dark: #014619;
+--color-nature-lighter: #4ADE80;
+--color-nature-darker: #052E16;
+--color-nature-gradient: linear-gradient(135deg, #168F41 0%, #014619 100%);
+--color-nature-light-gradient: linear-gradient(135deg, #4ADE80 0%, #168F41 100%);
+--color-nature-background: rgba(22, 143, 65, 0.1);
+--color-nature-background-light: #E3FBEC;
 ```
 
 ### Cores de Estado
@@ -101,11 +112,18 @@ Este documento descreve o sistema de cores centralizado implementado no projeto,
 --color-google-yellow: #FBBC04;
 --color-google-red: #EA4335;
 
-/* Glass Effect */
+/* Glass Effect Azul */
 --color-glass-white: rgba(255, 255, 255, 0.95);
 --color-glass-light: rgba(255, 255, 255, 0.1);
 --color-glass-border: rgba(255, 255, 255, 0.2);
 --color-glass-backdrop: rgba(255, 255, 255, 0.75);
+
+/* Glass Effect Verde */
+--color-nature-glass-white: rgba(227, 251, 236, 0.95);
+--color-nature-glass-light: rgba(227, 251, 236, 0.1);
+--color-nature-glass-medium: rgba(227, 251, 236, 0.2);
+--color-nature-glass-border: rgba(227, 251, 236, 0.3);
+--color-nature-glass-backdrop: rgba(227, 251, 236, 0.75);
 
 /* Feedback */
 --color-feedback-online: #22c55e;
@@ -139,6 +157,7 @@ Este documento descreve o sistema de cores centralizado implementado no projeto,
     import { colors, colorUtils } from '$lib/components/colors';
 </script>
 
+<!-- Componente Azul -->
 <div 
     style="
         background: {colors.primary.gradient};
@@ -146,7 +165,31 @@ Este documento descreve o sistema de cores centralizado implementado no projeto,
         box-shadow: {colorUtils.boxShadow(colors.primary.main, 0.2)};
     "
 >
-    Meu componente
+    Componente Azul
+</div>
+
+<!-- Componente Verde -->
+<div 
+    style="
+        background: {colors.nature.gradient};
+        color: {colors.text.white};
+        box-shadow: {colorUtils.boxShadow(colors.nature.main, 0.2)};
+        border: 1px solid {colors.nature.border};
+    "
+>
+    Componente Verde
+</div>
+
+<!-- Componente com Glass Effect Verde -->
+<div 
+    style="
+        background: {colors.nature.glass.white};
+        backdrop-filter: blur(20px);
+        border: 1px solid {colors.nature.glass.border};
+        color: {colors.nature.main};
+    "
+>
+    Glass Verde
 </div>
 ```
 
@@ -227,7 +270,7 @@ export const colors = {
 
 ## 🚀 Exemplos Práticos
 
-### Criando um Card com o Sistema de Cores
+### Criando um Card com o Sistema de Cores Azul
 
 ```svelte
 <div class="premium-card">
@@ -270,6 +313,55 @@ export const colors = {
     
     .card-button:hover {
         box-shadow: 0 4px 12px var(--color-shadow-primary);
+        transform: translateY(-2px);
+    }
+</style>
+```
+
+### Criando um Card com o Sistema de Cores Verde
+
+```svelte
+<div class="nature-card">
+    <h3>Card Eco-Friendly</h3>
+    <p>Usando o sistema de cores verde nature</p>
+    <button class="nature-button">Ação Verde</button>
+</div>
+
+<style>
+    .nature-card {
+        background: var(--color-nature-glass-white);
+        border: 1px solid var(--color-nature-glass-border);
+        border-radius: 16px;
+        padding: 2rem;
+        backdrop-filter: blur(20px);
+        box-shadow: 
+            0 15px 35px var(--color-nature-shadow-light),
+            0 8px 20px var(--color-shadow-main);
+    }
+    
+    .nature-card h3 {
+        color: var(--color-nature-main);
+        margin-bottom: 1rem;
+    }
+    
+    .nature-card p {
+        color: var(--color-text-secondary);
+        margin-bottom: 1.5rem;
+    }
+    
+    .nature-button {
+        background: var(--color-nature-gradient);
+        color: var(--color-text-white);
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .nature-button:hover {
+        background: var(--color-nature-light-gradient);
+        box-shadow: 0 4px 12px var(--color-nature-shadow);
         transform: translateY(-2px);
     }
 </style>
