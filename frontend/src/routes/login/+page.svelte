@@ -197,12 +197,7 @@
         margin: 0;
         padding: 0;
         min-height: 100vh;
-        background: linear-gradient(
-            135deg,
-            #ffffff 0%,
-            #f8f9fa 50%,
-            #e9ecef 100%
-        );
+        background: var(--color-bg-gradient);
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
             sans-serif;
     }
@@ -220,30 +215,30 @@
     .login-container {
         width: 100%;
         max-width: 420px;
-        background: rgba(255, 255, 255, 0.95);
+        background: var(--color-glass-white);
         backdrop-filter: blur(10px);
         border-radius: 20px;
         padding: 3rem 2.5rem;
         box-shadow:
-            0 25px 50px rgba(0, 0, 0, 0.15),
-            0 15px 35px rgba(0, 0, 0, 0.1),
-            0 5px 15px rgba(0, 0, 0, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+            0 25px 50px var(--color-shadow-dark),
+            0 15px 35px var(--color-shadow-main),
+            0 5px 15px var(--color-shadow-light);
+        border: 1px solid var(--color-glass-border);
         transition: all 0.3s ease;
     }
 
     .login-container:hover {
         transform: translateY(-2px);
         box-shadow:
-            0 30px 60px rgba(0, 0, 0, 0.2),
-            0 20px 40px rgba(0, 0, 0, 0.15),
-            0 10px 20px rgba(0, 0, 0, 0.1);
+            0 30px 60px var(--color-shadow-dark),
+            0 20px 40px var(--color-shadow-dark),
+            0 10px 20px var(--color-shadow-main);
     }
 
     h1 {
         text-align: center;
         margin-bottom: 2.5rem;
-        color: #2d3748;
+        color: var(--color-text-primary);
         font-size: 2rem;
         font-weight: 700;
         letter-spacing: -0.025em;
@@ -277,7 +272,7 @@
     }
 
     .links a {
-        color: #667eea;
+        color: var(--color-primary-main);
         text-decoration: none;
         font-weight: 500;
         font-size: 0.9rem;
@@ -288,21 +283,21 @@
     }
 
     .links a:hover {
-        color: #5a67d8;
+        color: var(--color-primary-light);
         background: rgba(102, 126, 234, 0.1);
         text-decoration: none;
         transform: translateY(-1px);
     }
 
     .error-message {
-        background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
-        color: #c53030;
+        background: var(--color-error-background);
+        color: var(--color-error-dark);
         padding: 1rem;
         border-radius: 12px;
         margin-bottom: 1.5rem;
-        border: 1px solid #fc8181;
+        border: 1px solid var(--color-error-border);
         font-weight: 500;
-        box-shadow: 0 4px 12px rgba(197, 48, 48, 0.1);
+        box-shadow: 0 4px 12px var(--color-shadow-error);
         text-align: center;
     }
 

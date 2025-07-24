@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/stores";
-	import { fade } from "svelte/transition";
+	import { fade, fly } from "svelte/transition";
+	import { quintOut } from "svelte/easing";
 
 	// Use the pathname as key to trigger transitions on route changes
 	$: key = $page.url.pathname;
@@ -15,8 +16,8 @@
 			<div
 				class="page-container"
 				class:home={isHomePage}
-				in:fade={{ duration: 500 }}
-				out:fade={{ duration: 500 }}
+				in:fly={{ y: 20, duration: 400, easing: quintOut }}
+				out:fade={{ duration: 300 }}
 			>
 				<slot></slot>
 			</div>
@@ -45,6 +46,7 @@
 		height: 100vh;
 		width: 100vw;
 		display: flex;
+		overflow: hidden;
 	}
 
 	main {
@@ -69,6 +71,7 @@
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
+		will-change: transform, opacity;
 	}
 	
 	/* Remove layout constraints for home page */

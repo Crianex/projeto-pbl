@@ -189,7 +189,7 @@
     }
 
     input[type="checkbox"] {
-        accent-color: #697077;
+        accent-color: var(--color-text-muted);
         width: 18px;
         height: 18px;
         margin: 0;
@@ -212,40 +212,40 @@
     }
 
     .btn-primary {
-        background-color: #3b82f6;
-        border-color: #3b82f6;
-        color: white;
+        background-color: var(--color-info-main);
+        border-color: var(--color-info-main);
+        color: var(--color-text-white);
     }
 
     .btn-primary:hover {
-        background-color: #2563eb;
-        border-color: #2563eb;
+        background-color: var(--color-info-dark);
+        border-color: var(--color-info-dark);
     }
 
     .btn-secondary {
-        background-color: white;
-        border-color: #d1d5db;
-        color: #374151;
+        background-color: var(--color-bg-white);
+        border-color: var(--color-border-main);
+        color: var(--color-text-secondary);
     }
 
     .btn-secondary:hover {
-        background-color: #f9fafb;
-        border-color: #9ca3af;
+        background-color: var(--color-bg-light);
+        border-color: var(--color-text-light);
     }
 
     /* Self-evaluation styling */
     tr.self-evaluation {
-        background-color: #f8f9fa !important;
-        border-left: 4px solid #0d6efd;
+        background-color: var(--color-bg-light) !important;
+        border-left: 4px solid var(--color-info-main);
     }
 
     tr.self-evaluation:hover {
-        background-color: #e9ecef !important;
+        background-color: var(--color-bg-neutral) !important;
     }
 
     /* Not evaluated styling */
     td.nao-avaliado {
-        color: #6c757d;
+        color: var(--color-text-muted);
         font-style: italic;
     }
 
@@ -256,14 +256,14 @@
         justify-content: center;
         min-width: 3rem;
         height: 2rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        background: var(--color-primary-gradient);
+        color: var(--color-text-white);
         font-weight: 600;
         padding: 0 0.75rem;
         border-radius: 8px;
         box-shadow:
-            0 4px 12px rgba(102, 126, 234, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            0 4px 12px var(--color-shadow-primary),
+            inset 0 1px 0 var(--color-glass-border);
     }
 
     /* Responsive Design - Only for desktop table adjustments */
