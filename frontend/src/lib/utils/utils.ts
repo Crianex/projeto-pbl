@@ -1,3 +1,6 @@
+import type { ProblemaModel } from "$lib/interfaces/interfaces";
+import { formatToDateTime } from "brazilian-values";
+
 export function classNames(...classes: (string | undefined | null | false)[]) {
     return classes.filter(Boolean).join(' ');
 }
@@ -171,5 +174,42 @@ export class MediaCalculator {
         });
 
         return count > 0 ? total / count : 0;
+    }
+}
+
+
+export class DateUtils {
+    static getDateFromProblemaModel(problema: ProblemaModel) {
+        // For each criterios tag, format its start and end date
+        const ranges = Object.values(problema.data_e_hora_criterios_e_arquivos)
+            .map(dateObj => {
+                if (!dateObj.data_e_hora_inicio || !dateObj.data_e_hora_fim) return null;
+                const inicio = formatToDateTime(dateObj.data_e_hora_inicio);
+                const fim = formatToDateTime(dateObj.data_e_hora_fim);
+                return `De ${inicio} a ${fim}`;
+            })
+            .filter(Boolean);
+        if (ranges.length === 0) return "";
+        return ranges.join(" e ");
+    }
+
+    static getDateStartFromProblemaModel(problema: ProblemaModel) {
+        const ranges = Object.entries(problema.data_e_hora_criterios_e_arquivos)
+            .map(([tag, dateObj]) => {
+                if (!dateObj.data_e_hora_inicio) return null;
+                return `${tag}: ${formatToDateTime(dateObj.data_e_hora_inicio)}`;
+            })
+            .filter(Boolean);
+        return ranges.join("<br><br>");
+    }
+
+    static getDateEndFromProblemaModel(problema: ProblemaModel) {
+        const ranges = Object.entries(problema.data_e_hora_criterios_e_arquivos)
+            .map(([tag, dateObj]) => {
+                if (!dateObj.data_e_hora_fim) return null;
+                return `${tag}: ${formatToDateTime(dateObj.data_e_hora_fim)}`;
+            })
+            .filter(Boolean);
+        return ranges.join("<br><br>");
     }
 }

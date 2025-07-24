@@ -16,14 +16,14 @@
     let registrationComplete = false;
     let showToast = false;
     let toastMessage = "";
-    let toastType: 'success' | 'error' | 'info' = 'success';
+    let toastType: "success" | "error" | "info" = "success";
 
     // Validation states
     let nameError = "";
     let emailError = "";
     let passwordError = "";
     let confirmPasswordError = "";
-    
+
     // Email validation
     function validateEmail(email: string) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -32,7 +32,7 @@
         }
         return "";
     }
-    
+
     // Name validation
     function validateName(name: string) {
         if (name.length < 2) {
@@ -43,7 +43,7 @@
         }
         return "";
     }
-    
+
     // Password strength validation
     function validatePassword(pass: string) {
         if (pass.length < 8) {
@@ -58,10 +58,21 @@
     // Reactive validation
     $: nameError = name && name.length > 0 ? validateName(name) : "";
     $: emailError = email && email.length > 0 ? validateEmail(email) : "";
-    $: passwordError = password && password.length > 0 ? validatePassword(password) : "";
-    $: confirmPasswordError = confirmPassword && password !== confirmPassword ? "Senhas não coincidem" : "";
-    $: formValid = name && email && password && confirmPassword && 
-        !nameError && !emailError && !passwordError && !confirmPasswordError;
+    $: passwordError =
+        password && password.length > 0 ? validatePassword(password) : "";
+    $: confirmPasswordError =
+        confirmPassword && password !== confirmPassword
+            ? "Senhas não coincidem"
+            : "";
+    $: formValid =
+        name &&
+        email &&
+        password &&
+        confirmPassword &&
+        !nameError &&
+        !emailError &&
+        !passwordError &&
+        !confirmPasswordError;
 
     async function handleRegister() {
         if (!formValid) return;
@@ -70,7 +81,7 @@
 
         try {
             logger.info("Attempting registration", { email, name });
-            
+
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
@@ -85,12 +96,15 @@
 
             if (data.user) {
                 registrationComplete = true;
-                toastType = 'success';
-                toastMessage = "Conta criada com sucesso! Verificando e-mail...";
+                toastType = "success";
+                toastMessage =
+                    "Conta criada com sucesso! Verificando e-mail...";
                 showToast = true;
-                
-                logger.info("Registration successful", { userId: data.user.id });
-                
+
+                logger.info("Registration successful", {
+                    userId: data.user.id,
+                });
+
                 // Wait a bit before redirecting
                 setTimeout(() => {
                     goto("/auth/callback");
@@ -98,8 +112,9 @@
             }
         } catch (err: any) {
             logger.error("Registration failed", { error: err.message, email });
-            toastType = 'error';
-            toastMessage = err.message || "Erro ao criar conta. Tente novamente.";
+            toastType = "error";
+            toastMessage =
+                err.message || "Erro ao criar conta. Tente novamente.";
             showToast = true;
         } finally {
             loading = false;
@@ -110,11 +125,11 @@
         try {
             loading = true;
             logger.info("Attempting Google registration");
-            
-            toastType = 'info';
+
+            toastType = "info";
             toastMessage = "Redirecionando para Google...";
             showToast = true;
-            
+
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: "google",
                 options: {
@@ -125,7 +140,7 @@
             if (error) throw error;
         } catch (err: any) {
             logger.error("Google registration failed", { error: err.message });
-            toastType = 'error';
+            toastType = "error";
             toastMessage = err.message || "Erro ao registrar com Google";
             showToast = true;
             loading = false;
@@ -147,14 +162,15 @@
                 Bem-vindo(a), <strong>{name}!</strong>
             </p>
             <p class="instructions">
-                Sua conta foi criada com sucesso. Você será redirecionado em instantes.
+                Sua conta foi criada com sucesso. Você será redirecionado em
+                instantes.
             </p>
-            
+
             <div class="actions">
-                <LoadingSpinner 
-                    size="md" 
-                    color="primary" 
-                    text="Configurando sua conta..."
+                <LoadingSpinner
+                    size="md"
+                    color="primary"
+                    message="Configurando sua conta..."
                 />
             </div>
         </div>
@@ -207,7 +223,7 @@
                     disabled={loading}
                     autocomplete="new-password"
                 />
-                
+
                 {#if password && !passwordError}
                     <div class="password-strength">
                         <div class="strength-indicator strong"></div>
@@ -231,11 +247,11 @@
             </div>
 
             <div class="button-group">
-                <Button 
+                <Button
                     type="submit"
-                    variant="primary" 
+                    variant="primary"
                     disabled={!formValid || loading}
-                    loading={loading}
+                    {loading}
                 >
                     {loading ? "Criando conta..." : "Criar conta"}
                 </Button>
@@ -289,15 +305,19 @@
 {/if}
 
 {#if loading && !registrationComplete}
-    <LoadingSpinner overlay={true} text="Criando sua conta..." />
+    <LoadingSpinner overlay={true} message="Criando sua conta..." />
 {/if}
 
 {#if showToast}
-    <Toast 
+    <Toast
         type={toastType}
-        title={toastType === 'success' ? 'Sucesso!' : toastType === 'error' ? 'Erro!' : 'Info'}
+        title={toastType === "success"
+            ? "Sucesso!"
+            : toastType === "error"
+              ? "Erro!"
+              : "Info"}
         message={toastMessage}
-        on:dismiss={() => showToast = false}
+        on:dismiss={() => (showToast = false)}
     />
 {/if}
 
@@ -306,8 +326,14 @@
         margin: 0;
         padding: 0;
         min-height: 100vh;
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #e9ecef 100%);
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        background: linear-gradient(
+            135deg,
+            #ffffff 0%,
+            #f8f9fa 50%,
+            #e9ecef 100%
+        );
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+            sans-serif;
     }
 
     :global(main) {
@@ -403,7 +429,13 @@
         left: 0;
         right: 0;
         height: 1px;
-        background: linear-gradient(90deg, transparent 0%, #e2e8f0 20%, #e2e8f0 80%, transparent 100%);
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            #e2e8f0 20%,
+            #e2e8f0 80%,
+            transparent 100%
+        );
     }
 
     .divider span {
@@ -481,22 +513,23 @@
         font-size: 2.5rem;
         font-weight: bold;
         margin: 0 auto 2rem auto;
-        box-shadow: 
+        box-shadow:
             0 15px 35px rgba(72, 187, 120, 0.3),
             0 8px 20px rgba(72, 187, 120, 0.2);
         animation: successPulse 2s ease-in-out infinite;
     }
 
     @keyframes successPulse {
-        0%, 100% {
+        0%,
+        100% {
             transform: scale(1);
-            box-shadow: 
+            box-shadow:
                 0 15px 35px rgba(72, 187, 120, 0.3),
                 0 8px 20px rgba(72, 187, 120, 0.2);
         }
         50% {
             transform: scale(1.05);
-            box-shadow: 
+            box-shadow:
                 0 20px 40px rgba(72, 187, 120, 0.4),
                 0 12px 25px rgba(72, 187, 120, 0.3);
         }
@@ -863,7 +896,9 @@
             font-size: 1.25rem;
         }
 
-        .subtitle, .success-message, .instructions {
+        .subtitle,
+        .success-message,
+        .instructions {
             font-size: 0.825rem;
         }
 

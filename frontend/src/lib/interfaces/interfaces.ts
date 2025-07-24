@@ -26,8 +26,6 @@ export interface AvaliacaoDB {
 export interface ProblemaDB {
     id_problema: number;
     created_at: Date;
-    data_inicio: Date | null;
-    data_fim: Date | null;
     nome_problema: string | null;
     id_turma: number | null;
     media_geral: number | null;
@@ -52,25 +50,33 @@ export interface TurmaDB {
     alunos: AlunoDB[] | null;
 }
 
+
+// Models
 export interface DefinicaoArquivoDeAvaliacao {
-    nome_tipo: string | null;
-    descricao_tipo: string | null;
+    nome_tipo: string | undefined;
+    descricao_tipo: string | undefined;
     tipos_de_arquivos_aceitos: string[];
 }
 
-// Models
+// Used for per-tag open/close date and time
+export interface DataEHoraDefinition {
+    data_e_hora_inicio: Date;
+    data_e_hora_fim: Date;
+}
 
 export interface ProblemaModel {
     id_problema: number;
     created_at: Date;
-    data_inicio: Date | null;
-    data_fim: Date | null;
     nome_problema: string | null;
     id_turma: number | null;
     media_geral: number | null;
     turma: TurmaModel | null;
     criterios: CriteriosGroup;
     definicao_arquivos_de_avaliacao: DefinicaoArquivoDeAvaliacao[];
+    // For each criterios tag, stores open/close date/time
+    data_e_hora_criterios_e_arquivos: {
+        [tag: string]: DataEHoraDefinition;
+    };
 }
 
 export interface TurmaModel {

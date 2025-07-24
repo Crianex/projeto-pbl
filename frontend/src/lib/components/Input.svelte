@@ -1,306 +1,255 @@
 <script lang="ts">
-    export let type: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' = 'text';
-    export let value = '';
-    export let placeholder = '';
-    export let label = '';
-    export let error = '';
-    export let disabled = false;
-    export let required = false;
-    export let id = '';
-    export let autocomplete = '';
-    export let maxlength: number | undefined = undefined;
-    
+    import { formatToDateTime } from "brazilian-values";
+    import { onMount } from "svelte";
+    import type { FullAutoFill } from "svelte/elements";
+
+    export let type: string = "text";
+    export let placeholder: string = "";
+    export let value: string | number = "";
+    export let required: boolean = false;
+    export let disabled: boolean = false;
+    export let readonly: boolean = false;
+    export let id: string = "";
+    export let name: string = "";
+    export let min: string | number | undefined = undefined;
+    export let max: string | number | undefined = undefined;
+    export let step: string | number | undefined = undefined;
+    export let autocomplete: FullAutoFill | undefined = undefined;
+    export let label: string = "";
+    export let helperText: string = "";
+    export let error: string = "";
+    export let size: "sm" | "md" | "lg" = "md";
+    export let variant: "default" | "outlined" = "default";
+
     let inputElement: HTMLInputElement;
-    let focused = false;
-    
+
+    // Size classes
+    const sizeClasses = {
+        sm: "input-sm",
+        md: "input-md",
+        lg: "input-lg",
+    };
+
+    // Variant classes
+    const variantClasses = {
+        default: "input-default",
+        outlined: "input-outlined",
+    };
+
+    // Export focus/blur methods for parent components
     export function focus() {
-        inputElement?.focus();
+        if (inputElement) inputElement.focus();
     }
-    
-    function handleFocus() {
-        focused = true;
+
+    export function blur() {
+        if (inputElement) inputElement.blur();
     }
-    
-    function handleBlur() {
-        focused = false;
-    }
+    onMount(() => {
+        if (inputElement && type === "datetime-local") {
+            console.log(`value: ${value}`);
+        }
+    });
 </script>
 
-<div class="input-container" class:focused class:error={!!error} class:disabled>
+<div class="input-wrapper">
     {#if label}
-        <label for={id} class="label">{label}</label>
+        <label for={id} class="input-label" class:required>
+            {label}
+        </label>
     {/if}
-    
-    <div class="input-wrapper">
-{#if type === 'email'}
-            <input
-                type="email"
-                bind:this={inputElement}
-                bind:value
-                {placeholder}
-                {disabled}
-                {required}
-                {id}
-                {autocomplete}
-                {maxlength}
-                class="input"
-                on:focus={handleFocus}
-                on:blur={handleBlur}
-                on:input
-                on:change
-                on:keydown
-                on:keyup
-            />
-        {:else if type === 'password'}
-            <input
-                type="password"
-                bind:this={inputElement}
-                bind:value
-                {placeholder}
-                {disabled}
-                {required}
-                {id}
-                {autocomplete}
-                {maxlength}
-                class="input"
-                on:focus={handleFocus}
-                on:blur={handleBlur}
-                on:input
-                on:change
-                on:keydown
-                on:keyup
-            />
-        {:else if type === 'number'}
-            <input
-                type="number"
-                bind:this={inputElement}
-                bind:value
-                {placeholder}
-                {disabled}
-                {required}
-                {id}
-                {autocomplete}
-                {maxlength}
-                class="input"
-                on:focus={handleFocus}
-                on:blur={handleBlur}
-                on:input
-                on:change
-                on:keydown
-                on:keyup
-            />
-        {:else if type === 'tel'}
-            <input
-                type="tel"
-                bind:this={inputElement}
-                bind:value
-                {placeholder}
-                {disabled}
-                {required}
-                {id}
-                {autocomplete}
-                {maxlength}
-                class="input"
-                on:focus={handleFocus}
-                on:blur={handleBlur}
-                on:input
-                on:change
-                on:keydown
-                on:keyup
-            />
-        {:else if type === 'url'}
-            <input
-                type="url"
-                bind:this={inputElement}
-                bind:value
-                {placeholder}
-                {disabled}
-                {required}
-                {id}
-                {autocomplete}
-                {maxlength}
-                class="input"
-                on:focus={handleFocus}
-                on:blur={handleBlur}
-                on:input
-                on:change
-                on:keydown
-                on:keyup
-            />
-        {:else}
-            <input
-                type="text"
-                bind:this={inputElement}
-                bind:value
-                {placeholder}
-                {disabled}
-                {required}
-                {id}
-                {autocomplete}
-                {maxlength}
-                class="input"
-                on:focus={handleFocus}
-                on:blur={handleBlur}
-                on:input
-                on:change
-                on:keydown
-                on:keyup
-            />
-        {/if}
-        
-        {#if $$slots.icon}
-            <div class="icon">
-                <slot name="icon" />
-            </div>
-        {/if}
-    </div>
-    
+
+    {#if type === "text"}
+        <input
+            type="text"
+            bind:this={inputElement}
+            bind:value
+            {id}
+            {name}
+            {placeholder}
+            {required}
+            {disabled}
+            {readonly}
+            {min}
+            {max}
+            {step}
+            {autocomplete}
+            class="input {sizeClasses[size]} {variantClasses[variant]}"
+            class:error
+            class:disabled
+            {...$$restProps}
+        />
+    {:else if type === "number"}
+        <input
+            type="number"
+            bind:this={inputElement}
+            bind:value
+            {id}
+            {name}
+            {placeholder}
+            {required}
+            {disabled}
+            {readonly}
+            {min}
+            {max}
+            {step}
+            {autocomplete}
+            class="input {sizeClasses[size]} {variantClasses[variant]}"
+            class:error
+            class:disabled
+            {...$$restProps}
+        />
+    {:else if type === "datetime-local"}
+        <input
+            type="datetime-local"
+            bind:this={inputElement}
+            bind:value
+            {id}
+            {name}
+            {placeholder}
+            {required}
+            {disabled}
+            {readonly}
+            {min}
+            {max}
+            {step}
+            {autocomplete}
+            class="input {sizeClasses[size]} {variantClasses[variant]}"
+            class:error
+            class:disabled
+            {...$$restProps}
+        />
+    {:else}
+        <input
+            {type}
+            bind:this={inputElement}
+            {value}
+            {id}
+            {name}
+            {placeholder}
+            {required}
+            {disabled}
+            {readonly}
+            {min}
+            {max}
+            {step}
+            {autocomplete}
+            class="input {sizeClasses[size]} {variantClasses[variant]}"
+            class:error
+            class:disabled
+            {...$$restProps}
+        />
+    {/if}
+
     {#if error}
-        <div class="error-message">{error}</div>
+        <span class="error-text">{error}</span>
+    {:else if helperText}
+        <span class="helper-text">{helperText}</span>
     {/if}
 </div>
 
 <style>
-    .input-container {
+    .input-wrapper {
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
         width: 100%;
     }
-    
-    .label {
-        font-weight: 600;
-        font-size: 0.95rem;
-        color: #4a5568;
-        margin-bottom: 0.25rem;
-        transition: color 0.2s ease;
+
+    .input-label {
+        display: block;
+        font-weight: 500;
+        color: #374151;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
     }
-    
-    .input-container.focused .label {
-        color: #667eea;
+
+    .input-label.required::after {
+        content: " *";
+        color: #dc2626;
     }
-    
-    .input-wrapper {
-        position: relative;
-        display: flex;
-        align-items: center;
-    }
-    
+
     .input {
-        width: 100%;
-        padding: 1rem 1.25rem;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
         font-size: 1rem;
-        font-family: inherit;
-        transition: all 0.3s ease;
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(10px);
+        line-height: 1.5rem;
+        transition: all 0.15s ease-in-out;
+        background-color: #ffffff;
+        color: #111827;
+        width: 100%;
         box-sizing: border-box;
     }
-    
+
     .input:focus {
         outline: none;
-        border-color: #667eea;
-        background: rgba(255, 255, 255, 1);
-        box-shadow: 
-            0 0 0 3px rgba(102, 126, 234, 0.1),
-            0 4px 12px rgba(102, 126, 234, 0.08);
-        transform: translateY(-1px);
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
-    
+
+    .input.error {
+        border-color: #dc2626;
+    }
+
+    .input.error:focus {
+        border-color: #dc2626;
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+    }
+
     .input:disabled {
-        background: #f7fafc;
+        background-color: #f3f4f6;
+        color: #6b7280;
         cursor: not-allowed;
-        opacity: 0.6;
-        transform: none;
     }
-    
-    .input-container.error .input {
-        border-color: #e53e3e;
-        background: rgba(255, 245, 245, 0.8);
+
+    .input:readonly {
+        background-color: #f9fafb;
+        cursor: default;
     }
-    
-    .input-container.error .input:focus {
-        border-color: #e53e3e;
-        box-shadow: 
-            0 0 0 3px rgba(229, 62, 62, 0.1),
-            0 4px 12px rgba(229, 62, 62, 0.08);
-    }
-    
-    .icon {
-        position: absolute;
-        right: 1rem;
-        color: #a0aec0;
-        pointer-events: none;
-        display: flex;
-        align-items: center;
-    }
-    
-    .input-container.focused .icon {
-        color: #667eea;
-    }
-    
-    .error-message {
+
+    /* Size variants */
+    .input-sm {
+        padding: 0.5rem;
         font-size: 0.875rem;
-        color: #e53e3e;
-        margin-top: 0.25rem;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    .error-message::before {
-        content: "⚠";
-        font-size: 0.75rem;
-    }
-    
-    /* Placeholder styling */
-    .input::placeholder {
-        color: #a0aec0;
-        transition: color 0.2s ease;
-    }
-    
-    .input:focus::placeholder {
-        color: #cbd5e0;
     }
 
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .input {
-            padding: 0.875rem 1rem;
-            font-size: 1rem;
-            border-radius: 10px;
-        }
-
-        .label {
-            font-size: 0.9rem;
-        }
-
-        .error-message {
-            font-size: 0.8rem;
-        }
+    .input-md {
+        padding: 0.75rem;
+        font-size: 1rem;
     }
 
-    @media (max-width: 480px) {
-        .input {
-            padding: 1rem 1.125rem;
-            font-size: 1.1rem;
-            border-radius: 8px;
-        }
-
-        .label {
-            font-size: 1rem;
-            margin-bottom: 0.375rem;
-        }
-
-        .error-message {
-            font-size: 0.875rem;
-        }
-
-        .icon {
-            right: 0.875rem;
-        }
+    .input-lg {
+        padding: 1rem;
+        font-size: 1.125rem;
     }
-</style> 
+
+    /* Style variants */
+    .input-default {
+        border: 1px solid #d1d5db;
+    }
+
+    .input-outlined {
+        border: 2px solid #e5e7eb;
+        background-color: transparent;
+    }
+
+    .input-outlined:focus {
+        border-color: #3b82f6;
+    }
+
+    .error-text {
+        color: #dc2626;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+    }
+
+    .helper-text {
+        color: #6b7280;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+    }
+
+    /* Hover effects */
+    .input:hover:not(:disabled):not(:focus) {
+        border-color: #9ca3af;
+    }
+</style>

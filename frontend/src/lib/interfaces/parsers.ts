@@ -1,4 +1,4 @@
-import { type AlunoModel, type ProfessorModel, type ProblemaModel, type TurmaModel, parseToProfessorModel, parseToAlunoModel, type CriteriosGroup, type Criterio, type AvaliacaoModel, type DefinicaoArquivoDeAvaliacao } from '$lib/interfaces/interfaces';
+import { type AlunoModel, type ProfessorModel, type ProblemaModel, type TurmaModel, parseToProfessorModel, parseToAlunoModel, type CriteriosGroup, type Criterio, type AvaliacaoModel, type DefinicaoArquivoDeAvaliacao, type DataEHoraDefinition } from '$lib/interfaces/interfaces';
 
 /**
  * Parses raw Supabase data into strongly typed interfaces
@@ -33,17 +33,28 @@ function parseProblema(data: any): ProblemaModel {
         ? definicao_arquivos_de_avaliacao_json.map((arquivo: any) => parseDefinicaoArquivoDeAvaliacao(arquivo))
         : [];
 
+    var data_e_hora_criterios_e_arquivos_json = data.data_e_hora_criterios_e_arquivos ? JSON.parse(data.data_e_hora_criterios_e_arquivos) : {};
+
+    // since it is a dictionary, we need to parse it
+    var data_e_hora_criterios_e_arquivos: { [tag: string]: DataEHoraDefinition } = {};
+
+    Object.keys(data_e_hora_criterios_e_arquivos_json).forEach((key: string) => {
+        data_e_hora_criterios_e_arquivos[key] = {
+            data_e_hora_inicio: new Date(data_e_hora_criterios_e_arquivos_json[key].data_e_hora_inicio),
+            data_e_hora_fim: new Date(data_e_hora_criterios_e_arquivos_json[key].data_e_hora_fim)
+        };
+    });
+
     return {
         id_problema: data.id_problema,
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
-        data_inicio: data.data_inicio ? new Date(data.data_inicio) : null,
-        data_fim: data.data_fim ? new Date(data.data_fim) : null,
         nome_problema: data.nome_problema || null,
         id_turma: data.id_turma || null,
         media_geral: data.media_geral || null,
         turma: data.turma ? parseTurma(data.turma) : null,
         criterios: data.criterios ? parseCriterios(data.criterios) : {},
-        definicao_arquivos_de_avaliacao: definicao_arquivos_de_avaliacao
+        definicao_arquivos_de_avaliacao: definicao_arquivos_de_avaliacao,
+        data_e_hora_criterios_e_arquivos: data_e_hora_criterios_e_arquivos
     };
 }
 

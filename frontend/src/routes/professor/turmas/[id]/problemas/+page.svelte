@@ -10,7 +10,7 @@
     import { ProblemasService } from "$lib/services/problemas_service";
     import { Parsers } from "$lib/interfaces/parsers";
     import type { ProblemaModel } from "$lib/interfaces/interfaces";
-    import { Utils } from "$lib/utils/utils";
+    import { DateUtils, Utils } from "$lib/utils/utils";
 
     const turmaId = $page.params.id;
 
@@ -159,10 +159,8 @@
                         <h3>{problema.nome_problema}</h3>
                         <div class="problema-details">
                             <span
-                                >Período: {Utils.formatDate(
-                                    problema.data_inicio || new Date(),
-                                )} - {Utils.formatDate(
-                                    problema.data_fim || new Date(),
+                                >Período: {DateUtils.getDateFromProblemaModel(
+                                    problema,
                                 )}</span
                             >
                             <!-- <span
@@ -268,13 +266,16 @@
         width: 100%;
         margin: 0 auto;
         padding: 2rem;
+        margin-top: 2.5rem;
+        box-sizing: border-box;
     }
 
     .header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
+        margin-bottom: 1.2rem;
+        gap: 0.7rem;
     }
 
     .title-section {
@@ -297,43 +298,45 @@
     }
 
     .header h1 {
-        font-size: 1.5rem;
-        font-weight: 600;
+        font-size: 1.3rem;
+        font-weight: 700;
         margin: 0;
+        text-align: left;
     }
 
     .problemas-list {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 0.7rem;
     }
 
     .problema-item {
         background: white;
         border: 1px solid #e9ecef;
-        border-radius: 8px;
-        padding: 1.5rem;
+        border-radius: 10px;
+        padding: 1rem 1.2rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 0.7rem;
     }
 
     .problema-info h3 {
-        font-size: 1.125rem;
+        font-size: 1.08rem;
         font-weight: 600;
-        margin: 0 0 0.5rem 0;
+        margin: 0 0 0.3rem 0;
     }
 
     .problema-details {
         display: flex;
-        gap: 1.5rem;
+        gap: 1rem;
         color: #6c757d;
-        font-size: 0.875rem;
+        font-size: 0.93rem;
     }
 
     .actions {
         display: flex;
-        gap: 0.5rem;
+        gap: 0.3rem;
         align-items: center;
     }
 
@@ -407,5 +410,58 @@
         justify-content: flex-end;
         gap: 1rem;
         margin-top: 2rem;
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            padding: 0.5rem;
+            margin-top: 3rem;
+        }
+        .header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.4rem;
+            margin-bottom: 0.7rem;
+        }
+        .header h1 {
+            font-size: 1.05rem;
+            text-align: center;
+        }
+        .title-section {
+            align-items: center;
+            gap: 0.2rem;
+        }
+        .problemas-list {
+            gap: 0.4rem;
+        }
+        .problema-item {
+            padding: 0.5rem 0.3rem;
+            border-radius: 8px;
+            font-size: 0.97rem;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.5rem;
+        }
+        .problema-info h3 {
+            font-size: 0.97rem;
+            margin-bottom: 0.1rem;
+        }
+        .problema-details {
+            gap: 0.3rem;
+            font-size: 0.9rem;
+        }
+        .actions {
+            gap: 0.1rem;
+            flex-direction: row;
+            justify-content: flex-end;
+        }
+        .header :global(button),
+        .header Button {
+            width: 100%;
+            min-width: 0;
+            padding: 0.5rem 0.2rem;
+            font-size: 0.97rem;
+            box-sizing: border-box;
+        }
     }
 </style>

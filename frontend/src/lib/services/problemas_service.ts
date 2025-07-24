@@ -89,11 +89,10 @@ async function getById(id: string, forceRefresh = false): Promise<ProblemaModel>
 
 async function create(problemaData: {
     nome_problema: string;
-    data_inicio: string;
-    data_fim: string;
     id_turma: number;
     criterios: string;
     definicao_arquivos_de_avaliacao?: string;
+    data_e_hora_criterios_e_arquivos?: string;
 }): Promise<ProblemaModel> {
     try {
         logger.info('Creating new problema', problemaData);
@@ -114,11 +113,10 @@ async function create(problemaData: {
 
 async function update(id: string, problemaData: {
     nome_problema: string;
-    data_inicio: string;
-    data_fim: string;
     id_turma: number;
     criterios: string;
     definicao_arquivos_de_avaliacao?: string;
+    data_e_hora_criterios_e_arquivos?: string;
 }): Promise<ProblemaModel> {
     try {
         logger.info(`Updating problema ${id}`, problemaData);
