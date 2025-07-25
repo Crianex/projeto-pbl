@@ -52,7 +52,9 @@
                 {@const renderResult = col.render(row)}
                 {#if Array.isArray(renderResult)}
                     {#each renderResult as item}
-                        {#if item.component === "a"}
+                        {#if typeof item === "string"}
+                            {item}
+                        {:else if item.component === "a"}
                             <Button
                                 variant={item.props.variant || "primary"}
                                 href={item.props.href}
@@ -66,7 +68,7 @@
                             <Button
                                 variant={item.props.variant || "primary"}
                                 class={item.props.class || ""}
-                                on:click={() => handleCellClick(col, row)}
+                                on:click={item.props.onClick}
                             >
                                 {typeof item.props.text === "string"
                                     ? item.props.text
@@ -84,6 +86,8 @@
                             {@html item}
                         {/if}
                     {/each}
+                {:else if typeof renderResult === "string"}
+                    {renderResult}
                 {:else if renderResult.component === "a"}
                     <Button
                         variant={renderResult.props.variant || "primary"}
@@ -98,7 +102,7 @@
                     <Button
                         variant={renderResult.props.variant || "primary"}
                         class={renderResult.props.class || ""}
-                        on:click={() => handleCellClick(col, row)}
+                        on:click={renderResult.props.onClick}
                     >
                         {typeof renderResult.props.text === "string"
                             ? renderResult.props.text
