@@ -220,9 +220,9 @@
         min-height: 100vh;
         background: linear-gradient(
             135deg,
-            #ffffff 0%,
-            #f8f9fa 50%,
-            #e9ecef 100%
+            var(--color-nature-background-light, #E3FBEC) 0%,
+            var(--color-bg-white, #ffffff) 50%,
+            var(--color-bg-light, #f8f9fa) 100%
         );
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
             sans-serif;
@@ -268,8 +268,8 @@
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%);
-        color: #4a5568;
+        background: linear-gradient(135deg, var(--color-nature-background, #E3FBEC) 0%, var(--color-nature-light, #22C55E) 100%);
+        color: var(--color-nature-dark, #014619);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -280,23 +280,23 @@
     }
 
     .step.active .step-icon {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--color-nature-gradient, linear-gradient(135deg, #168F41 0%, #22C55E 100%));
         color: white;
-        border-color: rgba(102, 126, 234, 0.3);
+        border-color: rgba(34, 197, 94, 0.3);
         box-shadow:
-            0 8px 20px rgba(102, 126, 234, 0.3),
-            0 4px 12px rgba(102, 126, 234, 0.2);
+            0 8px 20px rgba(34, 197, 94, 0.18),
+            0 4px 12px rgba(34, 197, 94, 0.12);
     }
 
     .step span {
         font-size: 0.875rem;
         font-weight: 500;
-        color: #4a5568;
+        color: var(--color-nature-dark, #014619);
         text-align: center;
     }
 
     .step.active span {
-        color: #2d3748;
+        color: var(--color-nature-main, #168F41);
         font-weight: 600;
     }
 
@@ -310,7 +310,7 @@
         width: 80px;
         height: 80px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #48bb78 0%, #38b2ac 100%);
+        background: var(--color-nature-gradient, linear-gradient(135deg, #168F41 0%, #22C55E 100%));
         color: white;
         display: flex;
         align-items: center;
@@ -319,8 +319,8 @@
         font-weight: bold;
         margin: 0 auto 2rem auto;
         box-shadow:
-            0 15px 35px rgba(72, 187, 120, 0.3),
-            0 8px 20px rgba(72, 187, 120, 0.2);
+            0 15px 35px rgba(34, 197, 94, 0.18),
+            0 8px 20px rgba(34, 197, 94, 0.12);
         animation: successBounce 0.6s ease-out;
     }
 
@@ -339,14 +339,14 @@
     }
 
     .success-container h1 {
-        color: #2d3748;
+        color: var(--color-nature-main, #168F41);
         font-size: 2rem;
         font-weight: 700;
         margin: 0 0 1rem 0;
     }
 
     .success-container p {
-        color: #4a5568;
+        color: var(--color-nature-dark, #014619);
         font-size: 1.1rem;
         margin: 0;
         opacity: 0.9;
