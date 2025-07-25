@@ -20,9 +20,6 @@
 
     function checkMobile() {
         isMobile = window.innerWidth < 768;
-        if (!isMobile && !sidebarOpen) {
-            sidebarOpen = true;
-        }
     }
 
     async function handleLogout() {
@@ -40,9 +37,7 @@
     }
 
     function closeSidebar() {
-        if (isMobile) {
-            sidebarOpen = false;
-        }
+        sidebarOpen = false;
     }
 
     // Navigation items based on user type
@@ -86,10 +81,9 @@
 
 <div class="layout">
     {#if userType !== "generic"}
-        <!-- Mobile menu button -->
+        <!-- Menu button -->
         <button
             class="mobile-menu-btn"
-            class:visible={isMobile}
             on:click={toggleSidebar}
             transition:fade
         >
@@ -110,8 +104,8 @@
     {/if}
 
     {#if userType !== "generic"}
-        <!-- Sidebar overlay for mobile -->
-        {#if sidebarOpen && isMobile}
+        <!-- Sidebar overlay -->
+        {#if sidebarOpen}
             <div
                 class="sidebar-overlay"
                 on:click={closeSidebar}
@@ -119,7 +113,7 @@
             ></div>
         {/if}
 
-        {#if !isMobile || sidebarOpen}
+        {#if sidebarOpen}
             <aside
                 class="sidebar"
                 class:open={sidebarOpen}
@@ -181,7 +175,7 @@
             ? 'blur(2px) grayscale(0.2)'
             : 'none'}; margin-left: {userType === 'generic'
             ? '0'
-            : '250px'}; {userType === 'generic'
+            : '0'}; {userType === 'generic'
             ? 'display: flex; align-items: center; justify-content: center; min-height: 100vh;'
             : ''}"
     >
@@ -207,7 +201,7 @@
     }
 
     .mobile-menu-btn {
-        display: none;
+        display: block;
         position: fixed;
         top: 1rem;
         left: 1rem;
@@ -220,10 +214,6 @@
         color: var(--color-layout-sidebar-text);
         box-shadow: 0 2px 4px var(--color-shadow-main);
         transition: all 0.2s ease;
-    }
-
-    .mobile-menu-btn.visible {
-        display: block;
     }
 
     .mobile-menu-btn:hover {
@@ -250,11 +240,12 @@
         height: 100vh;
         min-height: 100vh;
         overflow-y: visible;
-        padding-left: 1.2rem;
-        padding-right: 1.2rem;
+        padding-left: 0;
+        padding-right: 0;
         display: block;
         flex-direction: initial;
         align-items: initial;
+        transform: translateX(-100%);
     }
     .sidebar.mobile {
         transform: translateX(-100%);
@@ -262,8 +253,12 @@
     .sidebar.mobile.open {
         transform: translateX(0);
     }
+    .sidebar.open {
+        transform: translateX(0);
+    }
     .sidebar-content {
         width: 100%;
+        height: 100vh;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -280,6 +275,7 @@
         margin-bottom: 1.5rem;
         align-items: flex-start;
         width: 100%;
+        padding-top: 2rem;
     }
     nav a {
         display: flex;
@@ -288,7 +284,7 @@
         padding: 0.9rem 1.2rem;
         color: #222;
         text-decoration: none;
-        border-radius: 8px;
+        border-radius: 0;
         font-size: 1.08rem;
         font-weight: 500;
         transition:
@@ -313,7 +309,7 @@
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        padding-bottom: 0.5rem;
+        padding-bottom: 1rem;
         border: none !important;
         background: none !important;
         box-shadow: none !important;
@@ -329,7 +325,7 @@
         display: flex;
         align-items: center;
         gap: 1.1rem;
-        border-radius: 8px;
+        border-radius: 0;
         transition:
             background 0.18s,
             color 0.18s;
@@ -357,7 +353,7 @@
         flex: 1;
         background-color: var(--color-bg-white);
         overflow-y: scroll;
-        margin-left: 250px;
+        margin-left: 0;
         display: flex;
         align-items: flex-start;
     }
@@ -393,18 +389,6 @@
         .layout {
             overflow: scroll;
         }
-        .sidebar,
-        .sidebar-content,
-        nav,
-        .logout {
-            align-items: center;
-            text-align: center;
-        }
-        nav a,
-        .logout button {
-            justify-content: center;
-            text-align: center;
-        }
         .sidebar {
             width: 70vw;
             max-width: 260px;
@@ -420,16 +404,39 @@
             max-width: 260px;
         }
         .sidebar-content {
-            gap: 1rem;
-            padding: 0.5rem 0;
+            height: 100vh;
+            gap: 0;
+            padding: 0;
+            justify-content: space-between;
+            align-items: center;
         }
         nav {
             gap: 0.5rem;
+            padding-top: 3rem;
+            margin-bottom: 0;
+            flex: 1;
+            align-items: center;
+            width: 100%;
         }
-        nav a,
-        .logout button {
+        nav a {
+            justify-content: center;
+            text-align: center;
             padding: 0.75rem 0.5rem;
             font-size: 1rem;
+            align-items: center;
+        }
+        .logout {
+            padding-bottom: 2rem;
+            margin-top: auto;
+            align-items: center;
+            width: 100%;
+        }
+        .logout button {
+            justify-content: center;
+            text-align: center;
+            padding: 0.75rem 0.5rem;
+            font-size: 1rem;
+            align-items: center;
         }
         .sidebar-overlay {
             display: block;
@@ -456,37 +463,50 @@
         .sidebar {
             width: 100vw;
             max-width: 100vw;
-            padding: 0.75rem 0.25rem;
+            padding: 0;
         }
         .sidebar.mobile {
             width: 100vw;
             max-width: 100vw;
         }
-        nav a,
-        .logout button {
+        .sidebar-content {
+            height: 100vh;
+            gap: 0;
+            padding: 0;
+            justify-content: space-between;
+            align-items: center;
+        }
+        nav {
+            padding-top: 3rem;
+            margin-bottom: 0;
+            flex: 1;
+            align-items: center;
+            width: 100%;
+        }
+        nav a {
+            justify-content: center;
+            text-align: center;
             padding: 1rem 0.5rem;
             font-size: 1.05rem;
-        }
-        .sidebar-content,
-        nav,
-        .logout {
             align-items: center;
-            text-align: center;
         }
-        nav a,
+        .logout {
+            padding-bottom: 2rem;
+            margin-top: auto;
+            align-items: center;
+            width: 100%;
+        }
         .logout button {
             justify-content: center;
             text-align: center;
+            padding: 1rem 0.5rem;
+            font-size: 1.05rem;
+            align-items: center;
         }
         .main-content {
             align-items: center;
             justify-content: center;
         }
     }
-    @media (max-width: 768px) {
-        .sidebar {
-            padding-left: 0.5rem;
-            padding-right: 0.5rem;
-        }
-    }
+
 </style>
