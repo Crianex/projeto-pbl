@@ -4,6 +4,7 @@
     import Container from "$lib/components/Container.svelte";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
     import Toast from "$lib/components/Toast.svelte";
+    import BackButton from "$lib/components/BackButton.svelte";
     import { supabase } from "$lib/supabase";
     import { goto } from "$app/navigation";
     import { logger } from "$lib/utils/logger";
@@ -191,6 +192,7 @@
         shadow={true}
         needsContainerStyle={true}
     >
+        <BackButton on:click={() => goto('/')} />
         <div class="header">
             <h1>Criar Conta</h1>
             <p class="subtitle">Preencha os dados para se registrar</p>
@@ -362,6 +364,14 @@
     .header {
         text-align: center;
         margin-bottom: 2.5rem;
+        position: relative;
+    }
+
+    :global(.back-btn) {
+        position: absolute;
+        top: -3rem;
+        left: 0;
+        margin-bottom: 1rem;
     }
 
     .header h1 {

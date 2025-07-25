@@ -82,6 +82,12 @@
             key: "aluno",
             label: "Aluno",
             width: "30%",
+            render: (row: any) => `
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <img src="${row.aluno_avatar}" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
+                    <span>${row.aluno}</span>
+                </div>
+            `,
         },
         {
             key: "notas",
@@ -92,6 +98,12 @@
             key: "enviada_para",
             label: "Enviada para",
             width: "20%",
+            render: (row: any) => `
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <img src="${row.enviada_para_avatar}" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
+                    <span>${row.enviada_para}</span>
+                </div>
+            `,
         },
     ];
 
@@ -101,6 +113,12 @@
             key: "aluno",
             label: "Aluno",
             width: "30%",
+            render: (row: any) => `
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <img src="${row.aluno_avatar}" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
+                    <span>${row.aluno}</span>
+                </div>
+            `,
         },
         {
             key: "notas",
@@ -111,6 +129,12 @@
             key: "enviada_para",
             label: "Enviada para",
             width: "20%",
+            render: (row: any) => `
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <img src="${row.enviada_para_avatar}" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
+                    <span>${row.enviada_para}</span>
+                </div>
+            `,
         },
     ];
 
@@ -184,10 +208,12 @@
                     return {
                         id: av.id,
                         aluno: aluno?.nome_completo || "Aluno",
+                        aluno_avatar: aluno?.link_avatar || "/avatars/default.png",
                         notas: formatNotas(av.notas),
                         enviada_para:
                             alunoAvaliado?.nome_completo ||
                             "Aluno não encontrado",
+                        enviada_para_avatar: alunoAvaliado?.link_avatar || "/avatars/default.png",
                     };
                 });
 
@@ -205,8 +231,10 @@
                     return {
                         id: av.id,
                         aluno: alunoAvaliador?.nome_completo || "Aluno",
+                        aluno_avatar: alunoAvaliador?.link_avatar || "/avatars/default.png",
                         notas: formatNotas(av.notas),
                         enviada_para: aluno?.nome_completo || "Aluno",
+                        enviada_para_avatar: aluno?.link_avatar || "/avatars/default.png",
                     };
                 });
 

@@ -2,6 +2,7 @@
     import Button from "$lib/components/Button.svelte";
     import Input from "$lib/components/Input.svelte";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
+    import BackButton from "$lib/components/BackButton.svelte";
     import { supabase } from "$lib/supabase";
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
@@ -103,6 +104,7 @@
     />
 {:else}
     <div class="login-container">
+        <BackButton on:click={() => goto('/')} />
         <h1>Login</h1>
 
         {#if errorMessage}
@@ -227,6 +229,12 @@
         /* Remove glass effect */
         backdrop-filter: none;
     }
+
+    .login-container :global(.back-btn) {
+        margin-bottom: 1.5rem;
+    }
+
+
 
     .login-container:hover {
         box-shadow:
