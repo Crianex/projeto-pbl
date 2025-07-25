@@ -7,6 +7,7 @@
 
     export let open = false;
     export let exclude_turma_id: string | null = null;
+    export let exclude_aluno_ids: Array<string | number> = [];
 
     let searchQuery = "";
     let loading = false;
@@ -50,6 +51,7 @@
                 limit: pageSize,
                 offset,
                 exclude_turma_id,
+                exclude_aluno_ids: exclude_aluno_ids.map(String),
                 order: "nome_completo.asc",
             });
             if (newAlunos.length < pageSize) {
@@ -89,9 +91,16 @@
     }
 
     function handleAddSelected() {
-        const selectedAlunos = results.filter((a) =>
-            selected.has(a.id.toString()),
-        );
+        const selectedAlunos = results
+            .filter((a) => selected.has(a.id.toString()))
+            .map((a) => ({
+                ...a,
+                id: a.id,
+                id_aluno: a.id, // for compatibility
+                nome_completo: a.nome_completo,
+                email: a.email,
+                link_avatar: a.link_avatar,
+            }));
         dispatch("select", selectedAlunos);
         handleClose();
     }

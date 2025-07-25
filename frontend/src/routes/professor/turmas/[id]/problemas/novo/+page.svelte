@@ -32,9 +32,11 @@
         } = {};
         Object.keys(defaultCriterios).forEach((tag) => {
             result[tag] = {
-                data_e_hora_inicio: new Date(),
-                data_e_hora_fim: new Date(
+                data_e_hora_inicio: new Date(
                     new Date().getTime() + 60 * 60 * 1000,
+                ),
+                data_e_hora_fim: new Date(
+                    new Date().getTime() + 2 * 60 * 60 * 1000,
                 ),
             };
         });
@@ -140,6 +142,10 @@
             loading = true;
             error = null;
 
+            console.log(
+                "Salvando data_e_hora_criterios_e_arquivos:",
+                formData.data_e_hora_criterios_e_arquivos,
+            );
             const payload = {
                 ...formData,
                 id_turma: parseInt(turmaId),
@@ -172,55 +178,63 @@
 {#if loading}
     <LoadingSpinner message="Carregando..." />
 {:else}
-        <PageHeader
-            backUrl="/professor/turmas/{turmaId}/problemas"
-            backText="Voltar para problemas"
-            title="Novo Problema"
+    <PageHeader
+        backUrl="/professor/turmas/{turmaId}/problemas"
+        backText="Voltar para problemas"
+        title="Novo Problema"
+    />
+    <form on:submit|preventDefault={handleSubmit} class="form">
+        {#if error}
+            <div class="error-message">
+                {error}
+            </div>
+        {/if}
+
+        <div class="form-group">
+            <Input
+                type="text"
+                id="nome_problema"
+                label="Nome do Problema"
+                bind:value={formData.nome_problema}
+                required
+            />
+        </div>
+
+        <!-- Removed DateRangeInput for data_inicio and data_fim -->
+
+        <CriteriosForm
+            bind:criterios={formData.criterios}
+            bind:dataEHoraCriteriosEArquivos={
+                formData.data_e_hora_criterios_e_arquivos
+            }
         />
-        <form on:submit|preventDefault={handleSubmit} class="form">
-            {#if error}
-                <div class="error-message">
-                    {error}
-                </div>
-            {/if}
 
-            <div class="form-group">
-                <Input
-                    type="text"
-                    id="nome_problema"
-                    label="Nome do Problema"
-                    bind:value={formData.nome_problema}
-                    required
-                />
-            </div>
+        <ArquivosForm
+            bind:definicoes={formData.definicao_arquivos_de_avaliacao}
+            dataEHoraCriteriosEArquivos={formData.data_e_hora_criterios_e_arquivos}
+            on:changeDataEHoraCriteriosEArquivos={(e) => {
+                console.log(
+                    `Changing data_e_hora_criterios_e_arquivos to: ${JSON.stringify(
+                        e.detail,
+                    )}`,
+                );
+                formData.data_e_hora_criterios_e_arquivos = e.detail;
+            }}
+        />
 
-            <!-- Removed DateRangeInput for data_inicio and data_fim -->
-
-            <CriteriosForm
-                bind:criterios={formData.criterios}
-                bind:dataEHoraCriteriosEArquivos={
-                    formData.data_e_hora_criterios_e_arquivos
-                }
-            />
-
-            <ArquivosForm
-                bind:definicoes={formData.definicao_arquivos_de_avaliacao}
-            />
-
-            <div class="form-actions">
-                <Button
-                    type="button"
-                    variant="secondary"
-                    on:click={() =>
-                        goto(`/professor/turmas/${turmaId}/problemas`)}
-                >
-                    Cancelar
-                </Button>
-                <Button type="submit" variant="primary" disabled={loading}>
-                    {loading ? "Criando..." : "Criar Problema"}
-                </Button>
-            </div>
-        </form>
+        <div class="form-actions">
+            <Button
+                type="button"
+                variant="secondary"
+                on:click={() => goto(`/professor/turmas/${turmaId}/problemas`)}
+            >
+                Cancelar
+            </Button>
+            <Button type="submit" variant="primary" disabled={loading}>
+                {loading ? "Criando..." : "Criar Problema"}
+            </Button>
+        </div>
+    </form>
 {/if}
 
 <style>

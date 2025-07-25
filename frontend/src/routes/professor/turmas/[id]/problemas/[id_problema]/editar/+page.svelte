@@ -77,7 +77,10 @@
                                             .data_e_hora_criterios_e_arquivos[
                                             tag
                                         ].data_e_hora_inicio
-                                      : new Date(),
+                                      : new Date(
+                                            new Date().getTime() +
+                                                60 * 60 * 1000,
+                                        ),
                                   data_e_hora_fim: problema!
                                       .data_e_hora_criterios_e_arquivos[tag]
                                       .data_e_hora_fim
@@ -85,11 +88,18 @@
                                             .data_e_hora_criterios_e_arquivos[
                                             tag
                                         ].data_e_hora_fim
-                                      : new Date(),
+                                      : new Date(
+                                            new Date().getTime() +
+                                                2 * 60 * 60 * 1000,
+                                        ),
                               }
                             : {
-                                  data_e_hora_inicio: new Date(),
-                                  data_e_hora_fim: new Date(),
+                                  data_e_hora_inicio: new Date(
+                                      new Date().getTime() + 60 * 60 * 1000,
+                                  ),
+                                  data_e_hora_fim: new Date(
+                                      new Date().getTime() + 2 * 60 * 60 * 1000,
+                                  ),
                               },
                     ]),
                 ),
@@ -108,6 +118,10 @@
             saving = true;
             error = null;
 
+            console.log(
+                "Salvando data_e_hora_criterios_e_arquivos:",
+                formData.data_e_hora_criterios_e_arquivos,
+            );
             const payload = {
                 ...formData,
                 id_problema: parseInt(problemaId),

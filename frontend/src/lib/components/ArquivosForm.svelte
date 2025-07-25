@@ -22,6 +22,29 @@
         }
     }
 
+    $: {
+        for (const definicao of definicoes) {
+            const nome_tipo = definicao.nome_tipo || "";
+            if (nome_tipo && !dataEHoraCriteriosEArquivos[nome_tipo]) {
+                dataEHoraCriteriosEArquivos = {
+                    ...dataEHoraCriteriosEArquivos,
+                    [nome_tipo]: {
+                        data_e_hora_inicio: new Date(
+                            new Date().getTime() + 60 * 60 * 1000,
+                        ),
+                        data_e_hora_fim: new Date(
+                            new Date().getTime() + 2 * 60 * 60 * 1000,
+                        ),
+                    },
+                };
+                dispatch(
+                    "changeDataEHoraCriteriosEArquivos",
+                    dataEHoraCriteriosEArquivos,
+                );
+            }
+        }
+    }
+
     function addDefinicaoArquivo() {
         const defaultName = "";
         definicoes = [
@@ -82,8 +105,9 @@
     }
 
     function handleChangeInicio(nome_tipo: string) {
-        return (e: Event) => {
-            const value = (e.target as HTMLInputElement).value;
+        return (e: CustomEvent<string>) => {
+            if (!dataEHoraCriteriosEArquivos[nome_tipo]) return;
+            const value = e.detail;
             dataEHoraCriteriosEArquivos[nome_tipo].data_e_hora_inicio =
                 new Date(value);
             if (
@@ -103,8 +127,9 @@
     }
 
     function handleChangeFim(nome_tipo: string) {
-        return (e: Event) => {
-            const value = (e.target as HTMLInputElement).value;
+        return (e: CustomEvent<string>) => {
+            if (!dataEHoraCriteriosEArquivos[nome_tipo]) return;
+            const value = e.detail;
             dataEHoraCriteriosEArquivos[nome_tipo].data_e_hora_fim = new Date(
                 value,
             );
@@ -287,6 +312,9 @@
     }
 
     .arquivo-item {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
         background: white;
         padding: 1rem;
         border-bottom: 1px solid #e9ecef;
@@ -301,6 +329,12 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 1rem;
+    }
+
+    .arquivo-datetime {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
     }
 
     .tipos-arquivos {

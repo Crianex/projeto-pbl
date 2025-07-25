@@ -53,17 +53,17 @@
         searchDialogOpen = true;
     }
 
-    function handleAlunoSelected(
-        event: CustomEvent<{
-            id_aluno: number;
-            nome_completo: string;
-            email: string;
-        }>,
-    ) {
-        const aluno = event.detail;
-        // Check if student is already added
-        if (!alunosMatriculados.some((a) => a.id_aluno === aluno.id_aluno)) {
-            alunosMatriculados = [...alunosMatriculados, aluno];
+    function handleAlunoSelected(event: CustomEvent<any[]>) {
+        const alunos = event.detail;
+        for (const aluno of alunos) {
+            const alunoId = aluno.id_aluno ?? aluno.id;
+            if (
+                !alunosMatriculados.some(
+                    (a) => (a.id_aluno ?? a.id) === alunoId,
+                )
+            ) {
+                alunosMatriculados = [...alunosMatriculados, aluno];
+            }
         }
     }
 
@@ -74,109 +74,106 @@
     }
 </script>
 
-    <div class="header">
-        <h1>Nova Turma</h1>
+<div class="header">
+    <h1>Nova Turma</h1>
+</div>
+
+{#if error}
+    <div class="error">
+        <p>{error}</p>
+        <Button variant="secondary" on:click={() => (error = null)}
+            >Tentar novamente</Button
+        >
     </div>
-
-    {#if error}
-        <div class="error">
-            <p>{error}</p>
-            <Button variant="secondary" on:click={() => (error = null)}
-                >Tentar novamente</Button
-            >
+{:else}
+    <form on:submit|preventDefault={handleSubmit} class="form">
+        <div class="form-group">
+            <label for="nome_turma">Nome da Turma</label>
+            <input
+                type="text"
+                id="nome_turma"
+                bind:value={nomeTurma}
+                required
+                placeholder="Digite o nome da turma"
+            />
         </div>
-    {:else}
-        <form on:submit|preventDefault={handleSubmit} class="form">
-            <div class="form-group">
-                <label for="nome_turma">Nome da Turma</label>
-                <input
-                    type="text"
-                    id="nome_turma"
-                    bind:value={nomeTurma}
-                    required
-                    placeholder="Digite o nome da turma"
-                />
-            </div>
 
-            <div class="alunos-section">
-                <h2>Alunos matriculados</h2>
+        <div class="alunos-section">
+            <h2>Alunos matriculados</h2>
 
-                {#if alunosMatriculados.length > 0}
-                    <div class="alunos-list">
-                        {#each alunosMatriculados as aluno}
-                            <div class="aluno-item">
-                                <div class="aluno-info">
-                                    <img
-                                        src="https://via.placeholder.com/32"
-                                        alt="Avatar"
-                                        class="avatar"
-                                    />
-                                    <div class="aluno-details">
-                                        <span class="nome"
-                                            >{aluno.nome_completo}</span
-                                        >
-                                        <span class="email">{aluno.email}</span>
-                                    </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    class="more-options"
-                                    on:click={() =>
-                                        handleRemoveAluno(aluno.id_aluno)}
-                                    title="Remover aluno"
-                                >
-                                    <svg
-                                        width="24"
-                                        height="24"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
+            {#if alunosMatriculados.length > 0}
+                <div class="alunos-list">
+                    {#each alunosMatriculados as aluno}
+                        <div class="aluno-item">
+                            <div class="aluno-info">
+                                <img
+                                    src="https://via.placeholder.com/32"
+                                    alt="Avatar"
+                                    class="avatar"
+                                />
+                                <div class="aluno-details">
+                                    <span class="nome"
+                                        >{aluno.nome_completo}</span
                                     >
-                                        <path
-                                            d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
-                                            fill="currentColor"
-                                        />
-                                    </svg>
-                                </button>
+                                    <span class="email">{aluno.email}</span>
+                                </div>
                             </div>
-                        {/each}
-                    </div>
-                {/if}
+                            <button
+                                type="button"
+                                class="more-options"
+                                on:click={() =>
+                                    handleRemoveAluno(aluno.id_aluno)}
+                                title="Remover aluno"
+                            >
+                                <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+                                        fill="currentColor"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                    {/each}
+                </div>
+            {/if}
 
-                <Button
-                    variant="secondary"
-                    type="button"
-                    on:click={handleAddAluno}
-                >
-                    + Adicionar aluno
-                </Button>
-            </div>
+            <Button variant="secondary" type="button" on:click={handleAddAluno}>
+                + Adicionar aluno
+            </Button>
+        </div>
 
-            <div class="actions">
-                <Button
-                    variant="secondary"
-                    on:click={() => goto("/professor/turmas")}
-                    disabled={saving}
-                >
-                    Cancelar
-                </Button>
-                <Button
-                    variant="primary"
-                    type="submit"
-                    loading={saving}
-                    disabled={saving}
-                >
-                    {saving ? "Salvando..." : "Salvar"}
-                </Button>
-            </div>
-        </form>
-    {/if}
+        <div class="actions">
+            <Button
+                variant="secondary"
+                on:click={() => goto("/professor/turmas")}
+                disabled={saving}
+            >
+                Cancelar
+            </Button>
+            <Button
+                variant="primary"
+                type="submit"
+                loading={saving}
+                disabled={saving}
+            >
+                {saving ? "Salvando..." : "Salvar"}
+            </Button>
+        </div>
+    </form>
+{/if}
 
 <SearchAlunoDialog
     open={searchDialogOpen}
     on:close={() => (searchDialogOpen = false)}
     on:select={handleAlunoSelected}
     exclude_turma_id={null}
+    exclude_aluno_ids={alunosMatriculados.map((a) => a.id_aluno || a.id)}
 />
 
 <style>

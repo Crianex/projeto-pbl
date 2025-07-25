@@ -63,8 +63,12 @@ async function getByProblema(problemaId: string, forceRefresh = false): Promise<
         avaliacoesCache.setLoading(cacheKey, true);
         logger.info(`Fetching avaliacoes for problema ${problemaId} from API`);
         const data = await api.get(`/avaliacoes/list?id_problema=${problemaId}`);
-        avaliacoesCache.setData(cacheKey, data);
-        return data;
+        // parse data to AvaliacaoModel[]
+        const parsedData = data.map((avaliacao: AvaliacaoDB) =>
+            Parsers.parseAvaliacao(avaliacao)
+        );
+        avaliacoesCache.setData(cacheKey, parsedData);
+        return parsedData;
     } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Failed to fetch avaliacoes';
         avaliacoesCache.setError(cacheKey, errorMsg);

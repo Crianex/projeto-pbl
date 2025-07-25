@@ -208,6 +208,8 @@
                 true,
             );
 
+            console.log(`allAvaliacoes: ${JSON.stringify(allAvaliacoes)}`);
+
             // 2. Filter for duplicates
             let duplicates = [];
             if (isProfessorEvaluation) {
@@ -215,16 +217,16 @@
                     (av) =>
                         av.id_problema === parseInt(id_problema) &&
                         av.id_professor === parseInt(id_professor!) &&
-                        av.avaliado?.id_aluno ===
+                        av.aluno_avaliado?.id ===
                             parseInt(id_aluno_avaliado || "0"),
                 );
             } else {
                 duplicates = allAvaliacoes.filter(
                     (av) =>
                         av.id_problema === parseInt(id_problema) &&
-                        av.avaliador?.id_aluno ===
+                        av.aluno_avaliador?.id ===
                             parseInt(id_aluno_avaliador!) &&
-                        av.avaliado?.id_aluno ===
+                        av.aluno_avaliado?.id ===
                             parseInt(id_aluno_avaliado || "0"),
                 );
 
