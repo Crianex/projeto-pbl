@@ -39,7 +39,7 @@
                         ({ tag, date, isActive }) =>
                             `<span class=\"tag-status ${isActive ? "tag-green" : "tag-red"}\">${tag}: ${date}</span>`,
                     )
-                    .join("<br><br>");
+                    .join(Utils.isMobile() ? "<br>" : "<br><br>");
                 return { component: "html", props: { html } };
             },
         },
@@ -55,7 +55,7 @@
                         ({ tag, date, isActive }) =>
                             `<span class=\"tag-status ${isActive ? "tag-green" : "tag-red"}\">${tag}: ${date}</span>`,
                     )
-                    .join("<br><br>");
+                    .join(Utils.isMobile() ? "<br>" : "<br><br>");
                 return { component: "html", props: { html } };
             },
         },

@@ -365,33 +365,13 @@
     }
     @media (max-width: 768px) {
         .main-card {
-            padding: 1.2rem 0.5rem;
             margin: 1.2rem 0.2rem;
             max-width: 100vw;
             border-radius: 16px;
         }
-    }
-    @media (max-width: 640px) {
-        .main-card {
-            padding-left: 1rem;
-            padding-right: 1rem;
-            padding-top: 1.5rem;
-            padding-bottom: 1.5rem;
-            border-radius: 12px;
+        .layout {
+            overflow: scroll;
         }
-    }
-    @media (max-width: 480px) {
-        .main-card {
-            padding-left: 0.5rem;
-            padding-right: 0.5rem;
-            padding-top: 0.75rem;
-            padding-bottom: 0.75rem;
-            max-width: 100%;
-            margin: 0;
-            border-radius: 12px;
-        }
-    }
-    @media (max-width: 768px) {
         .sidebar,
         .sidebar-content,
         nav,
@@ -447,6 +427,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            height: fit-content;
         }
     }
     @media (max-width: 480px) {

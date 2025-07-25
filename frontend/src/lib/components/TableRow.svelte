@@ -7,10 +7,22 @@
     export let selected: boolean = false;
     export let onToggleSelect: ((id: number) => void) | null = null;
 
+    // Type guard for RenderObject
+    function isRenderObject(
+        obj: any,
+    ): obj is { component: string; props: Record<string, any> } {
+        return (
+            obj &&
+            typeof obj === "object" &&
+            "component" in obj &&
+            "props" in obj
+        );
+    }
+
     function handleCellClick(col: Column, row: any) {
         if (col.render && typeof col.render === "function") {
             const renderResult = col.render(row);
-            if (renderResult?.props?.onClick) {
+            if (isRenderObject(renderResult) && renderResult.props?.onClick) {
                 renderResult.props.onClick();
             }
         }
@@ -54,7 +66,7 @@
                     {#each renderResult as item}
                         {#if typeof item === "string"}
                             {item}
-                        {:else if item.component === "a"}
+                        {:else if isRenderObject(item) && item.component === "a"}
                             <Button
                                 variant={item.props.variant || "primary"}
                                 href={item.props.href}
@@ -64,7 +76,7 @@
                                     item.props.text ||
                                     ""}
                             </Button>
-                        {:else if item.component === "button" || item.component === "Button"}
+                        {:else if isRenderObject(item) && (item.component === "button" || item.component === "Button")}
                             <Button
                                 variant={item.props.variant || "primary"}
                                 class={item.props.class || ""}
@@ -74,13 +86,13 @@
                                     ? item.props.text
                                     : String(item.props.text || "")}
                             </Button>
-                        {:else if item.component === "span"}
+                        {:else if isRenderObject(item) && item.component === "span"}
                             <span class={item.props.class || ""}>
                                 {typeof item.props.text === "string"
                                     ? item.props.text
                                     : String(item.props.text || "")}
                             </span>
-                        {:else if item.component === "html"}
+                        {:else if isRenderObject(item) && item.component === "html"}
                             {@html item.props.html}
                         {:else}
                             {@html item}
@@ -88,7 +100,7 @@
                     {/each}
                 {:else if typeof renderResult === "string"}
                     {renderResult}
-                {:else if renderResult.component === "a"}
+                {:else if isRenderObject(renderResult) && renderResult.component === "a"}
                     <Button
                         variant={renderResult.props.variant || "primary"}
                         href={renderResult.props.href}
@@ -98,7 +110,7 @@
                             renderResult.props.text ||
                             ""}
                     </Button>
-                {:else if renderResult.component === "button" || renderResult.component === "Button"}
+                {:else if isRenderObject(renderResult) && (renderResult.component === "button" || renderResult.component === "Button")}
                     <Button
                         variant={renderResult.props.variant || "primary"}
                         class={renderResult.props.class || ""}
@@ -108,13 +120,13 @@
                             ? renderResult.props.text
                             : String(renderResult.props.text || "")}
                     </Button>
-                {:else if renderResult.component === "span"}
+                {:else if isRenderObject(renderResult) && renderResult.component === "span"}
                     <span class={renderResult.props.class || ""}>
                         {typeof renderResult.props.text === "string"
                             ? renderResult.props.text
                             : String(renderResult.props.text || "")}
                     </span>
-                {:else if renderResult.component === "html"}
+                {:else if isRenderObject(renderResult) && renderResult.component === "html"}
                     {@html renderResult.props.html}
                 {:else}
                     {@html renderResult}
