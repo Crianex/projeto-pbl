@@ -72,27 +72,14 @@
             key: "actions",
             label: "Ações",
             render: (row: ProblemaModel) => {
-                const isAvailable = DateUtils.isNowWithinAnyDateRange(row);
-                if (isAvailable) {
-                    return {
-                        component: "a",
-                        props: {
-                            href: `/aluno/problemas/${row.id_problema}`,
-                            class: "btn-action",
-                            textContent: "Ver Problema",
-                        },
-                    };
-                } else {
-                    return {
-                        component: "Button",
-                        props: {
-                            text: "Fora do período",
-                            disabled: true,
-                            variant: "secondary",
-                            class: "btn-action",
-                        },
-                    };
-                }
+                return {
+                    component: "a",
+                    props: {
+                        href: `/aluno/problemas/${row.id_problema}`,
+                        class: "btn-action",
+                        textContent: "Ver Problema",
+                    },
+                };
             },
         },
     ];

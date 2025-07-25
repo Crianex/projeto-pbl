@@ -73,15 +73,15 @@
                     allTags.map((tag) => [
                         tag,
                         problema!.data_e_hora_criterios_e_arquivos &&
-                        problema!.data_e_hora_criterios_e_arquivos[tag]
+                        problema!.data_e_hora_criterios_e_arquivos[tag!]
                             ? {
                                   data_e_hora_inicio:
                                       problema!
-                                          .data_e_hora_criterios_e_arquivos[tag]
+                                          .data_e_hora_criterios_e_arquivos[tag!]
                                           .data_e_hora_inicio ?? new Date(),
                                   data_e_hora_fim:
                                       problema!
-                                          .data_e_hora_criterios_e_arquivos[tag]
+                                          .data_e_hora_criterios_e_arquivos[tag!]
                                           .data_e_hora_fim ?? new Date(),
                               }
                             : {
