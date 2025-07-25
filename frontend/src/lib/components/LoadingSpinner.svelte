@@ -1,7 +1,7 @@
 <script lang="ts">
     export let message: string = "";
     export let size: "sm" | "md" | "lg" = "md";
-    export let color: "primary" | "secondary" | "gray" = "primary";
+    export let color: "primary" | "secondary" | "gray" | "nature" = "primary";
     export let overlay: boolean = false;
 
     // Map size prop to rem values
@@ -17,6 +17,7 @@
         primary: "#3b82f6", // blue-500
         secondary: "#38b2ac", // teal-400
         gray: "#a0aec0", // gray-400
+        nature: "var(--color-nature-main)",
     };
     $: spinnerColor = colorMap[color] || colorMap.primary;
 </script>

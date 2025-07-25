@@ -167,7 +167,7 @@
 {#if loading}
     <Container maxWidth="md" glass={true} shadow={true}>
         <div class="callback-container">
-            <LoadingSpinner size="lg" color="primary" message={loadingText} />
+            <LoadingSpinner size="lg" color="nature" message={loadingText} />
 
             <div class="progress-steps">
                 <div
