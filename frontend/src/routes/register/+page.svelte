@@ -75,22 +75,10 @@
         !confirmPasswordError;
     $: formTouched = name || email || password || confirmPassword;
 
-    $: missingFields = [] as string[];
-    if (formTouched) {
-        if (!name) missingFields.push("Nome completo");
-        else if (nameError) missingFields.push(nameError);
-
-        if (!email) missingFields.push("E-mail");
-        else if (emailError) missingFields.push(emailError);
-
-        if (!password) missingFields.push("Senha");
-        else if (passwordError) missingFields.push(passwordError);
-
-        if (!confirmPassword) missingFields.push("Confirmação de senha");
-        else if (confirmPasswordError) missingFields.push(confirmPasswordError);
-    }
+    let triedSubmit = false;
 
     async function handleRegister() {
+        triedSubmit = true;
         if (!formValid) return;
 
         loading = true;
@@ -216,7 +204,7 @@
                     label="Nome completo"
                     bind:value={name}
                     placeholder="Digite seu nome completo"
-                    error={nameError}
+                    error={triedSubmit ? nameError : ""}
                     required
                     disabled={loading}
                     autocomplete="name"
@@ -230,7 +218,7 @@
                     label="E-mail"
                     bind:value={email}
                     placeholder="seu@email.com"
-                    error={emailError}
+                    error={triedSubmit ? emailError : ""}
                     required
                     disabled={loading}
                     autocomplete="email"
@@ -244,7 +232,7 @@
                     label="Senha"
                     bind:value={password}
                     placeholder="Digite uma senha segura"
-                    error={passwordError}
+                    error={triedSubmit ? passwordError : ""}
                     required
                     disabled={loading}
                     autocomplete="new-password"
@@ -265,7 +253,7 @@
                     label="Confirmar senha"
                     bind:value={confirmPassword}
                     placeholder="Digite sua senha novamente"
-                    error={confirmPasswordError}
+                    error={triedSubmit ? confirmPasswordError : ""}
                     required
                     disabled={loading}
                     autocomplete="new-password"
@@ -276,24 +264,13 @@
                 <Button
                     type="submit"
                     variant="primary"
-                    disabled={!formValid || loading}
+                    disabled={loading}
                     {loading}
                 >
                     {loading ? "Criando conta..." : "Criar conta"}
                 </Button>
             </div>
         </form>
-
-        {#if !formValid && formTouched}
-            <div class="form-warning">
-                <div>Por favor, corrija os seguintes itens:</div>
-                <ul>
-                    {#each missingFields as field}
-                        <li>• {field}</li>
-                    {/each}
-                </ul>
-            </div>
-        {/if}
 
         <div class="divider">
             <span>ou registre-se com</span>

@@ -47,6 +47,15 @@
     export function blur() {
         if (inputElement) inputElement.blur();
     }
+
+    function handleInput(e: Event) {
+        const target = e.target as HTMLInputElement | null;
+        if (target) {
+            value = target.value;
+            dispatch("input", value);
+        }
+    }
+
     onMount(() => {
         if (inputElement && type === "datetime-local") {
             console.log(`value: ${value}`);
@@ -66,10 +75,7 @@
             type="text"
             bind:this={inputElement}
             {value}
-            on:input={(e) => {
-                value = e.target.value;
-                dispatch("input", value);
-            }}
+            on:input={handleInput}
             {id}
             {name}
             {placeholder}
@@ -90,10 +96,7 @@
             type="number"
             bind:this={inputElement}
             {value}
-            on:input={(e) => {
-                value = e.target.value;
-                dispatch("input", value);
-            }}
+            on:input={handleInput}
             {id}
             {name}
             {placeholder}
@@ -114,10 +117,7 @@
             type="datetime-local"
             bind:this={inputElement}
             {value}
-            on:input={(e) => {
-                value = e.target.value;
-                dispatch("input", value);
-            }}
+            on:input={handleInput}
             {id}
             {name}
             {placeholder}
@@ -138,10 +138,7 @@
             {type}
             bind:this={inputElement}
             {value}
-            on:input={(e) => {
-                value = e.target.value;
-                dispatch("input", value);
-            }}
+            on:input={handleInput}
             {id}
             {name}
             {placeholder}

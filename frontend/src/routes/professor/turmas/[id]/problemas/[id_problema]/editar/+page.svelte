@@ -121,10 +121,6 @@
                 ),
             };
 
-            console.log(
-                `Updating problema with payload: ${JSON.stringify(payload)}`,
-            );
-
             // Use the service instead of raw API call
             const updatedProblema = await ProblemasService.update(
                 problemaId,
@@ -183,9 +179,15 @@
 
         <CriteriosForm
             bind:criterios={formData.criterios}
-            bind:dataEHoraCriteriosEArquivos={
-                formData.data_e_hora_criterios_e_arquivos
-            }
+            dataEHoraCriteriosEArquivos={formData.data_e_hora_criterios_e_arquivos}
+            on:changeDataEHoraCriteriosEArquivos={(e) => {
+                console.log(
+                    `Changing data_e_hora_criterios_e_arquivos to: ${JSON.stringify(
+                        e.detail,
+                    )}`,
+                );
+                formData.data_e_hora_criterios_e_arquivos = e.detail;
+            }}
         />
 
         <ArquivosForm

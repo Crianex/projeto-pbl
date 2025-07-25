@@ -4,6 +4,7 @@
     import TextArea from "./TextArea.svelte";
     import type { CriteriosGroup } from "$lib/interfaces/interfaces";
     import { formatToDateTime, parseToDate } from "brazilian-values";
+    import { createEventDispatcher } from "svelte";
 
     export let criterios: CriteriosGroup = {};
     export let dataEHoraCriteriosEArquivos: {
@@ -12,6 +13,8 @@
             data_e_hora_fim: Date;
         };
     } = {};
+
+    const dispatch = createEventDispatcher();
 
     function addCriterioGroup() {
         const newGroupName = prompt("Nome do novo grupo de critérios:");
@@ -29,6 +32,10 @@
                     ),
                 },
             };
+            dispatch(
+                "changeDataEHoraCriteriosEArquivos",
+                dataEHoraCriteriosEArquivos,
+            );
         }
     }
 
@@ -54,6 +61,10 @@
             const { [groupName]: removedTime, ...restTimes } =
                 dataEHoraCriteriosEArquivos;
             dataEHoraCriteriosEArquivos = restTimes;
+            dispatch(
+                "changeDataEHoraCriteriosEArquivos",
+                dataEHoraCriteriosEArquivos,
+            );
         } else {
             criterios = { ...criterios };
         }
@@ -71,6 +82,10 @@
             const { [oldName]: removedTime, ...restTimes } =
                 dataEHoraCriteriosEArquivos;
             dataEHoraCriteriosEArquivos = { ...restTimes, [newName]: dateTime };
+            dispatch(
+                "changeDataEHoraCriteriosEArquivos",
+                dataEHoraCriteriosEArquivos,
+            );
         }
     }
 
@@ -95,43 +110,62 @@
         const { [groupName]: removedTime, ...restTimes } =
             dataEHoraCriteriosEArquivos;
         dataEHoraCriteriosEArquivos = restTimes;
+        dispatch(
+            "changeDataEHoraCriteriosEArquivos",
+            dataEHoraCriteriosEArquivos,
+        );
     }
 
     function handleChangeInicio(groupName: string) {
-        return (e: Event) => {
-            const value = (e.target as HTMLInputElement).value;
+        return (e: CustomEvent<string>) => {
+            const value = e.detail;
+            console.log(
+                `Changing data_e_hora_inicio to: ${value} for group ${groupName}`,
+            );
             dataEHoraCriteriosEArquivos[groupName].data_e_hora_inicio =
-                parseToDate(value);
+                new Date(value);
             // Auto-update end if it's before start
             if (
                 dataEHoraCriteriosEArquivos[groupName].data_e_hora_fim &&
-                parseToDate(value) >
+                new Date(value) >
                     dataEHoraCriteriosEArquivos[groupName].data_e_hora_fim
             ) {
                 dataEHoraCriteriosEArquivos[groupName].data_e_hora_fim =
-                    parseToDate(value);
+                    new Date(value);
             }
             // Trigger reactivity
             dataEHoraCriteriosEArquivos = { ...dataEHoraCriteriosEArquivos };
+            dispatch(
+                "changeDataEHoraCriteriosEArquivos",
+                dataEHoraCriteriosEArquivos,
+            );
         };
     }
 
     function handleChangeFim(groupName: string) {
-        return (e: Event) => {
-            const value = (e.target as HTMLInputElement).value;
-            dataEHoraCriteriosEArquivos[groupName].data_e_hora_fim =
-                parseToDate(value);
+        return (e: CustomEvent<string>) => {
+            const value = e.detail;
+            console.log(
+                `Changing data_e_hora_fim to: ${value} for group ${groupName}`,
+            );
+            dataEHoraCriteriosEArquivos[groupName].data_e_hora_fim = new Date(
+                value,
+            );
             // Auto-update start if it's after end
             if (
                 dataEHoraCriteriosEArquivos[groupName].data_e_hora_inicio &&
-                parseToDate(value) <
+                new Date(value) <
                     dataEHoraCriteriosEArquivos[groupName].data_e_hora_inicio
             ) {
                 dataEHoraCriteriosEArquivos[groupName].data_e_hora_inicio =
-                    parseToDate(value);
+                    new Date(value);
             }
             // Trigger reactivity
             dataEHoraCriteriosEArquivos = { ...dataEHoraCriteriosEArquivos };
+            dispatch(
+                "changeDataEHoraCriteriosEArquivos",
+                dataEHoraCriteriosEArquivos,
+            );
         };
     }
 </script>
@@ -184,7 +218,7 @@
                         .toISOString()
                         .slice(0, 16)}
                     size="sm"
-                    on:change={handleChangeInicio(groupName)}
+                    on:input={handleChangeInicio(groupName)}
                 />
                 <label>Data e hora de fechamento:</label>
                 <Input
@@ -195,7 +229,7 @@
                         .toISOString()
                         .slice(0, 16)}
                     size="sm"
-                    on:change={handleChangeFim(groupName)}
+                    on:input={handleChangeFim(groupName)}
                 />
             </div>
             <div class="criterios-list">
