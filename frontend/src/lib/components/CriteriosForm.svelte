@@ -168,6 +168,16 @@
             );
         };
     }
+
+    function toLocalISOString(date: Date) {
+        const pad = (n: number) => n.toString().padStart(2, "0");
+        const year = date.getFullYear();
+        const month = pad(date.getMonth() + 1);
+        const day = pad(date.getDate());
+        const hours = pad(date.getHours());
+        const minutes = pad(date.getMinutes());
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
 </script>
 
 <div class="criterios-section">
@@ -212,22 +222,19 @@
                 <label>Data e hora de abertura:</label>
                 <Input
                     type="datetime-local"
-                    value={dataEHoraCriteriosEArquivos[
-                        groupName
-                    ].data_e_hora_inicio
-                        .toISOString()
-                        .slice(0, 16)}
+                    value={toLocalISOString(
+                        dataEHoraCriteriosEArquivos[groupName]
+                            .data_e_hora_inicio,
+                    )}
                     size="sm"
                     on:input={handleChangeInicio(groupName)}
                 />
                 <label>Data e hora de fechamento:</label>
                 <Input
                     type="datetime-local"
-                    value={dataEHoraCriteriosEArquivos[
-                        groupName
-                    ].data_e_hora_fim
-                        .toISOString()
-                        .slice(0, 16)}
+                    value={toLocalISOString(
+                        dataEHoraCriteriosEArquivos[groupName].data_e_hora_fim,
+                    )}
                     size="sm"
                     on:input={handleChangeFim(groupName)}
                 />

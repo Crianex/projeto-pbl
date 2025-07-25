@@ -16,6 +16,7 @@
     import { MediaCalculator } from "$lib/utils/utils";
     import { currentUser } from "$lib/utils/auth";
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
+    import { DateUtils } from "$lib/utils/utils";
 
     interface AvaliacaoData {
         aluno: {
@@ -49,6 +50,13 @@
     let criterioAtual: { tag: string; criterio: any } | null = null;
     let showDialog = false;
     let currentValues: { [tag: string]: { [criterio: string]: number } } = {};
+
+    // Helper to check if a tag is currently active (for alunos only)
+    function isTagActive(tag: string): boolean {
+        if (isProfessorEvaluation) return true;
+        if (!problema) return false;
+        return DateUtils.isNowWithinTagDateRange(problema, tag);
+    }
 
     // Parse query parameters
     $: {
@@ -261,7 +269,11 @@
     <form on:submit|preventDefault={handleSubmit}>
         <div class="evaluation-grid">
             {#each Object.entries(criterios) as [tag, criteriosList]}
-                <div class="evaluation-section">
+                <div
+                    class="evaluation-section {isTagActive(tag)
+                        ? ''
+                        : 'inactive-section'}"
+                >
                     <h2>{tag}</h2>
                     <div class="criteria-group">
                         {#each criteriosList as criterio}
@@ -291,6 +303,7 @@
                                                     e,
                                                 )}
                                             class="slider"
+                                            disabled={!isTagActive(tag)}
                                         />
                                         <div class="value-display">
                                             {(
@@ -305,6 +318,7 @@
                                         class="criteria-btn"
                                         on:click={() =>
                                             showCriterios(tag, criterio)}
+                                        disabled={!isTagActive(tag)}
                                     >
                                         Critérios
                                     </button>
@@ -609,5 +623,10 @@
         margin: 0;
         color: #495057;
         line-height: 1.6;
+    }
+    .inactive-section {
+        opacity: 0.5;
+        pointer-events: none;
+        filter: grayscale(0.5);
     }
 </style>

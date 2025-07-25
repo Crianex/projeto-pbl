@@ -9,6 +9,11 @@ const config = {
     ],
 
     darkMode: 'class',
+    safelist: [
+        'tag-status', 'tag-green', 'tag-red',
+        'bg-green-100', 'text-green-800', 'border-green-400',
+        'bg-red-100', 'text-red-800', 'border-red-400'
+    ],
 
     theme: {
         extend: {

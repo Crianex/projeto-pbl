@@ -222,4 +222,35 @@ export class DateUtils {
             return now >= inicio && now <= fim;
         });
     }
+
+    static isNowWithinTagDateRange(problema: ProblemaModel, tag: string): boolean {
+        const now = new Date();
+        const dateObj = problema.data_e_hora_criterios_e_arquivos[tag];
+        if (!dateObj || !dateObj.data_e_hora_inicio || !dateObj.data_e_hora_fim) return false;
+        const inicio = new Date(dateObj.data_e_hora_inicio);
+        const fim = new Date(dateObj.data_e_hora_fim);
+        return now >= inicio && now <= fim;
+    }
+
+    static getDateStartStatusArrayFromProblemaModel(problema: ProblemaModel) {
+        // Returns [{ tag, date, isActive }]
+        return Object.entries(problema.data_e_hora_criterios_e_arquivos)
+            .filter(([tag, dateObj]) => !!dateObj.data_e_hora_inicio)
+            .map(([tag, dateObj]) => ({
+                tag,
+                date: formatToDateTime(dateObj.data_e_hora_inicio),
+                isActive: DateUtils.isNowWithinTagDateRange(problema, tag)
+            }));
+    }
+
+    static getDateEndStatusArrayFromProblemaModel(problema: ProblemaModel) {
+        // Returns [{ tag, date, isActive }]
+        return Object.entries(problema.data_e_hora_criterios_e_arquivos)
+            .filter(([tag, dateObj]) => !!dateObj.data_e_hora_fim)
+            .map(([tag, dateObj]) => ({
+                tag,
+                date: formatToDateTime(dateObj.data_e_hora_fim),
+                isActive: DateUtils.isNowWithinTagDateRange(problema, tag)
+            }));
+    }
 }

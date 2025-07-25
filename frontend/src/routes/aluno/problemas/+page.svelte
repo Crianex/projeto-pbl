@@ -31,15 +31,33 @@
             key: "data_inicio",
             label: "Data de Início",
             sortable: true,
-            render: (row: ProblemaModel) =>
-                DateUtils.getDateStartFromProblemaModel(row),
+            render: (row: ProblemaModel) => {
+                const tagStatusArr =
+                    DateUtils.getDateStartStatusArrayFromProblemaModel(row);
+                const html = tagStatusArr
+                    .map(
+                        ({ tag, date, isActive }) =>
+                            `<span class=\"tag-status ${isActive ? "tag-green" : "tag-red"}\">${tag}: ${date}</span>`,
+                    )
+                    .join("<br><br>");
+                return { component: "html", props: { html } };
+            },
         },
         {
             key: "data_fim",
             label: "Data de Término",
             sortable: true,
-            render: (row: ProblemaModel) =>
-                DateUtils.getDateEndFromProblemaModel(row),
+            render: (row: ProblemaModel) => {
+                const tagStatusArr =
+                    DateUtils.getDateEndStatusArrayFromProblemaModel(row);
+                const html = tagStatusArr
+                    .map(
+                        ({ tag, date, isActive }) =>
+                            `<span class=\"tag-status ${isActive ? "tag-green" : "tag-red"}\">${tag}: ${date}</span>`,
+                    )
+                    .join("<br><br>");
+                return { component: "html", props: { html } };
+            },
         },
         {
             key: "media_geral",
@@ -538,4 +556,6 @@
             padding: 0.75rem;
         }
     }
+
+    
 </style>

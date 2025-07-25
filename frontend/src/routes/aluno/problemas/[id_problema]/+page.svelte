@@ -17,6 +17,7 @@
     import { MediaCalculator } from "$lib/utils/utils";
     import { api } from "$lib/utils/api";
     import BackButton from "$lib/components/BackButton.svelte";
+    import { DateUtils } from "$lib/utils/utils";
 
     interface Avaliacao {
         id_avaliacao: number;
@@ -92,6 +93,19 @@
         };
     });
 
+    // Helper to check if any tag is currently available
+    function isAnyTagAvailable() {
+        if (!problema) return false;
+        return Object.keys(problema.criterios || {}).some((tag) =>
+            DateUtils.isNowWithinTagDateRange(problema, tag),
+        );
+    }
+    // Helper to get tag status array for display
+    function getTagStatusArr() {
+        if (!problema) return [];
+        return DateUtils.getDateStartStatusArrayFromProblemaModel(problema);
+    }
+
     // Table configuration
     let columns: Column[] = [
         {
@@ -104,21 +118,45 @@
             label: "Avaliação enviada",
             width: "40%",
             render: (row: any) => {
+                const canEvaluate = isAnyTagAvailable();
                 if (row.enviada) {
-                    return {
-                        component: "span",
-                        props: {
-                            text: row.nota?.toFixed(2) || "0.00",
-                            class: "grade",
+                    // If already evaluated, show media and, if still available, show Avaliar button too
+                    const result: any = [
+                        {
+                            component: "span",
+                            props: {
+                                text: row.nota?.toFixed(2) || "0.00",
+                                class: "grade",
+                            },
                         },
-                    };
-                } else {
+                    ];
+                    if (canEvaluate) {
+                        result.push({
+                            component: "Button",
+                            props: {
+                                text: "Avaliar",
+                                onClick: () => handleEvaluation(row.alunoId),
+                                class: "avaliar-btn-spacing",
+                            },
+                        });
+                    }
+                    return result;
+                } else if (canEvaluate) {
                     return {
                         component: "Button",
                         props: {
                             variant: "primary",
                             text: "Avaliar",
                             onClick: () => handleEvaluation(row.alunoId),
+                        },
+                    };
+                } else {
+                    // Not available, not evaluated
+                    return {
+                        component: "span",
+                        props: {
+                            text: "Fora do período",
+                            class: "grade grade-disabled",
                         },
                     };
                 }
@@ -357,7 +395,21 @@
                 Avaliações - {problema?.nome_problema || "Carregando..."}
             </h1>
         </div>
-
+        <!-- Show available date ranges for each tag -->
+        {#if problema}
+            <div class="tag-dates">
+                <h3>Períodos de Avaliação:</h3>
+                <div class="tag-dates-list">
+                    {#each getTagStatusArr() as { tag, date, isActive }}
+                        <span
+                            class="tag-status {isActive
+                                ? 'tag-green'
+                                : 'tag-red'}">{tag}: {date}</span
+                        >
+                    {/each}
+                </div>
+            </div>
+        {/if}
         <div class="table-wrapper" in:fade={{ duration: 400, delay: 200 }}>
             <Table
                 {columns}
@@ -871,5 +923,48 @@
         .save-button-container {
             margin-top: 1rem;
         }
+    }
+
+    .tag-dates {
+        margin-bottom: 1.5rem;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
+    }
+    .tag-dates-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+    .tag-status {
+        padding: 0.4rem 1rem;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #fff;
+        transition: background 0.2s;
+    }
+    .tag-green {
+        background: var(--color-nature-main);
+        border-color: var(--color-nature-main);
+    }
+    .tag-red {
+        background: var(--color-error-main);
+        border-color: var(--color-error-main);
+    }
+    .avaliacao-actions-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .grade-disabled {
+        opacity: 0.5;
+        background: #e2e8f0;
+        color: #888;
     }
 </style>

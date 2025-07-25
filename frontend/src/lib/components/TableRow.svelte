@@ -50,7 +50,41 @@
                 <span class="badge">{row.badge || ""}</span>
             {:else if col.render}
                 {@const renderResult = col.render(row)}
-                {#if renderResult.component === "a"}
+                {#if Array.isArray(renderResult)}
+                    {#each renderResult as item}
+                        {#if item.component === "a"}
+                            <Button
+                                variant={item.props.variant || "primary"}
+                                href={item.props.href}
+                                class={item.props.class || ""}
+                            >
+                                {item.props.textContent ||
+                                    item.props.text ||
+                                    ""}
+                            </Button>
+                        {:else if item.component === "button" || item.component === "Button"}
+                            <Button
+                                variant={item.props.variant || "primary"}
+                                class={item.props.class || ""}
+                                on:click={() => handleCellClick(col, row)}
+                            >
+                                {typeof item.props.text === "string"
+                                    ? item.props.text
+                                    : String(item.props.text || "")}
+                            </Button>
+                        {:else if item.component === "span"}
+                            <span class={item.props.class || ""}>
+                                {typeof item.props.text === "string"
+                                    ? item.props.text
+                                    : String(item.props.text || "")}
+                            </span>
+                        {:else if item.component === "html"}
+                            {@html item.props.html}
+                        {:else}
+                            {@html item}
+                        {/if}
+                    {/each}
+                {:else if renderResult.component === "a"}
                     <Button
                         variant={renderResult.props.variant || "primary"}
                         href={renderResult.props.href}
@@ -76,6 +110,8 @@
                             ? renderResult.props.text
                             : String(renderResult.props.text || "")}
                     </span>
+                {:else if renderResult.component === "html"}
+                    {@html renderResult.props.html}
                 {:else}
                     {@html renderResult}
                 {/if}
