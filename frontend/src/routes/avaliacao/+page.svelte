@@ -17,6 +17,7 @@
     import { currentUser } from "$lib/utils/auth";
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
     import { DateUtils } from "$lib/utils/utils";
+    import Button from "$lib/components/Button.svelte";
 
     interface AvaliacaoData {
         aluno: {
@@ -373,7 +374,9 @@
                 </div>
             {/each}
         </div>
-        <button type="submit" class="submit-btn">Salvar Avaliação</button>
+        <div class="submit-btn-container">
+            <Button type="submit" variant="primary">Salvar Avaliação</Button>
+        </div>
     </form>
 </div>
 
@@ -672,5 +675,10 @@
         opacity: 0.5;
         pointer-events: none;
         filter: grayscale(0.5);
+    }
+    .submit-btn-container {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 1.5rem;
     }
 </style>

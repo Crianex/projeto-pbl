@@ -6,6 +6,7 @@
     import { logger } from "$lib/utils/logger";
     import type {
         AlunoModel,
+        AvaliacaoModel,
         ProblemaModel,
         TurmaModel,
     } from "$lib/interfaces/interfaces";
@@ -34,7 +35,7 @@
         [];
     let criteriosList: { nome_criterio: string; descricao_criterio: string }[] =
         [];
-    let avaliacoesData: any[] = [];
+    let avaliacoesData: AvaliacaoModel[] = [];
     let evaluationMatrix: {
         [evaluatorId: number]: { [evaluatedId: number]: number };
     } = {};
@@ -177,21 +178,20 @@
                     });
                 });
                 avaliacoesData.forEach((avaliacao) => {
-                    if (
-                        avaliacao.id_aluno_avaliador &&
-                        avaliacao.id_aluno_avaliado
-                    ) {
-                        const average = MediaCalculator.calculateSimpleMedia(
-                            avaliacao.notas,
-                        );
+                    if (avaliacao.aluno_avaliador && avaliacao.aluno_avaliado) {
+                        const average =
+                            MediaCalculator.calculateSimpleMediaFromAvaliacao(
+                                avaliacao,
+                            );
+                        console.log(`average: ${average}`);
                         if (
-                            evaluationMatrix[avaliacao.id_aluno_avaliador] &&
-                            evaluationMatrix[avaliacao.id_aluno_avaliador][
-                                avaliacao.id_aluno_avaliado
+                            evaluationMatrix[avaliacao.aluno_avaliador.id] &&
+                            evaluationMatrix[avaliacao.aluno_avaliador.id][
+                                avaliacao.aluno_avaliado.id
                             ] !== undefined
                         ) {
-                            evaluationMatrix[avaliacao.id_aluno_avaliador][
-                                avaliacao.id_aluno_avaliado
+                            evaluationMatrix[avaliacao.aluno_avaliador.id][
+                                avaliacao.aluno_avaliado.id
                             ] = average;
                         }
                     }
@@ -232,6 +232,7 @@
                           criteriosList,
                       )
                     : null; // Show alunos without evaluations
+            console.log("DEBUG medias for aluno", aluno.nome_completo, medias);
             return {
                 ...aluno,
                 medias,
@@ -326,7 +327,7 @@
         // Check if this professor has already evaluated this student
         const professorEvaluation = avaliacoesData.find(
             (av) =>
-                av.id_aluno_avaliado === aluno.id &&
+                av.aluno_avaliado?.id === aluno.id &&
                 av.id_professor === $currentUser?.id,
         );
 
@@ -341,6 +342,7 @@
         // Add individual criteria scores (keep as before)
         criteriosList.forEach((criterio) => {
             const key = criterio.nome_criterio.toLowerCase();
+            console.log("DEBUG criterio key for table", key);
             if (
                 aluno.medias &&
                 key in aluno.medias &&

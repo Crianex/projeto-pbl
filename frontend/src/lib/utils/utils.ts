@@ -1,4 +1,4 @@
-import type { ProblemaModel } from "$lib/interfaces/interfaces";
+import type { AvaliacaoModel, ProblemaModel } from "$lib/interfaces/interfaces";
 import { formatToDateTime } from "brazilian-values";
 
 export function classNames(...classes: (string | undefined | null | false)[]) {
@@ -38,6 +38,29 @@ export class MediaCalculator {
         }
     }
 
+    static calculateSimpleMediaFromAvaliacao(avaliacao: AvaliacaoModel): number {
+        if (!avaliacao.notas) return 0;
+        // console.log(`avaliacao.notas: ${JSON.stringify(avaliacao.notas)}`);
+        let values: number[] = [];
+        Object.entries(avaliacao.notas).forEach(([key, val]) => {
+            if (key === "media" || typeof val !== "object" || val === null) return;
+            Object.values(val).forEach((num) => {
+                if (typeof num === "number" && !isNaN(num)) {
+                    values.push(num);
+                }
+            });
+        });
+        return values.length > 0 ? Number((values.reduce((sum, val) => sum + val, 0) / values.length).toFixed(2)) : 0;
+    }
+
+    // Helper to normalize keys: lowercase and remove accents
+    static normalizeKey(key: string): string {
+        return key
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/\p{Diacritic}/gu, '');
+    }
+
     /**
      * Calculates media per criterio from multiple evaluations
      * Used for peer evaluation averages per criterion
@@ -47,29 +70,30 @@ export class MediaCalculator {
         alunoId: number,
         criteriosList: { nome_criterio: string }[]
     ): Record<string, number> | null {
+
         // Get unique list of students who have submitted evaluations (evaluators)
         const studentsWhoEvaluated = new Set(
-            avaliacoes.map(av => av.id_aluno_avaliador)
+            avaliacoes.map(av => av.aluno_avaliador?.id)
         );
 
         // Filter avaliações where this aluno was evaluated AND only from students who have submitted evaluations
         const avaliacoesRecebidas = avaliacoes.filter(
             (av) =>
-                av.id_aluno_avaliado === alunoId &&
-                studentsWhoEvaluated.has(av.id_aluno_avaliador),
+                av.aluno_avaliado?.id === alunoId &&
+                studentsWhoEvaluated.has(av.aluno_avaliador?.id),
         );
         if (!avaliacoesRecebidas.length) return null;
 
         // For each criterio, calculate the average
         const medias: Record<string, number> = {};
         criteriosList.forEach((criterio) => {
-            const criterioKey = criterio.nome_criterio.toLowerCase();
+            const criterioKey = MediaCalculator.normalizeKey(criterio.nome_criterio);
             let soma = 0;
             let count = 0;
 
             avaliacoesRecebidas.forEach((av) => {
                 try {
-                    const notas = JSON.parse(av.notas);
+                    const notas = typeof av.notas === 'string' ? JSON.parse(av.notas) : av.notas;
                     // notas: { [tag]: { [criterio]: number } }
                     Object.entries(notas).forEach(
                         ([tagName, categoria]: [string, any]) => {
@@ -77,13 +101,13 @@ export class MediaCalculator {
                                 typeof categoria === "object" &&
                                 categoria !== null
                             ) {
-                                if (criterioKey in categoria) {
-                                    const val = categoria[criterioKey];
-                                    if (typeof val === "number") {
+                                // Normalize all keys in categoria
+                                Object.entries(categoria).forEach(([catKey, val]) => {
+                                    if (MediaCalculator.normalizeKey(catKey) === criterioKey && typeof val === "number") {
                                         soma += val;
                                         count++;
                                     }
-                                }
+                                });
                             }
                         },
                     );

@@ -82,12 +82,17 @@
             key: "aluno",
             label: "Aluno",
             width: "30%",
-            render: (row: any) => `
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <img src="${row.aluno_avatar}" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
-                    <span>${row.aluno}</span>
-                </div>
-            `,
+            render: (row: any) => ({
+                component: "html",
+                props: {
+                    html: `
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <img src="${row.aluno_avatar}" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
+                            <span>${row.aluno}</span>
+                        </div>
+                    `,
+                },
+            }),
         },
         {
             key: "notas",
@@ -98,12 +103,17 @@
             key: "enviada_para",
             label: "Enviada para",
             width: "20%",
-            render: (row: any) => `
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <img src="${row.enviada_para_avatar}" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
-                    <span>${row.enviada_para}</span>
-                </div>
-            `,
+            render: (row: any) => ({
+                component: "html",
+                props: {
+                    html: `
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <img src="${row.enviada_para_avatar}" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
+                            <span>${row.enviada_para}</span>
+                        </div>
+                    `,
+                },
+            }),
         },
     ];
 
@@ -113,12 +123,17 @@
             key: "aluno",
             label: "Aluno",
             width: "30%",
-            render: (row: any) => `
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <img src="${row.aluno_avatar}" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
-                    <span>${row.aluno}</span>
-                </div>
-            `,
+            render: (row: any) => ({
+                component: "html",
+                props: {
+                    html: `
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <img src="${row.aluno_avatar}" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
+                            <span>${row.aluno}</span>
+                        </div>
+                    `,
+                },
+            }),
         },
         {
             key: "notas",
@@ -129,12 +144,17 @@
             key: "enviada_para",
             label: "Enviada para",
             width: "20%",
-            render: (row: any) => `
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <img src="${row.enviada_para_avatar}" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
-                    <span>${row.enviada_para}</span>
-                </div>
-            `,
+            render: (row: any) => ({
+                component: "html",
+                props: {
+                    html: `
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <img src="${row.enviada_para_avatar}" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
+                            <span>${row.enviada_para}</span>
+                        </div>
+                    `,
+                },
+            }),
         },
     ];
 
@@ -200,20 +220,23 @@
             // Processar avaliações enviadas pelo aluno
             const currentAlunoId = Number($page.params.id_aluno);
             avaliacoesEnviadas = avaliacoesData
-                .filter((av: any) => av.id_aluno_avaliador === currentAlunoId)
+                .filter((av: any) => av.aluno_avaliador?.id === currentAlunoId)
                 .map((av: any) => {
                     const alunoAvaliado = turma?.alunos?.find(
-                        (a: any) => a.id === av.id_aluno_avaliado,
+                        (a: any) => a.id === av.aluno_avaliado?.id,
                     );
                     return {
                         id: av.id,
                         aluno: aluno?.nome_completo || "Aluno",
-                        aluno_avatar: aluno?.link_avatar || "/avatars/default.png",
+                        aluno_avatar:
+                            aluno?.link_avatar || "/avatars/default.png",
                         notas: formatNotas(av.notas),
                         enviada_para:
                             alunoAvaliado?.nome_completo ||
                             "Aluno não encontrado",
-                        enviada_para_avatar: alunoAvaliado?.link_avatar || "/avatars/default.png",
+                        enviada_para_avatar:
+                            alunoAvaliado?.link_avatar ||
+                            "/avatars/default.png",
                     };
                 });
 
@@ -221,20 +244,23 @@
             avaliacoesRecebidas = avaliacoesData
                 .filter(
                     (av: any) =>
-                        av.id_aluno_avaliado === currentAlunoId &&
+                        av.aluno_avaliado?.id === currentAlunoId &&
                         !av.id_professor,
                 )
                 .map((av: any) => {
                     const alunoAvaliador = turma?.alunos?.find(
-                        (a: any) => a.id === av.id_aluno_avaliador,
+                        (a: any) => a.id === av.aluno_avaliador?.id,
                     );
                     return {
                         id: av.id,
                         aluno: alunoAvaliador?.nome_completo || "Aluno",
-                        aluno_avatar: alunoAvaliador?.link_avatar || "/avatars/default.png",
+                        aluno_avatar:
+                            alunoAvaliador?.link_avatar ||
+                            "/avatars/default.png",
                         notas: formatNotas(av.notas),
                         enviada_para: aluno?.nome_completo || "Aluno",
-                        enviada_para_avatar: aluno?.link_avatar || "/avatars/default.png",
+                        enviada_para_avatar:
+                            aluno?.link_avatar || "/avatars/default.png",
                     };
                 });
 
@@ -254,7 +280,7 @@
         }
     });
 
-    function formatNotas(notas: string | null) {
+    function formatNotas(notas: string | object | null) {
         if (!notas) return "Não avaliado";
 
         const criteriosHardcoded = [
@@ -263,8 +289,12 @@
             { nome_criterio: "atitudes" },
         ];
 
+        // If notas is an object, stringify it for compatibility
+        const notasString =
+            typeof notas === "string" ? notas : JSON.stringify(notas);
+
         const medias = MediaCalculator.calcularMediaPorCriterioSingle(
-            notas,
+            notasString,
             criteriosHardcoded,
         );
 
