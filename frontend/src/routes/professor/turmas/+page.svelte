@@ -206,7 +206,25 @@
                         }
                     }}
                 >
-                    <span>{turma.nome_turma}</span>
+                    <div class="turma-main-info">
+                        <span class="turma-nome">{turma.nome_turma}</span>
+                        <div class="turma-alunos-mobile">
+                            <span class="alunos-label">Alunos:</span>
+                            {#if turma.alunos && turma.alunos.length > 0}
+                                <ul class="alunos-list">
+                                    {#each turma.alunos as aluno}
+                                        <li class="aluno-nome">
+                                            {aluno.nome_completo}
+                                        </li>
+                                    {/each}
+                                </ul>
+                            {:else}
+                                <span class="alunos-empty"
+                                    >Nenhum aluno cadastrado</span
+                                >
+                            {/if}
+                        </div>
+                    </div>
                     <div class="actions">
                         <div class="dropdown">
                             <Button
@@ -443,6 +461,41 @@
         margin-top: 2rem;
     }
 
+    .turma-main-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        flex: 1;
+    }
+    .turma-nome {
+        font-weight: 600;
+        font-size: 1.08rem;
+    }
+    .turma-alunos-mobile {
+        display: none;
+        font-size: 0.98rem;
+        margin-top: 0.2rem;
+        color: #444;
+    }
+    .alunos-label {
+        font-weight: 500;
+        margin-right: 0.3rem;
+    }
+    .alunos-list {
+        margin: 0.2rem 0 0 0.7rem;
+        padding: 0;
+        list-style: disc inside;
+    }
+    .aluno-nome {
+        font-size: 0.97rem;
+        margin-bottom: 0.1rem;
+    }
+    .alunos-empty {
+        color: #888;
+        font-size: 0.97rem;
+        margin-left: 0.5rem;
+    }
+
     @media (max-width: 768px) {
         .turmas-container {
             margin-top: 3rem;
@@ -477,6 +530,9 @@
             padding: 0.5rem 0.2rem;
             font-size: 0.97rem;
             box-sizing: border-box;
+        }
+        .turma-alunos-mobile {
+            display: block;
         }
     }
 

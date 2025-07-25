@@ -39,7 +39,7 @@
                         ({ tag, date, isActive }) =>
                             `<span class=\"tag-status ${isActive ? "tag-green" : "tag-red"}\">${tag}: ${date}</span>`,
                     )
-                    .join("<br><br>");
+                    .join(Utils.isMobile() ? "<br>" : "<br><br>");
                 return { component: "html", props: { html } };
             },
         },
@@ -55,7 +55,7 @@
                         ({ tag, date, isActive }) =>
                             `<span class=\"tag-status ${isActive ? "tag-green" : "tag-red"}\">${tag}: ${date}</span>`,
                     )
-                    .join("<br><br>");
+                    .join(Utils.isMobile() ? "<br>" : "<br><br>");
                 return { component: "html", props: { html } };
             },
         },
@@ -64,33 +64,22 @@
             label: "Minha Média",
             sortable: true,
             render: (row: ProblemaModel) =>
-                row.media_geral ? row.media_geral.toFixed(2) : "Não avaliado",
+                row.media_geral !== null && row.media_geral !== undefined
+                    ? row.media_geral.toFixed(2)
+                    : "Não avaliado",
         },
         {
             key: "actions",
             label: "Ações",
             render: (row: ProblemaModel) => {
-                const isAvailable = DateUtils.isNowWithinAnyDateRange(row);
-                if (isAvailable) {
-                    return {
-                        component: "a",
-                        props: {
-                            href: `/aluno/problemas/${row.id_problema}`,
-                            class: "btn-action",
-                            textContent: "Ver Problema",
-                        },
-                    };
-                } else {
-                    return {
-                        component: "Button",
-                        props: {
-                            text: "Fora do período",
-                            disabled: true,
-                            variant: "secondary",
-                            class: "btn-action",
-                        },
-                    };
-                }
+                return {
+                    component: "a",
+                    props: {
+                        href: `/aluno/problemas/${row.id_problema}`,
+                        class: "btn-action",
+                        textContent: "Ver Problema",
+                    },
+                };
             },
         },
     ];
@@ -556,6 +545,4 @@
             padding: 0.75rem;
         }
     }
-
-    
 </style>

@@ -173,8 +173,6 @@
             // Get the problem details first using cache service
             problema = await ProblemasService.getById(id_problema.toString());
 
-            console.log(JSON.stringify(problema, null, 2));
-
             // Get all evaluations using the service
             const avaliacoesData =
                 await AvaliacoesService.getAvaliacoes(id_problema);
@@ -464,6 +462,12 @@
                             existingFilesByType.get(
                                 definicao.nome_tipo || "",
                             ) || []}
+                        {@const nomeTipo = definicao.nome_tipo || ""}
+                        {@const isWithinRange =
+                            DateUtils.isNowWithinTagDateRange(
+                                problema,
+                                nomeTipo,
+                            )}
                         <div
                             class="upload-container"
                             in:fade={{
@@ -484,12 +488,37 @@
                                 supportedFormats={definicao.tipos_de_arquivos_aceitos
                                     ?.join(", ")
                                     .toUpperCase() || "Todos os formatos"}
-                                disabled={isUploading}
+                                disabled={isUploading || !isWithinRange}
                                 on:filesSelected={(e) =>
                                     handleFilesSelected(e, definicao)}
                                 on:fileRemoved={(e) =>
                                     handleFileRemoved(e, definicao)}
                             />
+
+                            {#if !isWithinRange}
+                                <div
+                                    class="upload-error"
+                                    style="margin-top: 0.5rem;"
+                                >
+                                    O envio deste arquivo só está disponível
+                                    entre
+                                    {#if problema.data_e_hora_criterios_e_arquivos[nomeTipo]?.data_e_hora_inicio}
+                                        {new Date(
+                                            problema.data_e_hora_criterios_e_arquivos[
+                                                nomeTipo
+                                            ].data_e_hora_inicio,
+                                        ).toLocaleString()}
+                                    {/if}
+                                    e
+                                    {#if problema.data_e_hora_criterios_e_arquivos[nomeTipo]?.data_e_hora_fim}
+                                        {new Date(
+                                            problema.data_e_hora_criterios_e_arquivos[
+                                                nomeTipo
+                                            ].data_e_hora_fim,
+                                        ).toLocaleString()}
+                                    {/if}
+                                </div>
+                            {/if}
 
                             <!-- Display existing files for this type -->
                             {#if existingFilesForType.length > 0}

@@ -59,37 +59,38 @@
             if (!loadedProblema) throw new Error("Problema não encontrado");
             problema = loadedProblema;
             // Populate form with existing data
+            const criteriosTags = Object.keys(problema!.criterios || {});
+            const arquivoTags = (
+                problema!.definicao_arquivos_de_avaliacao || []
+            ).map((a) => a.nome_tipo);
+            const allTags = [...criteriosTags, ...arquivoTags];
             formData = {
                 nome_problema: problema!.nome_problema || "",
                 criterios: problema!.criterios || {},
                 definicao_arquivos_de_avaliacao:
                     problema!.definicao_arquivos_de_avaliacao || [],
                 data_e_hora_criterios_e_arquivos: Object.fromEntries(
-                    Object.entries(problema!.criterios || {}).map(([tag]) => [
+                    allTags.map((tag) => [
                         tag,
                         problema!.data_e_hora_criterios_e_arquivos &&
-                        problema!.data_e_hora_criterios_e_arquivos[tag]
+                        problema!.data_e_hora_criterios_e_arquivos[tag!]
                             ? {
-                                  data_e_hora_inicio: problema!
-                                      .data_e_hora_criterios_e_arquivos[tag]
-                                      .data_e_hora_inicio
-                                      ? problema!
-                                            .data_e_hora_criterios_e_arquivos[
-                                            tag
-                                        ].data_e_hora_inicio
-                                      : new Date(),
-                                  data_e_hora_fim: problema!
-                                      .data_e_hora_criterios_e_arquivos[tag]
-                                      .data_e_hora_fim
-                                      ? problema!
-                                            .data_e_hora_criterios_e_arquivos[
-                                            tag
-                                        ].data_e_hora_fim
-                                      : new Date(),
+                                  data_e_hora_inicio:
+                                      problema!
+                                          .data_e_hora_criterios_e_arquivos[tag!]
+                                          .data_e_hora_inicio ?? new Date(),
+                                  data_e_hora_fim:
+                                      problema!
+                                          .data_e_hora_criterios_e_arquivos[tag!]
+                                          .data_e_hora_fim ?? new Date(),
                               }
                             : {
-                                  data_e_hora_inicio: new Date(),
-                                  data_e_hora_fim: new Date(),
+                                  data_e_hora_inicio: new Date(
+                                      new Date().getTime() + 60 * 60 * 1000,
+                                  ),
+                                  data_e_hora_fim: new Date(
+                                      new Date().getTime() + 2 * 60 * 60 * 1000,
+                                  ),
                               },
                     ]),
                 ),
@@ -108,6 +109,10 @@
             saving = true;
             error = null;
 
+            console.log(
+                "Salvando data_e_hora_criterios_e_arquivos:",
+                formData.data_e_hora_criterios_e_arquivos,
+            );
             const payload = {
                 ...formData,
                 id_problema: parseInt(problemaId),
@@ -192,6 +197,12 @@
 
         <ArquivosForm
             bind:definicoes={formData.definicao_arquivos_de_avaliacao}
+            bind:dataEHoraCriteriosEArquivos={
+                formData.data_e_hora_criterios_e_arquivos
+            }
+            on:changeDataEHoraCriteriosEArquivos={(e) => {
+                formData.data_e_hora_criterios_e_arquivos = e.detail;
+            }}
         />
 
         <div class="form-actions">

@@ -11,7 +11,7 @@ export const AvaliacaoController: EndpointController = {
     name: 'avaliacoes',
     routes: {
         'list': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            const { id_problema, id_aluno } = req.query;
+            const { id_problema, id_aluno, id_avaliacao } = req.query;
 
             var query = supabase
                 .from('avaliacoes')
@@ -30,6 +30,10 @@ export const AvaliacaoController: EndpointController = {
                 query = query.eq('id_aluno_avaliador', id_aluno);
             }
 
+            if (id_avaliacao) {
+                query = query.eq('id_avaliacao', id_avaliacao);
+            }
+
             const { data, error } = await query;
 
             if (error) {
@@ -37,7 +41,16 @@ export const AvaliacaoController: EndpointController = {
                 return res.status(500).json({ error: error.message });
             }
 
-            return res.json(data);
+            // If only one result, return as object (like 'get'), else as array
+            if (Array.isArray(data)) {
+                if (data.length === 1) {
+                    return res.json(data[0]);
+                } else {
+                    return res.json(data);
+                }
+            } else {
+                return res.json(data);
+            }
         }),
 
         'get': new Pair(RequestType.GET, async (req: Request, res: Response) => {
@@ -185,7 +198,7 @@ export const AvaliacaoController: EndpointController = {
         }),
 
         'delete': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
-            const { id_avaliacao } = req.params;
+            const { id_avaliacao } = req.query;
 
             // check if id_avaliacao is present
             if (!id_avaliacao) {

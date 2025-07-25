@@ -2,24 +2,161 @@
     import Button from "./Button.svelte";
     import Input from "./Input.svelte";
     import TextArea from "./TextArea.svelte";
+    import { createEventDispatcher } from "svelte";
     import type { DefinicaoArquivoDeAvaliacao } from "$lib/interfaces/interfaces";
+    import type { DataEHoraDefinition } from "$lib/interfaces/interfaces";
 
     export let definicoes: DefinicaoArquivoDeAvaliacao[] = [];
+    export let dataEHoraCriteriosEArquivos: {
+        [tag: string]: DataEHoraDefinition;
+    } = {};
+    const dispatch = createEventDispatcher();
+
+    // Track old nome_tipo for each definicao
+    let oldNomeTipos: string[] = definicoes.map((d) => d.nome_tipo || "");
+
+    $: {
+        // Keep oldNomeTipos in sync with definicoes
+        if (oldNomeTipos.length !== definicoes.length) {
+            oldNomeTipos = definicoes.map((d) => d.nome_tipo || "");
+        }
+    }
+
+    $: {
+        for (const definicao of definicoes) {
+            const nome_tipo = definicao.nome_tipo || "";
+            if (nome_tipo && !dataEHoraCriteriosEArquivos[nome_tipo]) {
+                dataEHoraCriteriosEArquivos = {
+                    ...dataEHoraCriteriosEArquivos,
+                    [nome_tipo]: {
+                        data_e_hora_inicio: new Date(
+                            new Date().getTime() + 60 * 60 * 1000,
+                        ),
+                        data_e_hora_fim: new Date(
+                            new Date().getTime() + 2 * 60 * 60 * 1000,
+                        ),
+                    },
+                };
+                dispatch(
+                    "changeDataEHoraCriteriosEArquivos",
+                    dataEHoraCriteriosEArquivos,
+                );
+            }
+        }
+    }
 
     function addDefinicaoArquivo() {
+        const defaultName = "";
         definicoes = [
             ...definicoes,
             {
-                nome_tipo: "",
+                nome_tipo: defaultName,
                 descricao_tipo: "",
                 tipos_de_arquivos_aceitos: [],
             },
         ];
+        oldNomeTipos.push(defaultName);
+        dataEHoraCriteriosEArquivos = {
+            ...dataEHoraCriteriosEArquivos,
+            [defaultName]: {
+                data_e_hora_inicio: new Date(),
+                data_e_hora_fim: new Date(
+                    new Date().getTime() + 60 * 60 * 1000,
+                ),
+            },
+        };
+        dispatch(
+            "changeDataEHoraCriteriosEArquivos",
+            dataEHoraCriteriosEArquivos,
+        );
     }
 
     function removeDefinicaoArquivo(index: number) {
+        const removed = definicoes[index].nome_tipo || "";
         definicoes.splice(index, 1);
         definicoes = [...definicoes];
+        oldNomeTipos.splice(index, 1);
+        if (removed && removed in dataEHoraCriteriosEArquivos) {
+            const { [removed]: _, ...rest } = dataEHoraCriteriosEArquivos;
+            dataEHoraCriteriosEArquivos = rest;
+            dispatch(
+                "changeDataEHoraCriteriosEArquivos",
+                dataEHoraCriteriosEArquivos,
+            );
+        }
+    }
+
+    function handleNomeTipoChange(index: number, newName: string) {
+        const oldName = oldNomeTipos[index] || "";
+        if (
+            newName &&
+            newName !== oldName &&
+            !(newName in dataEHoraCriteriosEArquivos)
+        ) {
+            const dateTime = dataEHoraCriteriosEArquivos[oldName];
+            const { [oldName]: _, ...rest } = dataEHoraCriteriosEArquivos;
+            dataEHoraCriteriosEArquivos = { ...rest, [newName]: dateTime };
+            dispatch(
+                "changeDataEHoraCriteriosEArquivos",
+                dataEHoraCriteriosEArquivos,
+            );
+            oldNomeTipos[index] = newName;
+        }
+    }
+
+    function handleChangeInicio(nome_tipo: string) {
+        return (e: CustomEvent<string>) => {
+            if (!dataEHoraCriteriosEArquivos[nome_tipo]) return;
+            const value = e.detail;
+            dataEHoraCriteriosEArquivos[nome_tipo].data_e_hora_inicio =
+                new Date(value);
+            if (
+                dataEHoraCriteriosEArquivos[nome_tipo].data_e_hora_fim &&
+                new Date(value) >
+                    dataEHoraCriteriosEArquivos[nome_tipo].data_e_hora_fim
+            ) {
+                dataEHoraCriteriosEArquivos[nome_tipo].data_e_hora_fim =
+                    new Date(value);
+            }
+            dataEHoraCriteriosEArquivos = { ...dataEHoraCriteriosEArquivos };
+            dispatch(
+                "changeDataEHoraCriteriosEArquivos",
+                dataEHoraCriteriosEArquivos,
+            );
+        };
+    }
+
+    function handleChangeFim(nome_tipo: string) {
+        return (e: CustomEvent<string>) => {
+            if (!dataEHoraCriteriosEArquivos[nome_tipo]) return;
+            const value = e.detail;
+            dataEHoraCriteriosEArquivos[nome_tipo].data_e_hora_fim = new Date(
+                value,
+            );
+            if (
+                dataEHoraCriteriosEArquivos[nome_tipo].data_e_hora_inicio &&
+                new Date(value) <
+                    dataEHoraCriteriosEArquivos[nome_tipo].data_e_hora_inicio
+            ) {
+                dataEHoraCriteriosEArquivos[nome_tipo].data_e_hora_inicio =
+                    new Date(value);
+            }
+            dataEHoraCriteriosEArquivos = { ...dataEHoraCriteriosEArquivos };
+            dispatch(
+                "changeDataEHoraCriteriosEArquivos",
+                dataEHoraCriteriosEArquivos,
+            );
+        };
+    }
+
+    function toLocalISOString(date: Date) {
+        const pad = (n: number) => n.toString().padStart(2, "0");
+        const year = date.getFullYear();
+        const month = pad(date.getMonth() + 1);
+        const day = pad(date.getDate());
+        const hours = pad(date.getHours());
+        const minutes = pad(date.getMinutes());
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
     }
 
     function addTipoArquivo(index: number) {
@@ -56,6 +193,11 @@
                         placeholder="Nome do tipo de arquivo"
                         bind:value={definicao.nome_tipo}
                         required
+                        on:blur={() =>
+                            handleNomeTipoChange(
+                                index,
+                                definicao.nome_tipo || "",
+                            )}
                     />
                     <button
                         type="button"
@@ -83,6 +225,30 @@
                     rows={2}
                     required
                 />
+                <div class="arquivo-datetime">
+                    <label>Data e hora de abertura:</label>
+                    <Input
+                        type="datetime-local"
+                        value={toLocalISOString(
+                            dataEHoraCriteriosEArquivos[
+                                definicao.nome_tipo || ""
+                            ]?.data_e_hora_inicio || new Date(),
+                        )}
+                        size="sm"
+                        on:input={handleChangeInicio(definicao.nome_tipo || "")}
+                    />
+                    <label>Data e hora de fechamento:</label>
+                    <Input
+                        type="datetime-local"
+                        value={toLocalISOString(
+                            dataEHoraCriteriosEArquivos[
+                                definicao.nome_tipo || ""
+                            ]?.data_e_hora_fim || new Date(),
+                        )}
+                        size="sm"
+                        on:input={handleChangeFim(definicao.nome_tipo || "")}
+                    />
+                </div>
                 <div class="tipos-arquivos">
                     <label>Extensões aceitas:</label>
                     <div class="extensoes-list">
@@ -146,6 +312,9 @@
     }
 
     .arquivo-item {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
         background: white;
         padding: 1rem;
         border-bottom: 1px solid #e9ecef;
@@ -160,6 +329,12 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 1rem;
+    }
+
+    .arquivo-datetime {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
     }
 
     .tipos-arquivos {

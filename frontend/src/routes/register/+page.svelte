@@ -159,165 +159,150 @@
 </svelte:head>
 
 {#if registrationComplete}
-    <Container
-        maxWidth="md"
-        glass={true}
-        shadow={true}
-        needsContainerStyle={true}
-    >
-        <div class="success-container">
-            <div class="success-icon">✓</div>
-            <h1>Conta Criada!</h1>
-            <p class="success-message">
-                Bem-vindo(a), <strong>{name}!</strong>
-            </p>
-            <p class="instructions">
-                Sua conta foi criada com sucesso. Você será redirecionado em
-                instantes.
-            </p>
+    <div class="success-container">
+        <div class="success-icon">✓</div>
+        <h1>Conta Criada!</h1>
+        <p class="success-message">
+            Bem-vindo(a), <strong>{name}!</strong>
+        </p>
+        <p class="instructions">
+            Sua conta foi criada com sucesso. Você será redirecionado em
+            instantes.
+        </p>
 
-            <div class="actions">
-                <LoadingSpinner
-                    size="md"
-                    color="primary"
-                    message="Configurando sua conta..."
-                />
-            </div>
+        <div class="actions">
+            <LoadingSpinner
+                size="md"
+                color="primary"
+                message="Configurando sua conta..."
+            />
         </div>
-    </Container>
+    </div>
 {:else}
-    <Container
-        maxWidth="lg"
-        glass={true}
-        shadow={true}
-        needsContainerStyle={true}
-    >
-        <BackButton on:click={() => goto('/')} />
-        <div class="header">
-            <h1>Criar Conta</h1>
-            <p class="subtitle">Preencha os dados para se registrar</p>
-        </div>
+    <div class="header">
+        <h1>Criar Conta</h1>
+        <p class="subtitle">Preencha os dados para se registrar</p>
+    </div>
 
-        <form on:submit|preventDefault={handleRegister}>
-            <div class="form-group">
-                <Input
-                    type="text"
-                    id="name"
-                    label="Nome completo"
-                    bind:value={name}
-                    placeholder="Digite seu nome completo"
-                    error={triedSubmit ? nameError : ""}
-                    required
-                    disabled={loading}
-                    autocomplete="name"
-                />
-            </div>
-
-            <div class="form-group">
-                <Input
-                    type="email"
-                    id="email"
-                    label="E-mail"
-                    bind:value={email}
-                    placeholder="seu@email.com"
-                    error={triedSubmit ? emailError : ""}
-                    required
-                    disabled={loading}
-                    autocomplete="email"
-                />
-            </div>
-
-            <div class="form-group">
-                <Input
-                    type="password"
-                    id="password"
-                    label="Senha"
-                    bind:value={password}
-                    placeholder="Digite uma senha segura"
-                    error={triedSubmit ? passwordError : ""}
-                    required
-                    disabled={loading}
-                    autocomplete="new-password"
-                />
-
-                {#if password && !passwordError}
-                    <div class="password-strength">
-                        <div class="strength-indicator strong"></div>
-                        <span class="strength-text">Senha forte ✓</span>
-                    </div>
-                {/if}
-            </div>
-
-            <div class="form-group">
-                <Input
-                    type="password"
-                    id="confirmPassword"
-                    label="Confirmar senha"
-                    bind:value={confirmPassword}
-                    placeholder="Digite sua senha novamente"
-                    error={triedSubmit ? confirmPasswordError : ""}
-                    required
-                    disabled={loading}
-                    autocomplete="new-password"
-                />
-            </div>
-
-            <div class="button-group">
-                <Button
-                    type="submit"
-                    variant="primary"
-                    disabled={loading}
-                    {loading}
-                >
-                    {loading ? "Criando conta..." : "Criar conta"}
-                </Button>
-            </div>
-        </form>
-
-        <div class="divider">
-            <span>ou registre-se com</span>
-        </div>
-
-        <div class="google-section">
-            <Button
-                variant="secondary"
+    <form on:submit|preventDefault={handleRegister}>
+        <div class="form-group">
+            <Input
+                type="text"
+                id="name"
+                label="Nome completo"
+                bind:value={name}
+                placeholder="Digite seu nome completo"
+                error={triedSubmit ? nameError : ""}
+                required
                 disabled={loading}
-                on:click={handleGoogleRegister}
-            >
-                <div class="google-icon">
-                    <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 18 18"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path
-                            fill="#4285F4"
-                            d="M18 9.2c0-.6-.1-1.2-.2-1.8H9.2v3.4h4.9c-.2 1.1-.9 2-1.8 2.6v2.2h2.9c1.7-1.6 2.8-3.9 2.8-6.4z"
-                        />
-                        <path
-                            fill="#34A853"
-                            d="M9.2 18c2.4 0 4.5-.8 6-2.2l-2.9-2.2c-.8.6-1.9.9-3.1.9-2.4 0-4.4-1.6-5.1-3.8H1.1v2.3C2.6 15.4 5.7 18 9.2 18z"
-                        />
-                        <path
-                            fill="#FBBC04"
-                            d="M4.1 10.7c-.2-.6-.3-1.2-.3-1.8s.1-1.2.3-1.8V4.8H1.1C.4 6.1 0 7.5 0 9s.4 2.9 1.1 4.2l3-2.5z"
-                        />
-                        <path
-                            fill="#EA4335"
-                            d="M9.2 3.6c1.3 0 2.5.4 3.4 1.3l2.5-2.5C13.7.7 11.6 0 9.2 0 5.7 0 2.6 2.6 1.1 5.9l3 2.5c.7-2.2 2.7-3.8 5.1-3.8z"
-                        />
-                    </svg>
+                autocomplete="name"
+            />
+        </div>
+
+        <div class="form-group">
+            <Input
+                type="email"
+                id="email"
+                label="E-mail"
+                bind:value={email}
+                placeholder="seu@email.com"
+                error={triedSubmit ? emailError : ""}
+                required
+                disabled={loading}
+                autocomplete="email"
+            />
+        </div>
+
+        <div class="form-group">
+            <Input
+                type="password"
+                id="password"
+                label="Senha"
+                bind:value={password}
+                placeholder="Digite uma senha segura"
+                error={triedSubmit ? passwordError : ""}
+                required
+                disabled={loading}
+                autocomplete="new-password"
+            />
+
+            {#if password && !passwordError}
+                <div class="password-strength">
+                    <div class="strength-indicator strong"></div>
+                    <span class="strength-text">Senha forte ✓</span>
                 </div>
-                Continuar com Google
+            {/if}
+        </div>
+
+        <div class="form-group">
+            <Input
+                type="password"
+                id="confirmPassword"
+                label="Confirmar senha"
+                bind:value={confirmPassword}
+                placeholder="Digite sua senha novamente"
+                error={triedSubmit ? confirmPasswordError : ""}
+                required
+                disabled={loading}
+                autocomplete="new-password"
+            />
+        </div>
+
+        <div class="button-group">
+            <Button
+                type="submit"
+                variant="primary"
+                disabled={loading}
+                {loading}
+            >
+                {loading ? "Criando conta..." : "Criar conta"}
             </Button>
         </div>
+    </form>
 
-        <div class="login-link">
-            <span>Já tem uma conta?</span>
-            <a href="/login">Fazer login</a>
-        </div>
-    </Container>
+    <div class="divider">
+        <span>ou registre-se com</span>
+    </div>
+
+    <div class="google-section">
+        <Button
+            variant="secondary"
+            disabled={loading}
+            on:click={handleGoogleRegister}
+        >
+            <div class="google-icon">
+                <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 18 18"
+                    xmlns="http://www.w3.org/2000/svg"
+                >
+                    <path
+                        fill="#4285F4"
+                        d="M18 9.2c0-.6-.1-1.2-.2-1.8H9.2v3.4h4.9c-.2 1.1-.9 2-1.8 2.6v2.2h2.9c1.7-1.6 2.8-3.9 2.8-6.4z"
+                    />
+                    <path
+                        fill="#34A853"
+                        d="M9.2 18c2.4 0 4.5-.8 6-2.2l-2.9-2.2c-.8.6-1.9.9-3.1.9-2.4 0-4.4-1.6-5.1-3.8H1.1v2.3C2.6 15.4 5.7 18 9.2 18z"
+                    />
+                    <path
+                        fill="#FBBC04"
+                        d="M4.1 10.7c-.2-.6-.3-1.2-.3-1.8s.1-1.2.3-1.8V4.8H1.1C.4 6.1 0 7.5 0 9s.4 2.9 1.1 4.2l3-2.5z"
+                    />
+                    <path
+                        fill="#EA4335"
+                        d="M9.2 3.6c1.3 0 2.5.4 3.4 1.3l2.5-2.5C13.7.7 11.6 0 9.2 0 5.7 0 2.6 2.6 1.1 5.9l3 2.5c.7-2.2 2.7-3.8 5.1-3.8z"
+                    />
+                </svg>
+            </div>
+            Continuar com Google
+        </Button>
+    </div>
+
+    <div class="login-link">
+        <span>Já tem uma conta?</span>
+        <a href="/login">Fazer login</a>
+    </div>
 {/if}
 
 {#if loading && !registrationComplete}

@@ -119,8 +119,8 @@ function parseAvaliacao(data: any): AvaliacaoModel {
         id_avaliacao: data.id_avaliacao,
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
         id_problema: data.id_problema || null,
-        aluno_avaliador: data.aluno_avaliador ? parseAluno(data.aluno_avaliador) : null,
-        aluno_avaliado: data.aluno_avaliado ? parseAluno(data.aluno_avaliado) : null,
+        aluno_avaliador: data.avaliador ? parseAluno(data.avaliador) : null,
+        aluno_avaliado: data.avaliado ? parseAluno(data.avaliado) : null,
         notas: data.notas ? JSON.parse(data.notas) : {},
         id_professor: data.id_professor || null
     };

@@ -7,7 +7,7 @@
     import { goto } from "$app/navigation";
     import Container from "./Container.svelte";
 
-    export let userType: "aluno" | "professor" = "aluno";
+    export let userType: "aluno" | "professor" | "generic" = "aluno";
 
     let sidebarOpen = false;
     let isMobile = false;
@@ -85,47 +85,71 @@
 </script>
 
 <div class="layout">
-    <!-- Mobile menu button -->
-    <button
-        class="mobile-menu-btn"
-        class:visible={isMobile}
-        on:click={toggleSidebar}
-        transition:fade
-    >
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
+    {#if userType !== "generic"}
+        <!-- Mobile menu button -->
+        <button
+            class="mobile-menu-btn"
+            class:visible={isMobile}
+            on:click={toggleSidebar}
+            transition:fade
         >
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-    </button>
-
-    <!-- Sidebar overlay for mobile -->
-    {#if sidebarOpen && isMobile}
-        <div
-            class="sidebar-overlay"
-            on:click={closeSidebar}
-            transition:fade={{ duration: 200 }}
-        ></div>
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+            >
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
     {/if}
 
-    {#if !isMobile || sidebarOpen}
-        <aside class="sidebar" class:open={sidebarOpen} class:mobile={isMobile}>
-            <div class="sidebar-content">
-                <nav>
-                    {#each navItems as item}
-                        <a
-                            href={item.href}
-                            class:active={item.active}
-                            on:click={closeSidebar}
-                        >
+    {#if userType !== "generic"}
+        <!-- Sidebar overlay for mobile -->
+        {#if sidebarOpen && isMobile}
+            <div
+                class="sidebar-overlay"
+                on:click={closeSidebar}
+                transition:fade={{ duration: 200 }}
+            ></div>
+        {/if}
+
+        {#if !isMobile || sidebarOpen}
+            <aside
+                class="sidebar"
+                class:open={sidebarOpen}
+                class:mobile={isMobile}
+            >
+                <div class="sidebar-content">
+                    <nav>
+                        {#each navItems as item}
+                            <a
+                                href={item.href}
+                                class:active={item.active}
+                                on:click={closeSidebar}
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    {@html item.icon}
+                                </svg>
+                                {item.text}
+                            </a>
+                        {/each}
+                    </nav>
+                    <div class="logout">
+                        <button on:click={handleLogout}>
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 width="20"
@@ -135,32 +159,18 @@
                                 stroke="currentColor"
                                 stroke-width="2"
                             >
-                                {@html item.icon}
+                                <path
+                                    d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+                                />
+                                <polyline points="16 17 21 12 16 7" />
+                                <line x1="21" y1="12" x2="9" y2="12" />
                             </svg>
-                            {item.text}
-                        </a>
-                    {/each}
-                </nav>
-                <div class="logout">
-                    <button on:click={handleLogout}>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                        >
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                            <polyline points="16 17 21 12 16 7" />
-                            <line x1="21" y1="12" x2="9" y2="12" />
-                        </svg>
-                        Sair
-                    </button>
+                            Sair
+                        </button>
+                    </div>
                 </div>
-            </div>
-        </aside>
+            </aside>
+        {/if}
     {/if}
 
     <main
@@ -169,9 +179,20 @@
             ? 'none'
             : 'auto'}; filter: {sidebarOpen && isMobile
             ? 'blur(2px) grayscale(0.2)'
-            : 'none'};"
+            : 'none'}; margin-left: {userType === 'generic'
+            ? '0'
+            : '250px'}; {userType === 'generic'
+            ? 'display: flex; align-items: center; justify-content: center; min-height: 100vh;'
+            : ''}"
     >
-        <div class="main-card">
+        <div
+            class="main-card"
+            style="max-width: {userType === 'generic'
+                ? '420px'
+                : '60vw'}; margin: {userType === 'generic'
+                ? '2rem auto'
+                : '2rem auto'};"
+        >
             <slot />
         </div>
     </main>
@@ -365,33 +386,13 @@
     }
     @media (max-width: 768px) {
         .main-card {
-            padding: 1.2rem 0.5rem;
             margin: 1.2rem 0.2rem;
             max-width: 100vw;
             border-radius: 16px;
         }
-    }
-    @media (max-width: 640px) {
-        .main-card {
-            padding-left: 1rem;
-            padding-right: 1rem;
-            padding-top: 1.5rem;
-            padding-bottom: 1.5rem;
-            border-radius: 12px;
+        .layout {
+            overflow: scroll;
         }
-    }
-    @media (max-width: 480px) {
-        .main-card {
-            padding-left: 0.5rem;
-            padding-right: 0.5rem;
-            padding-top: 0.75rem;
-            padding-bottom: 0.75rem;
-            max-width: 100%;
-            margin: 0;
-            border-radius: 12px;
-        }
-    }
-    @media (max-width: 768px) {
         .sidebar,
         .sidebar-content,
         nav,
@@ -441,12 +442,14 @@
             z-index: 999;
         }
         .main-content {
+            padding: 1.2rem;
             margin-left: 0;
             width: 100vw;
             min-width: 0;
             display: flex;
             align-items: center;
             justify-content: center;
+            height: fit-content;
         }
     }
     @media (max-width: 480px) {

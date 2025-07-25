@@ -10,6 +10,16 @@ export class Utils {
         if (!date) return "";
         return date.toLocaleDateString("pt-BR");
     }
+
+    /**
+     * Returns true if the current device is considered mobile (screen width <= 768px)
+     */
+    static isMobile(): boolean {
+        if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+            return window.matchMedia('(max-width: 768px)').matches;
+        }
+        return false;
+    }
 }
 
 export class MediaCalculator {
