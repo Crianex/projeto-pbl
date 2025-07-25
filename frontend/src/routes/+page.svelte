@@ -5,8 +5,6 @@
     import { goto } from "$app/navigation";
     import { fade, fly } from "svelte/transition";
     import { quintOut } from "svelte/easing";
-    import HomepageSvg from "$lib/images/homepage.svg";
-    import LogoSvg from "$lib/images/logounrv.svg";
 
     function goToLogin() {
         goto("/login");
@@ -35,7 +33,11 @@
     <header class="header">
         <div class="header-content">
             <div class="logo">
-                <img src={LogoSvg} alt="Logo UNRV" class="logo-image" />
+                <img
+                    src="/images/logounrv.svg"
+                    alt="Logo UNRV"
+                    class="logo-image"
+                />
                 <h1 class="header-title">Gerenciamento de avaliações PBL</h1>
             </div>
         </div>
@@ -73,7 +75,7 @@
                 in:fly={{ x: 30, duration: 1000, delay: 400, easing: quintOut }}
             >
                 <img
-                    src={HomepageSvg}
+                    src="/images/homepage.svg"
                     alt="Ilustração PBL"
                     class="illustration"
                 />
@@ -90,29 +92,49 @@
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon-container">
-                        <img src="/src/lib/images/carinhahome.svg" alt="Ícone de avaliação" class="feature-icon" />
+                        <img
+                            src="/images/carinhahome.svg"
+                            alt="Ícone de avaliação"
+                            class="feature-icon"
+                        />
                     </div>
                     <div class="feature-content">
-                        <div class="feature-text-line">Avaliar os colegas em</div>
+                        <div class="feature-text-line">
+                            Avaliar os colegas em
+                        </div>
                         <div class="feature-highlight-line">5 min</div>
                     </div>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon-container">
-                        <img src="/src/lib/images/folderhome.svg" alt="Ícone de documentos" class="feature-icon" />
+                        <img
+                            src="/images/folderhome.svg"
+                            alt="Ícone de documentos"
+                            class="feature-icon"
+                        />
                     </div>
                     <div class="feature-content">
-                        <div class="feature-text-line">Enviar documentos e trabalhos</div>
+                        <div class="feature-text-line">
+                            Enviar documentos e trabalhos
+                        </div>
                         <div class="feature-highlight-line">na plataforma</div>
                     </div>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon-container">
-                        <img src="/src/lib/images/setinhahome.svg" alt="Ícone de visualização" class="feature-icon" />
+                        <img
+                            src="/images/setinhahome.svg"
+                            alt="Ícone de visualização"
+                            class="feature-icon"
+                        />
                     </div>
                     <div class="feature-content">
-                        <div class="feature-text-line">Visualizar as avaliações recebidas</div>
-                        <div class="feature-highlight-line">instantaneamente</div>
+                        <div class="feature-text-line">
+                            Visualizar as avaliações recebidas
+                        </div>
+                        <div class="feature-highlight-line">
+                            instantaneamente
+                        </div>
                     </div>
                 </div>
             </div>
@@ -125,8 +147,8 @@
             <BrandLogo />
             <div class="footer-info">
                 <p class="footer-description">
-                    Plataforma de gestão de avaliações PBL desenvolvida para facilitar 
-                    a vida de estudantes e instituições
+                    Plataforma de gestão de avaliações PBL desenvolvida para
+                    facilitar a vida de estudantes e instituições
                 </p>
             </div>
         </div>
@@ -135,8 +157,9 @@
 
 <style>
     @font-face {
-        font-family: 'Source Code Pro';
-        src: url('/src/lib/fonts/SourceCodePro-VariableFont_wght.ttf') format('truetype');
+        font-family: "Source Code Pro";
+        src: url("/src/lib/fonts/SourceCodePro-VariableFont_wght.ttf")
+            format("truetype");
         font-weight: 200 900;
         font-style: normal;
     }
@@ -266,19 +289,28 @@
     /* Features Styles */
     .features {
         padding: 5rem 0;
-        background: linear-gradient(180deg, var(--color-text-white) 0%, var(--color-nature-background-light) 100%);
+        background: linear-gradient(
+            180deg,
+            var(--color-text-white) 0%,
+            var(--color-nature-background-light) 100%
+        );
         backdrop-filter: blur(10px);
         position: relative;
     }
 
     .features::before {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
         height: 1px;
-        background: linear-gradient(90deg, transparent, var(--color-nature-main), transparent);
+        background: linear-gradient(
+            90deg,
+            transparent,
+            var(--color-nature-main),
+            transparent
+        );
     }
 
     .features-content {
@@ -299,14 +331,18 @@
     }
 
     .features-title::after {
-        content: '';
+        content: "";
         position: absolute;
         bottom: -1rem;
         left: 50%;
         transform: translateX(-50%);
         width: 80px;
         height: 4px;
-        background: linear-gradient(90deg, var(--color-nature-main), var(--color-nature-accent));
+        background: linear-gradient(
+            90deg,
+            var(--color-nature-main),
+            var(--color-nature-accent)
+        );
         border-radius: 2px;
     }
 
@@ -394,20 +430,32 @@
     /* Footer Styles */
     .footer {
         padding: 3rem 0 2rem 0;
-        background: linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+        background: linear-gradient(
+            180deg,
+            #0f172a 0%,
+            #1e293b 50%,
+            #0f172a 100%
+        );
         border-top: 1px solid rgba(16, 185, 129, 0.2);
         position: relative;
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
     .footer::before {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
         height: 2px;
-        background: linear-gradient(90deg, transparent, #10b981, #059669, #10b981, transparent);
+        background: linear-gradient(
+            90deg,
+            transparent,
+            #10b981,
+            #059669,
+            #10b981,
+            transparent
+        );
         box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
     }
 
@@ -420,12 +468,6 @@
         align-items: center;
         gap: 1.5rem;
     }
-
-
-
-
-
-
 
     .footer-info {
         text-align: center;
@@ -530,13 +572,11 @@
         .footer {
             padding: 1.5rem 0 1rem 0;
         }
-        
+
         .footer-content {
             gap: 1rem;
         }
-        
 
-        
         .footer-description {
             font-size: 0.9rem;
         }
