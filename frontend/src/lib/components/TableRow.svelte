@@ -35,7 +35,12 @@
             class={col.key +
                 (col.key === "select" ? " select" : "") +
                 (col.key === "actions" ? " actions" : "") +
-                (row[col.key + "Class"] ? ` ${row[col.key + "Class"]}` : "")}
+                (row[col.key + "Class"] ? ` ${row[col.key + "Class"]}` : "") +
+                (row[col.key] &&
+                typeof row[col.key] === "object" &&
+                "class" in row[col.key]
+                    ? ` ${row[col.key].class}`
+                    : "")}
         >
             {#if col.key === "select"}
                 <input
@@ -134,7 +139,11 @@
             {:else if col.key === "actions"}
                 <span class="ellipsis" title="Actions">&#x22EE;</span>
             {:else}
-                {row[col.key] || ""}
+                {row[col.key] &&
+                typeof row[col.key] === "object" &&
+                "value" in row[col.key]
+                    ? row[col.key].value
+                    : row[col.key] || ""}
             {/if}
         </td>
     {/each}

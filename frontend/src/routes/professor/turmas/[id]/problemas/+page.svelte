@@ -12,6 +12,7 @@
     import type { ProblemaModel } from "$lib/interfaces/interfaces";
     import { DateUtils, Utils } from "$lib/utils/utils";
     import BackButton from "$lib/components/BackButton.svelte";
+    import { formatToDateTime } from "brazilian-values";
 
     const turmaId = $page.params.id;
 
@@ -111,7 +112,7 @@
 <div class="header">
     <div class="title-section">
         <BackButton
-            on:click={() => goto(`/professor/turmas/${turmaId}`)}
+            on:click={() => goto(`/professor/turmas/`)}
             text="Voltar para turmas"
         />
         <h1>Problemas - {turma.nome_turma}</h1>
@@ -143,17 +144,28 @@
             <div class="problema-item">
                 <div class="problema-info">
                     <h3>{problema.nome_problema}</h3>
-                    <div class="problema-details">
-                        <span
-                            >Período: {DateUtils.getDateFromProblemaModel(
-                                problema,
-                            )}</span
-                        >
-                        <!-- <span
-                                >Média geral: {problema.media_geral?.toFixed(
-                                    2,
-                                ) || "0.00"}</span
-                            > -->
+                    <div class="problema-tags-status">
+                        <div class="problema-tag-status-group">
+                            <span class="problema-tag-label">Período:</span>
+                            {#each Object.entries(problema.data_e_hora_criterios_e_arquivos) as [tag, dateObj]}
+                                {#if dateObj.data_e_hora_inicio && dateObj.data_e_hora_fim}
+                                    <span
+                                        class="tag-status {DateUtils.isNowWithinTagDateRange(
+                                            problema,
+                                            tag,
+                                        )
+                                            ? 'tag-green'
+                                            : 'tag-red'}"
+                                    >
+                                        {tag}:<br />De {formatToDateTime(
+                                            dateObj.data_e_hora_inicio,
+                                        )} à {formatToDateTime(
+                                            dateObj.data_e_hora_fim,
+                                        )}
+                                    </span>
+                                {/if}
+                            {/each}
+                        </div>
                     </div>
                 </div>
                 <div class="actions">
@@ -388,6 +400,46 @@
         margin-top: 2rem;
     }
 
+    .problema-tags-status {
+        margin: 0.2rem 0 0.5rem 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+    .problema-tag-status-group {
+        display: flex;
+        flex-direction: column;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: flex-start;
+        margin-bottom: 0.1rem;
+    }
+    .problema-tag-label {
+        font-weight: 500;
+        margin-right: 0.3rem;
+        color: #444;
+        font-size: 0.97rem;
+    }
+    .tag-status {
+        display: block;
+        padding: 0.15rem 0.5rem;
+        border-radius: 8px;
+        font-size: 0.93rem;
+        font-weight: 500;
+        margin-right: 0.2rem;
+        margin-bottom: 0.1rem;
+        background: #f2f4f8;
+        color: #697077;
+    }
+    .tag-green {
+        background: #e6f9ed;
+        color: #1a7f37;
+    }
+    .tag-red {
+        background: #fbeaea;
+        color: #b71c1c;
+    }
+
     @media (max-width: 768px) {
         .container {
             padding: 0.5rem;
@@ -438,6 +490,19 @@
             padding: 0.5rem 0.2rem;
             font-size: 0.97rem;
             box-sizing: border-box;
+        }
+        .problema-tags-status {
+            gap: 0.1rem;
+        }
+        .problema-tag-status-group {
+            gap: 0.2rem;
+        }
+        .problema-tag-label {
+            font-size: 0.91rem;
+        }
+        .tag-status {
+            font-size: 0.88rem;
+            padding: 0.1rem 0.3rem;
         }
     }
 

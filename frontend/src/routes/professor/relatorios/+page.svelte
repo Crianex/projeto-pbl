@@ -768,9 +768,10 @@
                     <option value="">Selecione um problema</option>
                     {#each problemas as problema}
                         <option value={problema.id_problema}>
-                            {problema.nome_problema} (Média: {problema.media_geral?.toFixed(
-                                2,
-                            ) || "N/A"})
+                            {problema.nome_problema} (Média: {problema.media_geral !==
+                                null && problema.media_geral !== undefined
+                                ? problema.media_geral.toFixed(2)
+                                : "Não avaliado"}
                         </option>
                     {/each}
                 </select>

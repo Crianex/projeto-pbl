@@ -64,7 +64,9 @@
             label: "Minha Média",
             sortable: true,
             render: (row: ProblemaModel) =>
-                row.media_geral ? row.media_geral.toFixed(2) : "Não avaliado",
+                row.media_geral !== null && row.media_geral !== undefined
+                    ? row.media_geral.toFixed(2)
+                    : "Não avaliado",
         },
         {
             key: "actions",
@@ -556,6 +558,4 @@
             padding: 0.75rem;
         }
     }
-
-    
 </style>

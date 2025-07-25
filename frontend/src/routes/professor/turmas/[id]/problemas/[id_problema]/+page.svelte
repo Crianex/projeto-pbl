@@ -290,6 +290,22 @@
             : 0;
     }
 
+    // Add this helper function for outlier detection (copy from relatorios if not present)
+    function isOutlier(studentId: number, grade: number): boolean {
+        if (grade === 0) return false;
+        // Collect all received grades for this student (excluding self-evaluation and zeros)
+        const received = Object.keys(evaluationMatrix)
+            .map(
+                (evaluatorId) =>
+                    evaluationMatrix[Number(evaluatorId)][studentId],
+            )
+            .filter((g, idx) => alunos[idx]?.id !== studentId && g > 0);
+        if (received.length <= 1) return false;
+        const avg = received.reduce((a, b) => a + b, 0) / received.length;
+        // Outlier if absolute difference is greater than 2 points
+        return Math.abs(grade - avg) > 2;
+    }
+
     // Filter alunos based on search term
     $: filteredAlunos = searchTerm
         ? alunos.filter((aluno) =>
@@ -325,14 +341,26 @@
         // Add individual criteria scores (keep as before)
         criteriosList.forEach((criterio) => {
             const key = criterio.nome_criterio.toLowerCase();
-            row[key] =
-                aluno.medias && key in aluno.medias
-                    ? aluno.medias[key]
-                    : "Não avaliado";
+            if (
+                aluno.medias &&
+                key in aluno.medias &&
+                aluno.medias[key] !== null &&
+                aluno.medias[key] !== undefined
+            ) {
+                const value = aluno.medias[key];
+                row[key] = {
+                    value: value.toFixed(2),
+                    class: isOutlier(aluno.id, value) ? "outlier-grade" : "",
+                };
+            } else {
+                row[key] = { value: "Não avaliado", class: "" };
+            }
         });
 
         // Calculate overall media from evaluation matrix (same as relatorios)
-        row.media = getReceivedAverage(aluno.id) || "Não avaliado";
+        const avg = getReceivedAverage(aluno.id);
+        row.media =
+            avg !== null && avg !== undefined ? avg.toFixed(2) : "Não avaliado";
 
         return row;
     });
