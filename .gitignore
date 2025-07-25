@@ -45,7 +45,6 @@ coverage/
 /frontend/.svelte-kit/
 /frontend/build/
 /frontend/.vercel/
-/frontend/static/
 /frontend/package-lock.json
 
 # Backend specific
