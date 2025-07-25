@@ -90,6 +90,15 @@
         selected = new Set(selected);
     }
 
+    function selectAll() {
+        if (results.length === 0) return;
+        results.forEach((aluno) => {
+            selected.add(aluno.id.toString());
+        });
+        // Force reactivity
+        selected = new Set(selected);
+    }
+
     function handleAddSelected() {
         const selectedAlunos = results
             .filter((a) => selected.has(a.id.toString()))
@@ -138,6 +147,22 @@
                 class="search-input"
             />
         </div>
+
+        {#if results.length > 0}
+            <div
+                style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;"
+            >
+                <Button
+                    type="button"
+                    variant="secondary"
+                    on:click={selectAll}
+                    disabled={results.length === 0 ||
+                        results.every((a) => selected.has(a.id.toString()))}
+                >
+                    Selecionar Todos
+                </Button>
+            </div>
+        {/if}
 
         {#if loading && results.length === 0}
             <div class="status-message">Carregando alunos...</div>

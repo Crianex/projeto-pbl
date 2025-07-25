@@ -179,11 +179,7 @@
         let added = false;
         for (const aluno of alunos) {
             const alunoId = aluno.id ?? aluno.id_aluno;
-            if (
-                !alunosMatriculados.some(
-                    (a) => (a.id ?? a.id_aluno) === alunoId,
-                )
-            ) {
+            if (!alunosMatriculados.some((a) => a.id === alunoId)) {
                 alunosMatriculados = [...alunosMatriculados, aluno];
                 added = true;
             }
@@ -402,7 +398,7 @@
     on:close={() => (searchDialogOpen = false)}
     on:select={handleAlunoSelected}
     exclude_turma_id={turmaId}
-    exclude_aluno_ids={alunosMatriculados.map((a) => a.id || a.id_aluno)}
+    exclude_aluno_ids={alunosMatriculados.map((a) => a.id)}
 />
 
 <Dialog
