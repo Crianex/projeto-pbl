@@ -173,8 +173,6 @@
             // Get the problem details first using cache service
             problema = await ProblemasService.getById(id_problema.toString());
 
-            console.log(JSON.stringify(problema, null, 2));
-
             // Get all evaluations using the service
             const avaliacoesData =
                 await AvaliacoesService.getAvaliacoes(id_problema);

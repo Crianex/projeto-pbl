@@ -10,11 +10,17 @@ export const AlunoController: EndpointController = {
     name: 'alunos',
     routes: {
         'search': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            const { query, exclude_turma_id, exclude_aluno_ids } = req.query;
+            const { query, exclude_turma_id, exclude_aluno_ids, limit, offset, order } = req.query;
 
             if (!query) {
                 return res.status(400).json({ error: 'Search query is required' });
             }
+
+            // Parse limit/offset with defaults
+            const parsedLimit = Math.max(1, Math.min(parseInt(limit as string) || 10, 100)); // 1-100
+            const parsedOffset = Math.max(0, parseInt(offset as string) || 0);
+            const orderParam = typeof order === 'string' ? order : 'nome_completo.asc';
+            const [orderCol, orderDir] = orderParam.split('.');
 
             var queryStatement = supabase.from('alunos').select('*');
 
@@ -36,7 +42,12 @@ export const AlunoController: EndpointController = {
                 }
             }
 
-            // First get all alunos that match the search query
+            // Apply ordering
+            queryStatement = queryStatement.order(orderCol, { ascending: orderDir !== 'desc' });
+
+            // Apply pagination using Supabase's range method
+            queryStatement = queryStatement.range(parsedOffset, parsedOffset + parsedLimit - 1);
+
             const { data: matchingAlunos, error: searchError } = await queryStatement;
 
             if (searchError) {
@@ -44,8 +55,8 @@ export const AlunoController: EndpointController = {
                 return res.status(500).json({ error: searchError.message });
             }
 
-            // Return only the first 10 results
-            return res.json(matchingAlunos?.slice(0, 10));
+            // Return the paginated results directly
+            return res.json(matchingAlunos);
         }),
 
         'list': new Pair(RequestType.GET, async (req: Request, res: Response) => {

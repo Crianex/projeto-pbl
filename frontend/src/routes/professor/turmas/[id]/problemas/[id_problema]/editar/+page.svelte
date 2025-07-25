@@ -192,6 +192,12 @@
 
         <ArquivosForm
             bind:definicoes={formData.definicao_arquivos_de_avaliacao}
+            bind:dataEHoraCriteriosEArquivos={
+                formData.data_e_hora_criterios_e_arquivos
+            }
+            on:changeDataEHoraCriteriosEArquivos={(e) => {
+                formData.data_e_hora_criterios_e_arquivos = e.detail;
+            }}
         />
 
         <div class="form-actions">

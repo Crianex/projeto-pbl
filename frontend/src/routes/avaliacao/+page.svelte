@@ -202,6 +202,48 @@
                 return;
             }
 
+            // 1. Fetch all evaluations for this problem
+            const allAvaliacoes = await AvaliacoesService.getByProblema(
+                id_problema.toString(),
+                true,
+            );
+
+            // 2. Filter for duplicates
+            let duplicates = [];
+            if (isProfessorEvaluation) {
+                duplicates = allAvaliacoes.filter(
+                    (av) =>
+                        av.id_problema === parseInt(id_problema) &&
+                        av.id_professor === parseInt(id_professor!) &&
+                        av.avaliado?.id_aluno ===
+                            parseInt(id_aluno_avaliado || "0"),
+                );
+            } else {
+                duplicates = allAvaliacoes.filter(
+                    (av) =>
+                        av.id_problema === parseInt(id_problema) &&
+                        av.avaliador?.id_aluno ===
+                            parseInt(id_aluno_avaliador!) &&
+                        av.avaliado?.id_aluno ===
+                            parseInt(id_aluno_avaliado || "0"),
+                );
+
+                console.log(
+                    `duplicates: ${JSON.stringify(duplicates)}`,
+                    `id_problema: ${id_problema}`,
+                    `id_aluno_avaliador: ${id_aluno_avaliador}`,
+                    `id_aluno_avaliado: ${id_aluno_avaliado}`,
+                );
+            }
+
+            // 3. Delete duplicates
+            for (const av of duplicates) {
+                await AvaliacoesService.delete(
+                    av.id_avaliacao.toString(),
+                    id_problema.toString(),
+                );
+            }
+
             const notas = { ...currentValues };
 
             if (isProfessorEvaluation) {

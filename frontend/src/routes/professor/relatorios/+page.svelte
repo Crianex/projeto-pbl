@@ -119,7 +119,6 @@
             const data = await api.get(
                 `/avaliacoes/list?id_problema=${problemaId}`,
             );
-            console.log(`Received ${data?.length || 0} avaliacoes:`, data);
             avaliacoes = data || [];
             console.log("About to build evaluation matrix...");
             buildEvaluationMatrix();

@@ -179,9 +179,20 @@
             ? 'none'
             : 'auto'}; filter: {sidebarOpen && isMobile
             ? 'blur(2px) grayscale(0.2)'
-            : 'none'};"
+            : 'none'}; margin-left: {userType === 'generic'
+            ? '0'
+            : '250px'}; {userType === 'generic'
+            ? 'display: flex; align-items: center; justify-content: center; min-height: 100vh;'
+            : ''}"
     >
-        <div class="main-card">
+        <div
+            class="main-card"
+            style="max-width: {userType === 'generic'
+                ? '420px'
+                : '60vw'}; margin: {userType === 'generic'
+                ? '2rem auto'
+                : '2rem auto'};"
+        >
             <slot />
         </div>
     </main>

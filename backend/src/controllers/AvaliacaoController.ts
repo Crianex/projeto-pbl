@@ -185,7 +185,7 @@ export const AvaliacaoController: EndpointController = {
         }),
 
         'delete': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
-            const { id_avaliacao } = req.params;
+            const { id_avaliacao } = req.query;
 
             // check if id_avaliacao is present
             if (!id_avaliacao) {
