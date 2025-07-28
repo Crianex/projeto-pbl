@@ -186,7 +186,7 @@
             class="main-card"
             style="max-width: {userType === 'generic'
                 ? '420px'
-                : '80vw'}; margin: {userType === 'generic'
+                : '90vw'}; margin: {userType === 'generic'
                 ? '2rem auto'
                 : '2rem auto'};"
         >
@@ -372,7 +372,7 @@
         max-width: 60vw;
         min-width: 30vw;
         width: 100%;
-        padding: 2rem;
+        padding: 1rem;
         flex-direction: column;
         box-shadow:
             0 15px 35px rgba(0, 0, 0, 0.08),

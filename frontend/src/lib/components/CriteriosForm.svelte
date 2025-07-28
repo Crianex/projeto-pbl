@@ -243,11 +243,32 @@
                 {#each criteriosList as criterio, index}
                     <div class="criterio-item">
                         <div class="criterio-header">
-                            <Input
-                                bind:value={criterio.nome_criterio}
-                                placeholder="Nome do critério"
-                                required
-                            />
+                            <div class="criterio-name-container">
+                                <Input
+                                    bind:value={criterio.nome_criterio}
+                                    placeholder="Nome do critério"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    class="remove-button"
+                                    on:click={() =>
+                                        removeCriterio(groupName, index)}
+                                >
+                                    <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+                                            fill="currentColor"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
                             <div class="nota-maxima">
                                 <label>Nota Máxima:</label>
                                 <Input
@@ -260,25 +281,6 @@
                                     required
                                 />
                             </div>
-                            <button
-                                type="button"
-                                class="remove-button"
-                                on:click={() =>
-                                    removeCriterio(groupName, index)}
-                            >
-                                <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <path
-                                        d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
-                            </button>
                         </div>
                         <TextArea
                             bind:value={criterio.descricao_criterio}
@@ -322,6 +324,9 @@
 
     .criterio-group {
         margin-bottom: 2rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
     }
 
     .criterio-group-header {
@@ -339,9 +344,10 @@
         align-items: center;
         margin-bottom: 1rem;
         padding: 1rem;
-        background: #f8f9fa;
-        border-radius: 4px;
-        border: 1px solid #e9ecef;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
     .criterio-datetime label {
@@ -371,14 +377,22 @@
     }
 
     .criterio-header {
-        display: grid;
-        grid-template-columns: 1fr auto auto;
+        display: flex;
+        flex-direction: column;
         gap: 1rem;
         align-items: center;
         margin-bottom: 1rem;
     }
 
+    .criterio-name-container {
+        display: flex;
+        width: 100%;
+        gap: 1rem;
+        align-items: center;
+    }
+
     .nota-maxima {
+        width: 100%;
         display: flex;
         align-items: center;
         gap: 0.5rem;
@@ -407,5 +421,92 @@
 
     :global(.criterios-list .button) {
         margin: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .criterios-header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch;
+        }
+
+        .criterios-header :global(button) {
+            width: 100%;
+        }
+
+        .criterio-group-header {
+            flex-direction: column;
+            gap: 0.8rem;
+            align-items: stretch;
+        }
+
+        .criterio-group-header .remove-button {
+            order: -1;
+            align-self: flex-end;
+        }
+
+        .criterio-datetime {
+            grid-template-columns: 1fr;
+            gap: 0.8rem;
+        }
+
+        .criterio-datetime label {
+            font-size: 0.9rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .criterio-header {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .criterio-name-container {
+            display: flex;
+            width: 100%;
+            align-items: center;
+        }
+
+        .criterio-name-container :global(input) {
+            flex: 1;
+        }
+
+        .nota-maxima {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.3rem;
+        }
+
+        .nota-maxima label {
+            font-size: 0.9rem;
+        }
+
+        .nota-maxima :global(input),
+        .criterio-header :global(input) {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .criterios-section {
+            margin-top: 1.5rem;
+        }
+
+        .criterios-header h2 {
+            font-size: 1.1rem;
+        }
+
+        .criterio-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .criterio-item {
+            padding: 0.8rem;
+        }
+
+        .criterio-datetime {
+            padding: 0.8rem;
+        }
     }
 </style>

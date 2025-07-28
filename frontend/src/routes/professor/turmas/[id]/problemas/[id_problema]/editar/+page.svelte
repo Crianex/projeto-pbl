@@ -77,12 +77,14 @@
                             ? {
                                   data_e_hora_inicio:
                                       problema!
-                                          .data_e_hora_criterios_e_arquivos[tag!]
-                                          .data_e_hora_inicio ?? new Date(),
+                                          .data_e_hora_criterios_e_arquivos[
+                                          tag!
+                                      ].data_e_hora_inicio ?? new Date(),
                                   data_e_hora_fim:
                                       problema!
-                                          .data_e_hora_criterios_e_arquivos[tag!]
-                                          .data_e_hora_fim ?? new Date(),
+                                          .data_e_hora_criterios_e_arquivos[
+                                          tag!
+                                      ].data_e_hora_fim ?? new Date(),
                               }
                             : {
                                   data_e_hora_inicio: new Date(
@@ -227,16 +229,9 @@
         }
     }
 
-    .container {
-        margin: 2rem auto;
-        padding: 1rem 2rem;
-        height: 100%;
-        width: 100%;
-    }
-
     .form {
         background: white;
-        padding: 2rem;
+        padding: 0.2rem;
         border-radius: 8px;
         border: 1px solid #e9ecef;
     }
@@ -264,5 +259,81 @@
 
     :global(.criterios-list .button) {
         margin: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            margin: 1rem auto;
+            padding: 0.5rem 1rem;
+        }
+
+        .form {
+            padding: 1.5rem;
+            margin: 0 0.5rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .form-actions :global(button) {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .container {
+            margin: 0.5rem auto;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .form {
+            padding: 1rem;
+            margin: 0 0.25rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+    }
+
+    /* Global styles for form components on mobile */
+    @media (max-width: 768px) {
+        :global(.date-range-container) {
+            flex-direction: column !important;
+            gap: 1rem !important;
+        }
+
+        :global(.date-range-container > div) {
+            width: 100% !important;
+        }
+
+        :global(.criterio-item) {
+            flex-direction: column !important;
+            gap: 0.8rem !important;
+        }
+
+        :global(.criterio-item > div) {
+            width: 100% !important;
+        }
+
+        :global(.arquivo-item) {
+            flex-direction: column !important;
+            gap: 0.8rem !important;
+        }
+
+        :global(.arquivo-item > div) {
+            width: 100% !important;
+        }
+
+        :global(.form-row) {
+            flex-direction: column !important;
+            gap: 1rem !important;
+        }
+
+        :global(.form-row > div) {
+            width: 100% !important;
+        }
     }
 </style>

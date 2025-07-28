@@ -238,4 +238,10 @@
     .textarea::placeholder {
         color: #9ca3af;
     }
+
+    @media (max-width: 768px) {
+        .textarea {
+            min-height: 20rem;
+        }
+    }
 </style>
