@@ -176,34 +176,21 @@
     <main
         class="main-content"
         class:sidebar-open={sidebarOpen && isMobile}
+        class:generic-layout={userType === "generic"}
         style="margin-left: {userType === 'generic' || isMobile
             ? '0'
-            : '250px'}; {userType === 'generic'
-            ? 'display: flex; align-items: center; justify-content: center; min-height: 100vh;'
-            : ''}"
+            : '250px'};"
     >
         <div
-            class="main-card-wrapper"
+            class="main-card"
+            class:generic-card={userType === "generic"}
             style="max-width: {userType === 'generic'
-                ? '420px'
+                ? '30rem'
                 : isMobile
                   ? '90vw'
-                  : '80vw'}; margin: {userType === 'generic'
-                ? '2rem auto'
-                : '2rem auto'};"
+                  : '60vw'};"
         >
-            <div
-                class="main-card"
-                style="max-width: {userType === 'generic'
-                    ? '420px'
-                    : isMobile
-                      ? '90vw'
-                      : '60vw'}; margin: {userType === 'generic'
-                    ? '2rem auto'
-                    : '2rem auto'};"
-            >
-                <slot />
-            </div>
+            <slot />
         </div>
     </main>
 </div>
@@ -373,9 +360,14 @@
         margin-left: 250px;
         display: flex;
         align-items: flex-start;
+        justify-content: center;
         transition: all 0.3s ease;
         padding: 2rem;
         height: 100vh;
+    }
+
+    .main-content.generic-layout {
+        align-items: center;
     }
 
     .main-content.sidebar-open {
@@ -383,22 +375,9 @@
         filter: blur(2px) grayscale(0.2);
     }
 
-    .main-card-wrapper {
-        background: transparent;
-        padding: 0;
-        border-radius: 20px;
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        min-height: calc(100vh - 4rem);
-    }
-
     .main-card {
         background: #fff;
         border-radius: 20px;
-        max-width: 60vw;
-        min-width: 30vw;
         width: 100%;
         padding: 1rem;
         flex-direction: column;
@@ -408,6 +387,10 @@
             0 3px 8px rgba(0, 0, 0, 0.04);
         margin: 0;
         transition: all 0.3s ease;
+    }
+
+    .main-card.generic-card {
+        margin-top: 5rem;
     }
     .main-card:hover {
         box-shadow:
@@ -481,10 +464,14 @@
             width: 100vw;
             min-width: 0;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
-            height: fit-content;
+            height: 100vh;
             transition: all 0.3s ease;
+        }
+
+        .main-content.generic-layout {
+            align-items: center;
         }
     }
     @media (max-width: 480px) {
