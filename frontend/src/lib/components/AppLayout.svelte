@@ -401,17 +401,17 @@
         .sidebar-content,
         nav,
         .logout {
-            align-items: center;
-            text-align: center;
+            align-items: flex-start;
+            text-align: left;
         }
         nav a,
         .logout button {
-            justify-content: center;
-            text-align: center;
+            justify-content: flex-start;
+            text-align: left;
         }
         .sidebar {
-            width: 70vw;
-            max-width: 260px;
+            width: 75vw;
+            max-width: 300px;
             background: #fff !important;
             overflow: hidden !important;
             overflow-y: hidden !important;
@@ -421,8 +421,8 @@
             transform: translateX(0);
         }
         .sidebar.mobile {
-            width: 70vw;
-            max-width: 260px;
+            width: 75vw;
+            max-width: 300px;
             transform: translateX(-100%);
         }
         .sidebar-content {
@@ -461,13 +461,13 @@
     }
     @media (max-width: 480px) {
         .sidebar {
-            width: 100vw;
-            max-width: 100vw;
+            width: 75vw;
+            max-width: 300px;
             padding: 0.75rem 0.25rem;
         }
         .sidebar.mobile {
-            width: 100vw;
-            max-width: 100vw;
+            width: 75vw;
+            max-width: 300px;
         }
         nav a,
         .logout button {
@@ -477,13 +477,13 @@
         .sidebar-content,
         nav,
         .logout {
-            align-items: center;
-            text-align: center;
+            align-items: flex-start;
+            text-align: left;
         }
         nav a,
         .logout button {
-            justify-content: center;
-            text-align: center;
+            justify-content: flex-start;
+            text-align: left;
         }
         .main-content {
             align-items: center;
