@@ -278,7 +278,7 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        min-height: 0;
+        min-height: 100vh;
         padding: 0.5rem 0;
         align-items: flex-start;
     }
@@ -324,10 +324,12 @@
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        padding-bottom: 0.5rem;
+        padding-bottom: 1rem;
         border: none !important;
         background: none !important;
         box-shadow: none !important;
+        position: sticky;
+        bottom: 0;
     }
     .logout button {
         width: 100%;

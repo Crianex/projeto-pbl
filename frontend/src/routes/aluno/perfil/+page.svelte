@@ -56,9 +56,16 @@
                     );
 
                     // Atualizar o avatar com a URL retornada
-                    $currentUser!.link_avatar = AvatarService.getAvatarUrl(
-                        uploadResult.avatar_url,
-                    );
+                    const avatarUrl = AvatarService.getAvatarUrl(uploadResult.avatar_url);
+                    console.log("Avatar URL após upload:", avatarUrl);
+                    
+                    // Atualizar o currentUser store
+                    if ($currentUser) {
+                        $currentUser.link_avatar = avatarUrl;
+                        // Forçar atualização do store
+                        currentUser.set($currentUser);
+                    }
+                    
                     avatarPreview = undefined;
                 } catch (uploadError) {
                     console.error(

@@ -16,8 +16,8 @@
         onSave();
     }
 
-    let nome = get(currentUser)?.nome_completo || "";
-    let email = get(currentUser)?.email || "";
+    let nome = $currentUser?.nome_completo || "";
+    let email = $currentUser?.email || "";
 
     // Remove handleNomeChange if not used elsewhere
 </script>
@@ -28,7 +28,7 @@
     <form on:submit|preventDefault={handleSubmit}>
         <div class="avatar-section">
             <Avatar
-                src={avatarPreview || get(currentUser)?.link_avatar || ""}
+                src={avatarPreview || $currentUser?.link_avatar || ""}
                 alt="Avatar do usuário"
                 size="lg"
                 editable={true}
