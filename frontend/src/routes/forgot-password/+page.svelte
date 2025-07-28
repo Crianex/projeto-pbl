@@ -4,6 +4,7 @@
     import Container from "$lib/components/Container.svelte";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
     import Toast from "$lib/components/Toast.svelte";
+    import PageHeader from "$lib/components/PageHeader.svelte";
     import { supabase } from "$lib/supabase";
     import { logger } from "$lib/utils/logger";
 
@@ -58,69 +59,61 @@
 </svelte:head>
 
 {#if emailSent}
-    <Container maxWidth="md" glass={true} shadow={true}>
-        <div class="success-container">
-            <div class="success-icon">✓</div>
-            <h1>E-mail Enviado!</h1>
-            <p class="success-message">
-                Enviamos um link de recuperação para <strong>{email}</strong>
-            </p>
-            <p class="instructions">
-                Verifique sua caixa de entrada e siga as instruções para
-                redefinir sua senha.
-            </p>
+    <div class="success-container">
+        <div class="success-icon">✓</div>
+        <h1>E-mail Enviado!</h1>
+        <p class="success-message">
+            Enviamos um link de recuperação para <strong>{email}</strong>
+        </p>
+        <p class="instructions">
+            Verifique sua caixa de entrada e siga as instruções para redefinir
+            sua senha.
+        </p>
 
-            <div class="actions">
-                <Button
-                    variant="secondary"
-                    on:click={() => (emailSent = false)}
-                >
-                    Enviar para outro e-mail
-                </Button>
-                <a href="/login" class="back-link">Voltar para o login</a>
-            </div>
+        <div class="actions">
+            <Button variant="secondary" on:click={() => (emailSent = false)}>
+                Enviar para outro e-mail
+            </Button>
+            <a href="/login" class="back-link">Voltar para o login</a>
         </div>
-    </Container>
+    </div>
 {:else}
-    <Container maxWidth="md" glass={true} shadow={true}>
-        <div class="header">
-            <h1>Recuperar Senha</h1>
-            <p class="subtitle">
-                Digite seu e-mail para receber um link de recuperação
-            </p>
+    <PageHeader
+        title="Recuperar Senha"
+        backUrl="/login"
+        backText="Voltar para o login"
+    />
+
+    <p class="subtitle">
+        Digite seu e-mail para receber um link de recuperação
+    </p>
+
+    <form on:submit|preventDefault={handleForgotPassword}>
+        <div class="form-group">
+            <Input
+                type="email"
+                id="email"
+                label="E-mail"
+                bind:value={email}
+                placeholder="Digite seu e-mail"
+                error={errorMessage}
+                required
+                disabled={loading}
+                autocomplete="email"
+            />
         </div>
 
-        <form on:submit|preventDefault={handleForgotPassword}>
-            <div class="form-group">
-                <Input
-                    type="email"
-                    id="email"
-                    label="E-mail"
-                    bind:value={email}
-                    placeholder="Digite seu e-mail"
-                    error={errorMessage}
-                    required
-                    disabled={loading}
-                    autocomplete="email"
-                />
-            </div>
-
-            <div class="button-group">
-                <Button
-                    type="submit"
-                    variant="primary"
-                    disabled={!email || loading}
-                    {loading}
-                >
-                    {loading ? "Enviando..." : "Enviar link de recuperação"}
-                </Button>
-            </div>
-        </form>
-
-        <div class="back-to-login">
-            <a href="/login">Voltar para o login</a>
+        <div class="button-group">
+            <Button
+                type="submit"
+                variant="primary"
+                disabled={!email || loading}
+                {loading}
+            >
+                {loading ? "Enviando..." : "Enviar link de recuperação"}
+            </Button>
         </div>
-    </Container>
+    </form>
 {/if}
 
 {#if loading}
@@ -163,17 +156,12 @@
         box-sizing: border-box;
     }
 
-    .header {
-        text-align: left;
-        margin-bottom: 2rem;
-    }
-
-    .header h1 {
-        color: #1f2937;
-        font-size: 1.5rem;
-        font-weight: 700;
-        letter-spacing: -0.025em;
-        margin: 0 0 0.75rem 0;
+    .subtitle {
+        color: #4a5568;
+        font-size: 1rem;
+        margin: 0 0 2rem 0;
+        line-height: 1.4;
+        opacity: 0.9;
     }
 
     .subtitle {
@@ -338,13 +326,9 @@
             padding-top: 2rem;
         }
 
-        .header {
+        .subtitle {
+            font-size: 0.95rem;
             margin-bottom: 1.5rem;
-        }
-
-        .header h1 {
-            font-size: 1.875rem;
-            margin-bottom: 0.5rem;
         }
 
         .subtitle {
@@ -479,13 +463,9 @@
             padding-top: 1rem;
         }
 
-        .header {
+        .subtitle {
+            font-size: 0.875rem;
             margin-bottom: 1.25rem;
-        }
-
-        .header h1 {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
         }
 
         .subtitle {
@@ -552,13 +532,9 @@
             padding-top: 0.75rem;
         }
 
-        .header {
+        .subtitle {
+            font-size: 0.825rem;
             margin-bottom: 1rem;
-        }
-
-        .header h1 {
-            font-size: 1.375rem;
-            margin-bottom: 0.5rem;
         }
 
         .success-container h1 {
@@ -594,13 +570,9 @@
             padding-top: 1rem;
         }
 
-        .header {
+        .subtitle {
+            font-size: 0.9rem;
             margin-bottom: 1rem;
-        }
-
-        .header h1 {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
         }
 
         .form-group {

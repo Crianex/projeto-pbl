@@ -8,6 +8,7 @@
     import { onMount } from "svelte";
     import { logger } from "$lib/utils/logger";
     import { currentUser } from "$lib/utils/auth";
+    import PageHeader from "$lib/components/PageHeader.svelte";
 
     let email = "";
     let password = "";
@@ -103,7 +104,7 @@
         overlay={true}
     />
 {:else}
-    <h1>Login</h1>
+    <PageHeader title="Login" backUrl="/" />
 
     {#if errorMessage}
         <div class="error-message">
