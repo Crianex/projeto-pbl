@@ -288,12 +288,18 @@
                             avg !== null && avg !== undefined
                                 ? avg.toFixed(2)
                                 : "Não avaliado"}
+                        {@const professorEvaluationValue = professorEvaluation
+                            ? MediaCalculator.calculateSimpleMediaFromAvaliacao(
+                                  professorEvaluation,
+                              )
+                            : null}
 
                         <AlunoCard
                             {aluno}
                             {criteriosList}
                             {hasEvaluation}
                             {overallMedia}
+                            professorEvaluation={professorEvaluationValue}
                             onVerDetalhes={verDetalhes}
                             onAvaliar={avaliarAluno}
                         />

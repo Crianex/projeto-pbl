@@ -10,6 +10,7 @@
     }[];
     export let hasEvaluation: boolean;
     export let overallMedia: string;
+    export let professorEvaluation: number | null = null;
     export let onVerDetalhes: (id: string) => void;
     export let onAvaliar: (id: number) => void;
 
@@ -63,6 +64,15 @@
             <span class="media-label">Média Geral:</span>
             <span class="media-value">{overallMedia}</span>
         </div>
+
+        {#if professorEvaluation !== null}
+            <div class="professor-evaluation-section">
+                <span class="professor-label">Sua Avaliação:</span>
+                <span class="professor-value"
+                    >{professorEvaluation.toFixed(2)}</span
+                >
+            </div>
+        {/if}
 
         <div class="evaluation-status">
             <span class="status-label">Avaliado:</span>
@@ -187,6 +197,27 @@
     .media-value {
         font-weight: 700;
         color: #0369a1;
+        font-size: 1rem;
+    }
+
+    .professor-evaluation-section {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background: #fef3c7;
+        border-radius: 6px;
+    }
+
+    .professor-label {
+        font-weight: 600;
+        color: #92400e;
+        font-size: 0.9rem;
+    }
+
+    .professor-value {
+        font-weight: 700;
+        color: #92400e;
         font-size: 1rem;
     }
 
