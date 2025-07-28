@@ -123,6 +123,29 @@ export const AlunoController: EndpointController = {
             return res.json(data[0]);
         }),
 
+        'checkEmail': new Pair(RequestType.GET, async (req: Request, res: Response) => {
+            const { email } = req.query;
+
+            if (!email) {
+                return res.status(400).json({ error: 'Email is required' });
+            }
+
+            const { data, error } = await supabase
+                .from('alunos')
+                .select('id_aluno, email')
+                .eq('email', email);
+
+            if (error) {
+                logger.error(`Error checking email ${email}: ${error.message}`);
+                return res.status(500).json({ error: error.message });
+            }
+
+            return res.json({
+                exists: data.length > 0,
+                email: email
+            });
+        }),
+
         'create': new Pair(RequestType.POST, async (req: Request, res: Response) => {
             const { nome_completo, email, link_avatar: link_avatar_body } = req.body;
 

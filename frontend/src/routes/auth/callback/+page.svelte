@@ -3,7 +3,7 @@
     import { goto } from "$app/navigation";
     import { supabase } from "$lib/supabase";
     import { logger } from "$lib/utils/logger";
-    import { currentUser } from "$lib/utils/auth";
+    import { currentUser, initializeAuth } from "$lib/utils/auth";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
     import Container from "$lib/components/Container.svelte";
     import Toast from "$lib/components/Toast.svelte";
@@ -22,6 +22,11 @@
 
         loadingText = "Verificando autenticação...";
         logger.info("Starting authentication verification process");
+
+        // Initialize auth to ensure backend account creation
+        initializeAuth().catch((error) => {
+            logger.error("Failed to initialize auth", { error });
+        });
 
         // Set a timeout to handle cases where auth doesn't complete
         const timeout = setTimeout(() => {
@@ -98,7 +103,9 @@
                     }
                 }, 1500);
             } else {
-                logger.info("No user found in currentUser subscription");
+                logger.info(
+                    "No user found in currentUser subscription - this might be normal during auth initialization",
+                );
             }
         });
 
@@ -112,7 +119,9 @@
             });
 
             if (event === "SIGNED_IN") {
-                logger.info("User signed in event received");
+                logger.info(
+                    "User signed in event received - backend account creation will be triggered",
+                );
                 loadingText = "Configurando conta...";
             } else if (event === "SIGNED_OUT") {
                 logger.warn("User signed out event received", {
@@ -220,7 +229,7 @@
         min-height: 100vh;
         background: linear-gradient(
             135deg,
-            var(--color-nature-background-light, #E3FBEC) 0%,
+            var(--color-nature-background-light, #e3fbec) 0%,
             var(--color-bg-white, #ffffff) 50%,
             var(--color-bg-light, #f8f9fa) 100%
         );
@@ -268,7 +277,11 @@
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background: linear-gradient(135deg, var(--color-nature-background, #E3FBEC) 0%, var(--color-nature-light, #22C55E) 100%);
+        background: linear-gradient(
+            135deg,
+            var(--color-nature-background, #e3fbec) 0%,
+            var(--color-nature-light, #22c55e) 100%
+        );
         color: var(--color-nature-dark, #014619);
         display: flex;
         align-items: center;
@@ -280,7 +293,10 @@
     }
 
     .step.active .step-icon {
-        background: var(--color-nature-gradient, linear-gradient(135deg, #168F41 0%, #22C55E 100%));
+        background: var(
+            --color-nature-gradient,
+            linear-gradient(135deg, #168f41 0%, #22c55e 100%)
+        );
         color: white;
         border-color: rgba(34, 197, 94, 0.3);
         box-shadow:
@@ -296,7 +312,7 @@
     }
 
     .step.active span {
-        color: var(--color-nature-main, #168F41);
+        color: var(--color-nature-main, #168f41);
         font-weight: 600;
     }
 
@@ -310,7 +326,10 @@
         width: 80px;
         height: 80px;
         border-radius: 50%;
-        background: var(--color-nature-gradient, linear-gradient(135deg, #168F41 0%, #22C55E 100%));
+        background: var(
+            --color-nature-gradient,
+            linear-gradient(135deg, #168f41 0%, #22c55e 100%)
+        );
         color: white;
         display: flex;
         align-items: center;
@@ -339,7 +358,7 @@
     }
 
     .success-container h1 {
-        color: var(--color-nature-main, #168F41);
+        color: var(--color-nature-main, #168f41);
         font-size: 2rem;
         font-weight: 700;
         margin: 0 0 1rem 0;

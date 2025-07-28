@@ -8,6 +8,9 @@
     import { supabase } from "$lib/supabase";
     import { goto } from "$app/navigation";
     import { logger } from "$lib/utils/logger";
+    import { api } from "$lib/utils/api";
+    import { Parsers } from "$lib/interfaces/parsers";
+    import { AlunosService } from "$lib/services/alunos_service";
 
     let email = "";
     let password = "";
@@ -32,6 +35,17 @@
             return "Por favor, digite um e-mail válido";
         }
         return "";
+    }
+
+    // Check if email already exists
+    async function checkEmailExists(email: string): Promise<boolean> {
+        try {
+            const result = await AlunosService.checkEmail(email);
+            return result.exists;
+        } catch (error) {
+            logger.error("Error checking email existence", { error, email });
+            return false; // Assume it doesn't exist if we can't check
+        }
     }
 
     // Name validation
@@ -87,6 +101,17 @@
         try {
             logger.info("Attempting registration", { email, name });
 
+            // Check if email already exists
+            const emailExists = await checkEmailExists(email);
+            if (emailExists) {
+                toastType = "error";
+                toastMessage =
+                    "Este e-mail já está registrado. Tente fazer login ou use outro e-mail.";
+                showToast = true;
+                loading = false;
+                return;
+            }
+
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
@@ -100,20 +125,55 @@
             if (error) throw error;
 
             if (data.user) {
-                registrationComplete = true;
-                toastType = "success";
-                toastMessage =
-                    "Conta criada com sucesso! Verificando e-mail...";
-                showToast = true;
-
-                logger.info("Registration successful", {
+                logger.info("Supabase registration successful", {
                     userId: data.user.id,
                 });
 
-                // Wait a bit before redirecting
-                setTimeout(() => {
-                    goto("/auth/callback");
-                }, 2000);
+                // Create backend account
+                try {
+                    logger.info("Creating backend aluno account", {
+                        email,
+                        name,
+                    });
+                    const backendResponse = await api.post("/alunos/create", {
+                        email: email,
+                        nome_completo: name,
+                    });
+
+                    const aluno = Parsers.parseAluno(backendResponse);
+                    logger.info("Backend aluno account created successfully", {
+                        alunoId: aluno.id,
+                        email: aluno.email,
+                    });
+
+                    registrationComplete = true;
+                    toastType = "success";
+                    toastMessage =
+                        "Conta criada com sucesso! Redirecionando...";
+                    showToast = true;
+
+                    // Wait a bit before redirecting to aluno problemas page
+                    setTimeout(() => {
+                        goto("/aluno/problemas");
+                    }, 2000);
+                } catch (backendError: any) {
+                    logger.error("Failed to create backend account", {
+                        error: backendError.message,
+                        email,
+                    });
+
+                    // If backend creation fails, still show success but log the error
+                    registrationComplete = true;
+                    toastType = "success";
+                    toastMessage =
+                        "Conta criada com sucesso! Redirecionando...";
+                    showToast = true;
+
+                    // Wait a bit before redirecting to aluno problemas page
+                    setTimeout(() => {
+                        goto("/aluno/problemas");
+                    }, 2000);
+                }
             }
         } catch (err: any) {
             logger.error("Registration failed", { error: err.message, email });
@@ -143,6 +203,9 @@
             });
 
             if (error) throw error;
+
+            // Note: Backend account creation will be handled in the auth callback
+            // since Google OAuth redirects the user away from this page
         } catch (err: any) {
             logger.error("Google registration failed", { error: err.message });
             toastType = "error";
@@ -166,8 +229,8 @@
             Bem-vindo(a), <strong>{name}!</strong>
         </p>
         <p class="instructions">
-            Sua conta foi criada com sucesso. Você será redirecionado em
-            instantes.
+            Sua conta foi criada com sucesso. Você será redirecionado para a
+            página de problemas em instantes.
         </p>
 
         <div class="actions">
