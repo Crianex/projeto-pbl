@@ -11,6 +11,8 @@
     import { TurmasService } from "$lib/services/turmas_service";
     import { cacheInvalidation } from "$lib/utils/stores";
     import Pagination from "../../../lib/components/Pagination.svelte";
+    import CardList from "$lib/components/CardList.svelte";
+    import TurmaCard from "$lib/components/TurmaCard.svelte";
 
     let turmas: TurmaModel[] = [];
     let loading = true;
@@ -176,137 +178,28 @@
         />
     </div>
 
-    {#if loading}
-        <div class="loading">Carregando turmas...</div>
-    {:else if error}
-        <div class="error">
-            <p>{error}</p>
-            <Button variant="secondary" on:click={() => fetchTurmas(true)}
-                >Tentar novamente</Button
-            >
-        </div>
-    {:else if turmas.length === 0}
-        <div class="empty-state">
-            <p>Nenhuma turma encontrada.</p>
-        </div>
-    {:else}
-        <div class="turmas-list">
+    <CardList
+        items={turmas}
+        {loading}
+        {error}
+        loadingMessage="Carregando turmas..."
+        emptyMessage="Nenhuma turma encontrada."
+        showRetryButton={true}
+        onRetry={() => fetchTurmas(true)}
+    >
+        <svelte:fragment slot="default">
             {#each turmas as turma}
-                <div
-                    class="turma-item"
-                    on:click={() =>
-                        goto(`/professor/turmas/${turma.id_turma}/problemas`)}
-                    role="button"
-                    tabindex="0"
-                    on:keydown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                            goto(
-                                `/professor/turmas/${turma.id_turma}/problemas`,
-                            );
-                        }
-                    }}
-                >
-                    <div class="turma-main-info">
-                        <span class="turma-nome">{turma.nome_turma}</span>
-                        <div class="turma-alunos-mobile">
-                            <span class="alunos-label">Alunos:</span>
-                            {#if turma.alunos && turma.alunos.length > 0}
-                                <ul class="alunos-list">
-                                    {#each turma.alunos as aluno}
-                                        <li class="aluno-nome">
-                                            {aluno.nome_completo}
-                                        </li>
-                                    {/each}
-                                </ul>
-                            {:else}
-                                <span class="alunos-empty"
-                                    >Nenhum aluno cadastrado</span
-                                >
-                            {/if}
-                        </div>
-                    </div>
-                    <div class="actions">
-                        <div class="dropdown">
-                            <Button
-                                variant="secondary"
-                                size="icon"
-                                on:click={(e) =>
-                                    toggleDropdown(e, turma.id_turma)}
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-                                    <circle cx="12" cy="12" r="1" />
-                                    <circle cx="19" cy="12" r="1" />
-                                    <circle cx="5" cy="12" r="1" />
-                                </svg>
-                            </Button>
-                            <div
-                                class="dropdown-content"
-                                class:show={openDropdownId === turma.id_turma}
-                            >
-                                <Button
-                                    variant="secondary"
-                                    class="dropdown-item"
-                                    on:click={(e) => {
-                                        e.stopPropagation();
-                                        goto(
-                                            `/professor/turmas/${turma.id_turma}`,
-                                        );
-                                    }}
-                                >
-                                    <svg
-                                        width="16"
-                                        height="16"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                        <path
-                                            d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                        />
-                                    </svg>
-                                    Editar
-                                </Button>
-                                <Button
-                                    variant="danger"
-                                    class="dropdown-item delete"
-                                    on:click={(e) => {
-                                        e.stopPropagation();
-                                        openDeleteConfirm(turma);
-                                    }}
-                                >
-                                    <svg
-                                        width="16"
-                                        height="16"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                        <path
-                                            d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
-                                            fill="currentColor"
-                                        />
-                                    </svg>
-                                    Excluir turma
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <TurmaCard
+                    {turma}
+                    {openDropdownId}
+                    onToggleDropdown={toggleDropdown}
+                    onOpenDeleteConfirm={openDeleteConfirm}
+                />
             {/each}
-        </div>
+        </svelte:fragment>
+    </CardList>
 
+    {#if !loading && !error && turmas.length > 0}
         <Pagination
             {currentPage}
             {totalPages}
@@ -366,81 +259,6 @@
         text-align: center;
     }
 
-    .turmas-list {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        background: white;
-        border: 1px solid #e9ecef;
-        border-radius: 10px;
-        overflow: visible;
-        margin-bottom: 1.2rem;
-        padding: 0.2rem 0.2rem;
-    }
-
-    .turma-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.7rem 0.5rem;
-        border-bottom: 1px solid #e9ecef;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-        border-radius: 6px;
-        margin: 0.1rem 0;
-    }
-
-    .turma-item:hover {
-        background-color: #f8f9fa;
-    }
-
-    .turma-item:last-child {
-        border-bottom: none;
-    }
-
-    .actions {
-        display: flex;
-        gap: 0.3rem;
-        align-items: center;
-    }
-
-    .dropdown {
-        position: relative;
-        display: inline-block;
-    }
-
-    .dropdown-content {
-        display: none;
-        position: absolute;
-        right: 0;
-        top: 100%;
-        background-color: white;
-        min-width: max-content;
-        width: max-content;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        border-radius: 4px;
-        z-index: 1;
-        margin-top: 0.25rem;
-    }
-
-    .dropdown-content.show {
-        display: block;
-    }
-
-    .loading,
-    .error,
-    .empty-state {
-        text-align: center;
-        padding: 2rem;
-        background: white;
-        border: 1px solid #e9ecef;
-        border-radius: 8px;
-    }
-
-    .error {
-        color: #dc3545;
-    }
-
     .delete-confirm-content {
         padding: 1rem;
     }
@@ -461,41 +279,6 @@
         margin-top: 2rem;
     }
 
-    .turma-main-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
-        flex: 1;
-    }
-    .turma-nome {
-        font-weight: 600;
-        font-size: 1.08rem;
-    }
-    .turma-alunos-mobile {
-        display: none;
-        font-size: 0.98rem;
-        margin-top: 0.2rem;
-        color: #444;
-    }
-    .alunos-label {
-        font-weight: 500;
-        margin-right: 0.3rem;
-    }
-    .alunos-list {
-        margin: 0.2rem 0 0 0.7rem;
-        padding: 0;
-        list-style: disc inside;
-    }
-    .aluno-nome {
-        font-size: 0.97rem;
-        margin-bottom: 0.1rem;
-    }
-    .alunos-empty {
-        color: #888;
-        font-size: 0.97rem;
-        margin-left: 0.5rem;
-    }
-
     @media (max-width: 768px) {
         .turmas-container {
             margin-top: 3rem;
@@ -510,19 +293,6 @@
             font-size: 1.05rem;
             margin-bottom: 0.1rem;
         }
-        .turmas-list {
-            border-radius: 8px;
-            margin-bottom: 0.7rem;
-            padding: 0.1rem 0.05rem;
-        }
-        .turma-item {
-            padding: 0.5rem 0.2rem;
-            font-size: 0.97rem;
-            border-radius: 4px;
-        }
-        .actions {
-            gap: 0.1rem;
-        }
 
         .header :global(button) {
             width: 100%;
@@ -530,9 +300,6 @@
             padding: 0.5rem 0.2rem;
             font-size: 0.97rem;
             box-sizing: border-box;
-        }
-        .turma-alunos-mobile {
-            display: block;
         }
     }
 
@@ -549,20 +316,6 @@
         .header h1 {
             font-size: 1.5rem;
             margin-bottom: 2rem;
-        }
-        .turmas-list {
-            gap: 0.1rem;
-            border-radius: 6px;
-            margin-bottom: 0.3rem;
-            padding: 0.05rem 0.01rem;
-        }
-        .turma-item {
-            padding: 0.3rem 0.05rem;
-            font-size: 0.91rem;
-            border-radius: 3px;
-        }
-        .actions {
-            gap: 0.05rem;
         }
 
         .header :global(button) {

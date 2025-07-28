@@ -10,9 +10,11 @@
         ProblemaModel,
         TurmaModel,
     } from "$lib/interfaces/interfaces";
+    import type { Column } from "$lib/interfaces/column";
     import { Parsers } from "$lib/interfaces/parsers";
     import Button from "$lib/components/Button.svelte";
     import Container from "$lib/components/Container.svelte";
+    import Table from "$lib/components/Table.svelte";
     import BackButton from "$lib/components/BackButton.svelte";
     import SearchBar from "$lib/components/SearchBar.svelte";
     import { ProblemasService } from "$lib/services/problemas_service";
@@ -21,8 +23,6 @@
     import Pagination from "$lib/components/Pagination.svelte";
     import { currentUser } from "$lib/utils/auth";
     import { MediaCalculator } from "$lib/utils/utils";
-    import CardList from "$lib/components/CardList.svelte";
-    import AlunoCard from "$lib/components/AlunoCard.svelte";
 
     let problema: ProblemaModel | null = null;
     let turma: TurmaModel | null = null;
@@ -39,6 +39,30 @@
     let evaluationMatrix: {
         [evaluatorId: number]: { [evaluatedId: number]: number };
     } = {};
+
+    // Table configuration
+    let columns: Column[] = [
+        {
+            key: "aluno",
+            label: "Aluno",
+            width: "40%",
+        },
+        {
+            key: "actions",
+            label: "Ações",
+            width: "20%",
+            render: (row: any) => ({
+                component: "button",
+                props: {
+                    variant: "secondary",
+                    text: "Ver Detalhes",
+                    onClick: () => verDetalhes(row.id.toString()),
+                },
+            }),
+        },
+    ];
+
+    let tableRows: any[] = [];
 
     $: if (problema && problema.criterios) {
         // Flatten all criterios from all groups and deduplicate by nome_criterio
@@ -60,6 +84,67 @@
             }),
         );
     }
+
+    // Table configuration
+    $: columns =
+        criteriosList.length > 0
+            ? [
+                  {
+                      key: "aluno",
+                      label: "Aluno",
+                      width: "20%",
+                  },
+                  ...criteriosList.map((criterio) => ({
+                      key: criterio.nome_criterio.toLowerCase(),
+                      label: criterio.nome_criterio.charAt(0),
+                      tooltip: `${criterio.nome_criterio}\n\n${criterio.descricao_criterio}`,
+                      width: `${criteriosList.length > 0 ? 30 / criteriosList.length : 30}%`,
+                  })),
+                  {
+                      key: "media",
+                      label: "Média",
+                      width: "10%",
+                  },
+                  {
+                      key: "avaliar",
+                      label: "Já avaliou?",
+                      width: "15%",
+                      render: (row: any) => ({
+                          component: "span",
+                          props: {
+                              text: row.hasEvaluation ? "✓" : "-",
+                              style: row.hasEvaluation
+                                  ? "color: #22c55e; font-size: 1.2rem; font-weight: bold;"
+                                  : "color: #6b7280;",
+                          },
+                      }),
+                  },
+                  {
+                      key: "actions",
+                      label: "",
+                      width: "15%",
+                      render: (row: any) => ({
+                          component: "button",
+                          props: {
+                              variant: "secondary",
+                              text: "Ver Detalhes",
+                              onClick: () => verDetalhes(row.id.toString()),
+                          },
+                      }),
+                  },
+              ]
+            : [
+                  {
+                      key: "aluno",
+                      label: "Aluno",
+                      width: "60%",
+                  },
+                  {
+                      key: "loading",
+                      label: "Carregando critérios...",
+                      width: "40%",
+                  },
+              ];
 
     onMount(async () => {
         try {
@@ -236,6 +321,51 @@
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage,
     );
+
+    // Transform data for Table component
+    $: tableRows = paginatedAlunos.map((aluno) => {
+        // Check if this professor has already evaluated this student
+        const professorEvaluation = avaliacoesData.find(
+            (av) =>
+                av.aluno_avaliado?.id === aluno.id &&
+                av.id_professor === $currentUser?.id,
+        );
+
+        const row: any = {
+            id: aluno.id,
+            aluno: aluno.nome_completo || "Nome não disponível",
+            hasEvaluation: !!professorEvaluation,
+            avaliar: "",
+            actions: "",
+        };
+
+        // Add individual criteria scores (keep as before)
+        criteriosList.forEach((criterio) => {
+            const key = criterio.nome_criterio.toLowerCase();
+            console.log("DEBUG criterio key for table", key);
+            if (
+                aluno.medias &&
+                key in aluno.medias &&
+                aluno.medias[key] !== null &&
+                aluno.medias[key] !== undefined
+            ) {
+                const value = aluno.medias[key];
+                row[key] = {
+                    value: value.toFixed(2),
+                    class: isOutlier(aluno.id, value) ? "outlier-grade" : "",
+                };
+            } else {
+                row[key] = { value: "Não avaliado", class: "" };
+            }
+        });
+
+        // Calculate overall media from evaluation matrix (same as relatorios)
+        const avg = getReceivedAverage(aluno.id);
+        row.media =
+            avg !== null && avg !== undefined ? avg.toFixed(2) : "Não avaliado";
+
+        return row;
+    });
 </script>
 
 {#if loading}
@@ -266,40 +396,9 @@
                 />
             </div>
 
-            <CardList
-                items={paginatedAlunos}
-                {loading}
-                {error}
-                loadingMessage="Carregando alunos..."
-                emptyMessage="Nenhum aluno encontrado."
-                showRetryButton={true}
-                onRetry={() => window.location.reload()}
-            >
-                <svelte:fragment slot="default">
-                    {#each paginatedAlunos as aluno}
-                        {@const professorEvaluation = avaliacoesData.find(
-                            (av) =>
-                                av.aluno_avaliado?.id === aluno.id &&
-                                av.id_professor === $currentUser?.id,
-                        )}
-                        {@const hasEvaluation = !!professorEvaluation}
-                        {@const avg = getReceivedAverage(aluno.id)}
-                        {@const overallMedia =
-                            avg !== null && avg !== undefined
-                                ? avg.toFixed(2)
-                                : "Não avaliado"}
-
-                        <AlunoCard
-                            {aluno}
-                            {criteriosList}
-                            {hasEvaluation}
-                            {overallMedia}
-                            onVerDetalhes={verDetalhes}
-                            onAvaliar={avaliarAluno}
-                        />
-                    {/each}
-                </svelte:fragment>
-            </CardList>
+            <div class="table-wrapper">
+                <Table {columns} rows={tableRows} enableSelection={false} />
+            </div>
 
             <Pagination
                 {currentPage}
@@ -342,6 +441,10 @@
 
     .search-section {
         margin-bottom: 1.5rem;
+    }
+
+    .table-wrapper {
+        margin-bottom: 1rem;
     }
 
     .pagination {
