@@ -56,27 +56,54 @@
         if (!/^[a-zA-ZÀ-ÿ\s]+$/.test(name)) {
             return "Nome deve conter apenas letras e espaços";
         }
+        // Check for at least 2 words (first name and last name)
+        const words = name
+            .trim()
+            .split(/\s+/)
+            .filter((word) => word.length > 0);
+        if (words.length < 2) {
+            return "Nome deve conter pelo menos nome e sobrenome";
+        }
         return "";
     }
 
     // Password strength validation
     function validatePassword(pass: string) {
+        if (pass.length === 0) {
+            return "";
+        }
+
+        const errors = [];
+
         if (pass.length < 8) {
-            return "Senha deve ter pelo menos 8 caracteres";
+            errors.push("pelo menos 8 caracteres");
         }
-        if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(pass)) {
-            return "Senha deve conter pelo menos 1 letra minúscula, 1 maiúscula e 1 número";
+
+        if (!/(?=.*[a-z])/.test(pass)) {
+            errors.push("1 letra minúscula");
         }
+
+        if (!/(?=.*[A-Z])/.test(pass)) {
+            errors.push("1 letra maiúscula");
+        }
+
+        if (!/(?=.*\d)/.test(pass)) {
+            errors.push("1 número");
+        }
+
+        if (errors.length > 0) {
+            return `Senha deve conter: ${errors.join(", ")}`;
+        }
+
         return "";
     }
 
-    // Reactive validation
-    $: nameError = name && name.length > 0 ? validateName(name) : "";
-    $: emailError = email && email.length > 0 ? validateEmail(email) : "";
-    $: passwordError =
-        password && password.length > 0 ? validatePassword(password) : "";
+    // Reactive validation - real-time
+    $: nameError = name.length > 0 ? validateName(name) : "";
+    $: emailError = email.length > 0 ? validateEmail(email) : "";
+    $: passwordError = password.length > 0 ? validatePassword(password) : "";
     $: confirmPasswordError =
-        confirmPassword && password !== confirmPassword
+        confirmPassword.length > 0 && password !== confirmPassword
             ? "Senhas não coincidem"
             : "";
     $: formValid =
@@ -99,7 +126,7 @@
         loading = true;
 
         try {
-            logger.info("Attempting registration", { email, name });
+            logger.info("Attempting registration", { email, name, password });
 
             // Check if email already exists
             const emailExists = await checkEmailExists(email);
@@ -121,6 +148,8 @@
                     },
                 },
             });
+
+            console.log(error);
 
             if (error) throw error;
 
@@ -154,25 +183,13 @@
 
                     // Wait a bit before redirecting to aluno problemas page
                     setTimeout(() => {
-                        goto("/aluno/problemas");
+                        //goto("/aluno/problemas");
                     }, 2000);
                 } catch (backendError: any) {
                     logger.error("Failed to create backend account", {
                         error: backendError.message,
                         email,
                     });
-
-                    // If backend creation fails, still show success but log the error
-                    registrationComplete = true;
-                    toastType = "success";
-                    toastMessage =
-                        "Conta criada com sucesso! Redirecionando...";
-                    showToast = true;
-
-                    // Wait a bit before redirecting to aluno problemas page
-                    setTimeout(() => {
-                        goto("/aluno/problemas");
-                    }, 2000);
                 }
             }
         } catch (err: any) {
@@ -255,7 +272,7 @@
                 label="Nome completo"
                 bind:value={name}
                 placeholder="Digite seu nome completo"
-                error={triedSubmit ? nameError : ""}
+                error={nameError}
                 required
                 disabled={loading}
                 autocomplete="name"
@@ -269,7 +286,7 @@
                 label="E-mail"
                 bind:value={email}
                 placeholder="seu@email.com"
-                error={triedSubmit ? emailError : ""}
+                error={emailError}
                 required
                 disabled={loading}
                 autocomplete="email"
@@ -283,7 +300,7 @@
                 label="Senha"
                 bind:value={password}
                 placeholder="Digite uma senha segura"
-                error={triedSubmit ? passwordError : ""}
+                error={passwordError}
                 required
                 disabled={loading}
                 autocomplete="new-password"
@@ -304,7 +321,7 @@
                 label="Confirmar senha"
                 bind:value={confirmPassword}
                 placeholder="Digite sua senha novamente"
-                error={triedSubmit ? confirmPasswordError : ""}
+                error={confirmPasswordError}
                 required
                 disabled={loading}
                 autocomplete="new-password"
@@ -986,5 +1003,4 @@
             font-size: 0.75rem;
         }
     }
-
 </style>
