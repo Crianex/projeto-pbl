@@ -183,7 +183,7 @@
 
                     // Wait a bit before redirecting to aluno problemas page
                     setTimeout(() => {
-                        //goto("/aluno/problemas");
+                        goto("/aluno/problemas");
                     }, 2000);
                 } catch (backendError: any) {
                     logger.error("Failed to create backend account", {
