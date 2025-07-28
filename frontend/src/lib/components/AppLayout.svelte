@@ -186,7 +186,9 @@
             class="main-card"
             style="max-width: {userType === 'generic'
                 ? '420px'
-                : '90vw'}; margin: {userType === 'generic'
+                : isMobile
+                  ? '90vw'
+                  : '60vw'}; margin: {userType === 'generic'
                 ? '2rem auto'
                 : '2rem auto'};"
         >

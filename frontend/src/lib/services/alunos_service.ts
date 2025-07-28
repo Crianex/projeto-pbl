@@ -11,6 +11,7 @@ export const AlunosService = {
     delete: deleteAluno,
     invalidateCache,
     searchPaginated,
+    checkEmail,
 };
 
 async function getById(id: string, forceRefresh = false): Promise<AlunoModel> {
@@ -141,4 +142,15 @@ async function searchPaginated({ query, limit = 10, offset = 0, exclude_turma_id
     if (order) params.set('order', order);
     const data = await api.get(`/alunos/search?${params.toString()}`);
     return Parsers.parseAlunos(data);
+}
+
+async function checkEmail(email: string): Promise<{ exists: boolean; email: string }> {
+    try {
+        logger.info(`Checking if email exists: ${email}`);
+        const response = await api.get(`/alunos/checkEmail?email=${encodeURIComponent(email)}`);
+        return response;
+    } catch (error) {
+        logger.error('Failed to check email', error);
+        throw error;
+    }
 }

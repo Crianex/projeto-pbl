@@ -21,7 +21,7 @@
     let currentPage = 1;
     let itemsPerPage = 10;
     let searchQuery = "";
-    let openDropdownId: string | null = null;
+    let openDropdownId: number | null = null;
     let deleteConfirmOpen = false;
     let turmaToDelete: TurmaModel | null = null;
 
@@ -44,7 +44,8 @@
         goto("/professor/turmas/nova");
     }
 
-    function toggleDropdown(turmaId: string) {
+    function toggleDropdown(event: MouseEvent, turmaId: number) {
+        event.stopPropagation();
         openDropdownId = openDropdownId === turmaId ? null : turmaId;
     }
 
@@ -82,7 +83,7 @@
     $: filteredTurmas = searchQuery
         ? turmas.filter((turma) =>
               turma.nome_turma
-                  .toLowerCase()
+                  ?.toLowerCase()
                   .includes(searchQuery.toLowerCase()),
           )
         : turmas;
@@ -94,7 +95,7 @@
     );
 </script>
 
-<PageHeader backUrl="/professor" backText="Voltar" title="Turmas" />
+<PageHeader backText="Voltar" title="Turmas" />
 
 <div class="turmas-container">
     <div class="search-section">
