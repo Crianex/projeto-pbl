@@ -203,7 +203,7 @@
 
     .header-title {
         font-size: 1.5rem;
-        font-weight: 600;
+        font-weight: 700;
         margin: 0;
         color: var(--color-nature-main);
         margin-left: 1rem;

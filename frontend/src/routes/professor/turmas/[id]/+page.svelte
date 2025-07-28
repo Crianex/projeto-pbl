@@ -9,6 +9,7 @@
     import Dialog from "$lib/components/Dialog.svelte";
     import { TurmasService } from "$lib/services/turmas_service";
     import type { AlunoModel } from "$lib/interfaces/interfaces";
+    import PageHeader from "$lib/components/PageHeader.svelte";
 
     const turmaId = $page.params.id;
 
@@ -29,383 +30,219 @@
     let changesSummaryOpen = false;
     let hasUnsavedChanges = false;
 
-    async function fetchTurma() {
+    onMount(async () => {
         try {
             loading = true;
-            error = null;
-            // Use the caching service instead of direct API call
-            const data = await TurmasService.getById(turmaId);
+            const turmaData = await TurmasService.getById(turmaId);
+            if (!turmaData) {
+                throw new Error("Turma não encontrada");
+            }
+
             turma = {
-                nome_turma: data.nome_turma || "",
-                id_professor: data.id_professor?.toString() || "",
+                nome_turma: turmaData.nome_turma,
+                id_professor: turmaData.id_professor,
             };
             originalTurma = { ...turma };
-            // Extract alunos from the nested structure
-            alunosMatriculados = data.alunos?.map((item: any) => item) || [];
-            console.log(
-                `Alunos matriculados: ${JSON.stringify(alunosMatriculados)}`,
-            );
-            originalAlunosMatriculados = [...alunosMatriculados];
-        } catch (err) {
-            error =
-                err instanceof Error ? err.message : "Failed to fetch turma";
-            console.error("Error fetching turma:", err);
+
+            if (turmaData.alunos) {
+                alunosMatriculados = [...turmaData.alunos];
+                originalAlunosMatriculados = [...turmaData.alunos];
+            }
+        } catch (err: any) {
+            error = err.message || "Erro ao carregar turma";
+            console.error("Error loading turma:", err);
         } finally {
             loading = false;
         }
+    });
+
+    function handleSave() {
+        saveChanges();
     }
 
-    function getChangesSummary() {
-        const changes = {
-            nameChanged: turma.nome_turma !== originalTurma.nome_turma,
-            removedAlunos: originalAlunosMatriculados.filter(
-                (original) =>
-                    !alunosMatriculados.some(
-                        (current) => current.id === original.id,
-                    ),
-            ),
-            addedAlunos: alunosMatriculados.filter(
-                (current) =>
-                    !originalAlunosMatriculados.some(
-                        (original) => original.id === current.id,
-                    ),
-            ),
-        };
-        return changes;
+    function handleCancel() {
+        // Reset to original values
+        turma = { ...originalTurma };
+        alunosMatriculados = [...originalAlunosMatriculados];
+        hasUnsavedChanges = false;
+        goto("/professor/turmas");
     }
 
-    async function handleSubmit() {
+    async function saveChanges() {
         try {
             saving = true;
             error = null;
 
-            // Update turma basic info
-            await api.put(`/turmas/update?id_turma=${turmaId}`, turma);
+            const payload = {
+                nome_turma: turma.nome_turma,
+                id_professor: turma.id_professor,
+                alunos: alunosMatriculados.map((aluno) => aluno.id),
+            };
 
-            // Invalidate cache after update
-            TurmasService.invalidateCache(turmaId);
+            await TurmasService.update(turmaId, payload);
 
-            // Get current enrolled students to compare
-            const currentData = await TurmasService.getById(turmaId, true); // Force refresh
-            const currentAlunos =
-                currentData.alunos?.map((item: any) => item.id) || [];
-
-            // Remove students that are no longer in the list
-            for (const alunoId of currentAlunos) {
-                if (!alunosMatriculados.some((a) => a.id === alunoId)) {
-                    await api.delete(
-                        `/turmas/remove-aluno?id_turma=${turmaId}&id_aluno=${alunoId}`,
-                    );
-                }
-            }
-
-            // Add new students
-            for (const aluno of alunosMatriculados) {
-                if (!currentAlunos.includes(aluno.id)) {
-                    await api.post("/turmas/add-aluno", {
-                        id_turma: turmaId,
-                        id_aluno: aluno.id,
-                    });
-                }
-            }
-
+            // Update original values
+            originalTurma = { ...turma };
+            originalAlunosMatriculados = [...alunosMatriculados];
             hasUnsavedChanges = false;
-            changesSummaryOpen = true;
-        } catch (err) {
-            error =
-                err instanceof Error ? err.message : "Failed to update turma";
-            console.error("Error updating turma:", err);
-        } finally {
-            saving = false;
-        }
-    }
 
-    async function handleUndo() {
-        try {
-            saving = true;
-            error = null;
-
-            // Restore original values
-            turma = { ...originalTurma };
-            alunosMatriculados = [...originalAlunosMatriculados];
-
-            // Update turma basic info
-            await api.put(`/turmas/update?id_turma=${turmaId}`, turma);
-
-            // Get current enrolled students to compare
-            const currentData = await api.get(
-                `/turmas/get?id_turma=${turmaId}`,
-            );
-            const currentAlunos =
-                currentData.alunos?.map((item: any) => item.alunos.id_aluno) ||
-                [];
-
-            // Remove students that are no longer in the list
-            for (const alunoId of currentAlunos) {
-                if (!alunosMatriculados.some((a) => a.id === alunoId)) {
-                    await api.delete(
-                        `/turmas/remove-aluno?id_turma=${turmaId}&id_aluno=${alunoId}`,
-                    );
-                }
-            }
-
-            // Add new students
-            for (const aluno of alunosMatriculados) {
-                if (!currentAlunos.includes(aluno.id)) {
-                    await api.post("/turmas/add-aluno", {
-                        id_turma: turmaId,
-                        id_aluno: aluno.id,
-                    });
-                }
-            }
-
-            changesSummaryOpen = false;
+            // Show success message
+            alert("Turma atualizada com sucesso!");
             goto("/professor/turmas");
-        } catch (err) {
-            error =
-                err instanceof Error ? err.message : "Failed to undo changes";
-            console.error("Error undoing changes:", err);
+        } catch (err: any) {
+            error = err.message || "Erro ao salvar turma";
+            console.error("Error saving turma:", err);
         } finally {
             saving = false;
         }
     }
 
-    function handleAddAluno() {
-        searchDialogOpen = true;
+    function handleNameChange(event: Event) {
+        const target = event.target as HTMLInputElement;
+        turma.nome_turma = target.value;
+        checkForChanges();
     }
 
-    function handleAlunoSelected(event: CustomEvent<any[]>) {
-        const alunos = event.detail;
-        let added = false;
-        for (const aluno of alunos) {
-            const alunoId = aluno.id ?? aluno.id_aluno;
-            if (!alunosMatriculados.some((a) => a.id === alunoId)) {
-                alunosMatriculados = [...alunosMatriculados, aluno];
-                added = true;
-            }
+    function handleAddAluno(aluno: AlunoModel) {
+        if (!alunosMatriculados.find((a) => a.id === aluno.id)) {
+            alunosMatriculados = [...alunosMatriculados, aluno];
+            checkForChanges();
         }
-        if (added) hasUnsavedChanges = true;
+        searchDialogOpen = false;
     }
 
     function handleRemoveAluno(alunoId: number) {
         alunosMatriculados = alunosMatriculados.filter((a) => a.id !== alunoId);
-        hasUnsavedChanges = true;
+        checkForChanges();
     }
 
-    $: {
-        if (turma.nome_turma !== originalTurma.nome_turma) {
-            hasUnsavedChanges = true;
-        }
-    }
-
-    async function handleUndoNameChange() {
-        try {
-            saving = true;
-            error = null;
-            turma.nome_turma = originalTurma.nome_turma;
-            await api.put(`/turmas/update?id_turma=${turmaId}`, turma);
-
-            const changes = getChangesSummary();
-            if (
-                !changes.nameChanged &&
-                changes.removedAlunos.length === 0 &&
-                changes.addedAlunos.length === 0
-            ) {
-                changesSummaryOpen = false;
-                goto("/professor/turmas");
-            }
-        } catch (err) {
-            error =
-                err instanceof Error
-                    ? err.message
-                    : "Failed to undo name change";
-            console.error("Error undoing name change:", err);
-        } finally {
-            saving = false;
-        }
-    }
-
-    async function handleUndoRemoveAluno(
-        aluno: (typeof originalAlunosMatriculados)[0],
-    ) {
-        try {
-            saving = true;
-            error = null;
-
-            await api.post("/turmas/add-aluno", {
-                id_turma: turmaId,
-                id_aluno: aluno.id,
-            });
-
-            alunosMatriculados = [...alunosMatriculados, aluno];
-
-            const changes = getChangesSummary();
-            if (
-                !changes.nameChanged &&
-                changes.removedAlunos.length === 0 &&
-                changes.addedAlunos.length === 0
-            ) {
-                changesSummaryOpen = false;
-                goto("/professor/turmas");
-            }
-        } catch (err) {
-            error =
-                err instanceof Error
-                    ? err.message
-                    : "Failed to undo aluno removal";
-            console.error("Error undoing aluno removal:", err);
-        } finally {
-            saving = false;
-        }
-    }
-
-    async function handleUndoAddAluno(aluno: (typeof alunosMatriculados)[0]) {
-        try {
-            saving = true;
-            error = null;
-
-            await api.delete(
-                `/turmas/remove-aluno?id_turma=${turmaId}&id_aluno=${aluno.id}`,
+    function checkForChanges() {
+        const nameChanged = turma.nome_turma !== originalTurma.nome_turma;
+        const alunosChanged =
+            alunosMatriculados.length !== originalAlunosMatriculados.length ||
+            alunosMatriculados.some(
+                (aluno, index) =>
+                    originalAlunosMatriculados[index]?.id !== aluno.id,
             );
 
-            alunosMatriculados = alunosMatriculados.filter(
-                (a) => a.id !== aluno.id,
-            );
-
-            const changes = getChangesSummary();
-            if (
-                !changes.nameChanged &&
-                changes.removedAlunos.length === 0 &&
-                changes.addedAlunos.length === 0
-            ) {
-                changesSummaryOpen = false;
-                goto("/professor/turmas");
-            }
-        } catch (err) {
-            error =
-                err instanceof Error
-                    ? err.message
-                    : "Failed to undo aluno addition";
-            console.error("Error undoing aluno addition:", err);
-        } finally {
-            saving = false;
-        }
+        hasUnsavedChanges = nameChanged || alunosChanged;
     }
 
-    onMount(fetchTurma);
+    function getChangesSummary() {
+        return {
+            nameChanged: turma.nome_turma !== originalTurma.nome_turma,
+            alunosChanged:
+                alunosMatriculados.length !==
+                    originalAlunosMatriculados.length ||
+                alunosMatriculados.some(
+                    (aluno, index) =>
+                        originalAlunosMatriculados[index]?.id !== aluno.id,
+                ),
+        };
+    }
+
+    function handleUndoNameChange() {
+        turma.nome_turma = originalTurma.nome_turma;
+        checkForChanges();
+    }
+
+    function handleUndoAlunosChange() {
+        alunosMatriculados = [...originalAlunosMatriculados];
+        checkForChanges();
+    }
 </script>
 
-<div class="header">
-    <h1>Editar Turma</h1>
-</div>
+<PageHeader
+    backUrl="/professor/turmas"
+    backText="Voltar para turmas"
+    title="Editar Turma"
+/>
 
-{#if loading}
-    <div class="loading">Carregando turma...</div>
-{:else if error}
-    <div class="error">
-        <p>{error}</p>
-        <Button variant="secondary" on:click={fetchTurma}
-            >Tentar novamente</Button
-        >
-    </div>
-{:else}
-    <form on:submit|preventDefault={handleSubmit} class="form">
-        <div class="form-group">
-            <label for="nome_turma">Nome da Turma</label>
-            <input
-                type="text"
-                id="nome_turma"
-                bind:value={turma.nome_turma}
-                required
-                placeholder="Digite o nome da turma"
-            />
-        </div>
+<div class="container">
+    {#if loading}
+        <div class="loading">Carregando...</div>
+    {:else if error}
+        <div class="error">{error}</div>
+    {:else}
+        <form on:submit|preventDefault={handleSave} class="form">
+            {#if error}
+                <div class="error-message">{error}</div>
+            {/if}
 
-        <div class="alunos-section">
-            <h2>Alunos matriculados</h2>
+            <div class="form-group">
+                <label for="nome_turma">Nome da Turma</label>
+                <input
+                    type="text"
+                    id="nome_turma"
+                    bind:value={turma.nome_turma}
+                    on:input={handleNameChange}
+                    required
+                />
+            </div>
 
-            {#if alunosMatriculados.length > 0}
+            <div class="alunos-section">
+                <h2>Alunos Matriculados</h2>
                 <div class="alunos-list">
                     {#each alunosMatriculados as aluno}
                         <div class="aluno-item">
                             <div class="aluno-info">
                                 <img
-                                    src={aluno.link_avatar}
-                                    alt="Avatar"
+                                    src={aluno.link_avatar ||
+                                        "/avatars/default.png"}
+                                    alt={aluno.nome_completo}
                                     class="avatar"
                                 />
                                 <div class="aluno-details">
-                                    <span class="nome"
-                                        >{aluno.nome_completo}</span
-                                    >
-                                    <span class="email">{aluno.email}</span>
+                                    <div class="nome">
+                                        {aluno.nome_completo}
+                                    </div>
+                                    <div class="email">{aluno.email}</div>
                                 </div>
                             </div>
                             <Button
-                                variant="danger"
-                                size="icon"
                                 type="button"
+                                variant="danger"
                                 on:click={() => handleRemoveAluno(aluno.id)}
-                                title="Remover aluno"
                             >
-                                <svg
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <path
-                                        d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
+                                Remover
                             </Button>
                         </div>
                     {/each}
                 </div>
-            {/if}
 
-            <Button variant="secondary" type="button" on:click={handleAddAluno}>
-                + Adicionar aluno
-            </Button>
-        </div>
-
-        <div class="actions">
-            <Button
-                variant="secondary"
-                on:click={() => goto("/professor/turmas")}
-                disabled={saving}
-            >
-                Cancelar
-            </Button>
-            {#if hasUnsavedChanges}
                 <Button
-                    variant="primary"
-                    type="submit"
-                    loading={saving}
-                    disabled={saving}
+                    type="button"
+                    variant="secondary"
+                    on:click={() => (searchDialogOpen = true)}
                 >
-                    {saving ? "Salvando..." : "Salvar"}
+                    + Adicionar Aluno
                 </Button>
-            {/if}
-        </div>
-    </form>
-{/if}
+            </div>
+
+            <div class="actions">
+                <Button
+                    type="button"
+                    variant="secondary"
+                    on:click={handleCancel}
+                >
+                    Cancelar
+                </Button>
+                <Button type="submit" variant="primary" disabled={saving}>
+                    {saving ? "Salvando..." : "Salvar Alterações"}
+                </Button>
+            </div>
+        </form>
+    {/if}
+</div>
 
 <SearchAlunoDialog
     open={searchDialogOpen}
     on:close={() => (searchDialogOpen = false)}
-    on:select={handleAlunoSelected}
-    exclude_turma_id={turmaId}
-    exclude_aluno_ids={alunosMatriculados.map((a) => a.id)}
+    on:select={handleAddAluno}
+    excludeAlunos={alunosMatriculados}
 />
 
-<Dialog
-    open={changesSummaryOpen}
-    closeOnClickOutside={false}
-    on:close={() => goto("/professor/turmas")}
->
+<Dialog open={changesSummaryOpen} on:close={() => (changesSummaryOpen = false)}>
     <svelte:fragment slot="header">
         <h2>Alterações realizadas</h2>
     </svelte:fragment>
@@ -436,59 +273,35 @@
             </div>
         {/if}
 
-        {#if getChangesSummary().removedAlunos.length > 0}
+        {#if getChangesSummary().alunosChanged}
             <div class="change-item">
-                <span class="change-title">Alunos removidos</span>
-                <ul class="change-list">
-                    {#each getChangesSummary().removedAlunos as aluno}
-                        <li>
-                            <div class="change-list-item">
-                                <span>{aluno.nome_completo}</span>
-                                <Button
-                                    variant="secondary"
-                                    on:click={() =>
-                                        handleUndoRemoveAluno(aluno)}
-                                    disabled={saving}
-                                    loading={saving}
-                                >
-                                    Desfazer
-                                </Button>
-                            </div>
-                        </li>
-                    {/each}
-                </ul>
-            </div>
-        {/if}
-
-        {#if getChangesSummary().addedAlunos.length > 0}
-            <div class="change-item">
-                <span class="change-title">Alunos adicionados</span>
-                <ul class="change-list">
-                    {#each getChangesSummary().addedAlunos as aluno}
-                        <li>
-                            <div class="change-list-item">
-                                <span>{aluno.nome_completo}</span>
-                                <Button
-                                    variant="secondary"
-                                    on:click={() => handleUndoAddAluno(aluno)}
-                                    disabled={saving}
-                                    loading={saving}
-                                >
-                                    Desfazer
-                                </Button>
-                            </div>
-                        </li>
-                    {/each}
-                </ul>
+                <div class="change-header">
+                    <span class="change-title">Lista de alunos alterada</span>
+                    <Button
+                        variant="secondary"
+                        on:click={handleUndoAlunosChange}
+                        disabled={saving}
+                        loading={saving}
+                    >
+                        Desfazer
+                    </Button>
+                </div>
+                <p class="change-detail">
+                    Alunos adicionados/removidos: {alunosMatriculados.length -
+                        originalAlunosMatriculados.length}
+                </p>
             </div>
         {/if}
 
         <div class="dialog-actions">
             <Button
                 variant="secondary"
-                on:click={() => goto("/professor/turmas")}
+                on:click={() => (changesSummaryOpen = false)}
             >
-                Voltar para turmas
+                Cancelar
+            </Button>
+            <Button variant="primary" on:click={saveChanges} disabled={saving}>
+                {saving ? "Salvando..." : "Salvar Alterações"}
             </Button>
         </div>
     </div>
@@ -496,20 +309,20 @@
 
 <style>
     .container {
-        height: 100%;
-        width: 100%;
+        max-width: 800px;
         margin: 0 auto;
         padding: 2rem;
     }
 
-    .header {
-        margin-bottom: 2rem;
+    .loading,
+    .error {
+        text-align: center;
+        padding: 2rem;
+        font-size: 1.1rem;
     }
 
-    .header h1 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin: 0;
+    .error {
+        color: #dc3545;
     }
 
     .form {
@@ -602,12 +415,48 @@
         border: none;
         cursor: pointer;
         padding: 0.5rem;
-        color: #dc3545;
         border-radius: 4px;
+        color: #6c757d;
     }
 
     .more-options:hover {
-        background-color: #f8f9fa;
+        background: #f8f9fa;
+        color: #495057;
+    }
+
+    .dropdown {
+        position: absolute;
+        right: 0;
+        top: 100%;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        min-width: 120px;
+    }
+
+    .dropdown button {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 1rem;
+        border: none;
+        background: none;
+        text-align: left;
+        cursor: pointer;
+        color: #212529;
+    }
+
+    .dropdown button:hover {
+        background: #f8f9fa;
+    }
+
+    .dropdown button.danger {
+        color: #dc3545;
+    }
+
+    .dropdown button.danger:hover {
+        background: #f8d7da;
     }
 
     .actions {
@@ -615,15 +464,17 @@
         gap: 1rem;
         justify-content: flex-end;
         margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e9ecef;
     }
 
-    .loading,
-    .error {
-        text-align: center;
-        padding: 2rem;
-        background: white;
-        border: 1px solid #e9ecef;
-        border-radius: 8px;
+    .error-message {
+        background-color: #fee2e2;
+        border: 1px solid #ef4444;
+        color: #b91c1c;
+        padding: 0.75rem 1rem;
+        border-radius: 0.375rem;
+        margin-bottom: 1rem;
     }
 
     .error {

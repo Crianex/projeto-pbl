@@ -217,7 +217,7 @@
         }
 
         .header h1 {
-            font-size: 2rem;
+            font-size: 1.3rem;
         }
 
         .subtitle {
@@ -235,7 +235,7 @@
         }
 
         .header h1 {
-            font-size: 1.75rem;
+            font-size: 1.1rem;
         }
 
         .subtitle {
@@ -250,7 +250,7 @@
 
     .header h1 {
         color: var(--color-text-primary);
-        font-size: 2.5rem;
+        font-size: 1.5rem;
         font-weight: 700;
         margin: 0 0 0.5rem 0;
         letter-spacing: -0.025em;
@@ -349,9 +349,9 @@
     }
 
     .empty-content p {
-        color: var(--color-text-secondary);
+        color: var(--color-text-muted);
         margin: 0 0 1.5rem 0;
-        line-height: 1.6;
+        line-height: 1.5;
     }
 
     /* Table styling */

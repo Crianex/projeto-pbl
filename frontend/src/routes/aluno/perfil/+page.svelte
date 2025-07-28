@@ -146,7 +146,7 @@
         }
 
         :global(.profile-info h1) {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
         }
 
         :global(.email) {
@@ -164,7 +164,7 @@
         }
 
         :global(.profile-info h1) {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
         }
 
         :global(.email) {

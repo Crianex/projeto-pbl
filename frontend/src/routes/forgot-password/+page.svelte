@@ -169,8 +169,8 @@
     }
 
     .header h1 {
-        color: #2d3748;
-        font-size: 2rem;
+        color: #1f2937;
+        font-size: 1.5rem;
         font-weight: 700;
         letter-spacing: -0.025em;
         margin: 0 0 0.75rem 0;

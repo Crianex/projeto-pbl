@@ -231,8 +231,6 @@
         margin-bottom: 1.5rem;
     }
 
-
-
     .login-container:hover {
         box-shadow:
             0 25px 50px rgba(0, 0, 0, 0.12),
@@ -245,7 +243,7 @@
         text-align: center;
         margin-bottom: 2.5rem;
         color: var(--color-text-primary);
-        font-size: 2rem;
+        font-size: 1.5rem;
         font-weight: 700;
         letter-spacing: -0.025em;
     }

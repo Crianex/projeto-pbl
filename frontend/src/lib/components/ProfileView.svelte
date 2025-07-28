@@ -70,8 +70,8 @@
     }
 
     .profile-info h1 {
-        font-size: 1.75rem;
-        font-weight: 600;
+        font-size: 1.5rem;
+        font-weight: 700;
         color: #1a1a1a;
         margin: 0;
         line-height: 1.2;
@@ -109,7 +109,7 @@
         }
 
         .profile-info h1 {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
         }
     }
 
@@ -119,7 +119,7 @@
         }
 
         .profile-info h1 {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
         }
     }
 </style>

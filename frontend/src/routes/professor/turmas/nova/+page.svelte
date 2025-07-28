@@ -1,94 +1,97 @@
 <script lang="ts">
-    import { api } from "$lib/utils/api";
+    import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import Button from "$lib/components/Button.svelte";
+    import Input from "$lib/components/Input.svelte";
     import SearchAlunoDialog from "../SearchAlunoDialog.svelte";
-    import { currentUser } from "$lib/utils/auth";
-    import { TurmasService } from "$lib/services/turmas_service";
+    import Dialog from "$lib/components/Dialog.svelte";
+    import { api } from "$lib/utils/api";
+    import { logger } from "$lib/utils/logger";
+    import type { AlunoModel } from "$lib/interfaces/interfaces";
+    import PageHeader from "$lib/components/PageHeader.svelte";
 
-    let nomeTurma = "";
-    let alunosMatriculados: Array<{
-        id_aluno: number;
-        nome_completo: string;
-        email: string;
-    }> = [];
-    let saving = false;
+    let turma = {
+        nome_turma: "",
+        id_professor: "",
+    };
+    let alunosMatriculados: AlunoModel[] = [];
+    let loading = false;
     let error: string | null = null;
     let searchDialogOpen = false;
+    let changesSummaryOpen = false;
+
+    onMount(() => {
+        // Initialize with current user as professor
+        turma.id_professor = "1"; // This should be the current user's ID
+    });
 
     async function handleSubmit() {
-        if (!nomeTurma.trim()) {
-            error = "O nome da turma é obrigatório";
+        if (!turma.nome_turma.trim()) {
+            error = "Nome da turma é obrigatório";
             return;
         }
 
         try {
-            saving = true;
+            loading = true;
             error = null;
 
-            // First create the turma using the service
-            const turmaResponse = await TurmasService.create({
-                nome_turma: nomeTurma,
-                id_professor: $currentUser?.id!,
-            });
+            const payload = {
+                nome_turma: turma.nome_turma,
+                id_professor: turma.id_professor,
+                alunos: alunosMatriculados.map((aluno) => aluno.id),
+            };
 
-            // Then add all students using the service
-            for (const aluno of alunosMatriculados) {
-                await TurmasService.addAluno(
-                    turmaResponse.id_turma.toString(),
-                    aluno.id_aluno,
-                );
-            }
+            const response = await api.post("/turmas/create", payload);
+            logger.info("Turma created successfully", response);
 
+            // Show success message and redirect
+            alert("Turma criada com sucesso!");
             goto("/professor/turmas");
-        } catch (err) {
-            error = err instanceof Error ? err.message : "Erro ao criar turma";
-            console.error("Error creating turma:", err);
+        } catch (err: any) {
+            error = err.message || "Erro ao criar turma";
+            logger.error("Error creating turma:", err);
         } finally {
-            saving = false;
+            loading = false;
         }
     }
 
-    function handleAddAluno() {
-        searchDialogOpen = true;
-    }
-
-    function handleAlunoSelected(event: CustomEvent<any[]>) {
-        const alunos = event.detail;
-        for (const aluno of alunos) {
-            const alunoId = aluno.id_aluno ?? aluno.id;
-            if (!alunosMatriculados.some((a) => a.id_aluno === alunoId)) {
-                alunosMatriculados = [...alunosMatriculados, aluno];
-            }
+    function handleAddAluno(aluno: AlunoModel) {
+        if (!alunosMatriculados.find((a) => a.id === aluno.id)) {
+            alunosMatriculados = [...alunosMatriculados, aluno];
         }
+        searchDialogOpen = false;
     }
 
     function handleRemoveAluno(alunoId: number) {
-        alunosMatriculados = alunosMatriculados.filter(
-            (a) => a.id_aluno !== alunoId,
-        );
+        alunosMatriculados = alunosMatriculados.filter((a) => a.id !== alunoId);
+    }
+
+    function getChangesSummary() {
+        return {
+            nameChanged: turma.nome_turma !== "",
+            alunosChanged: alunosMatriculados.length > 0,
+        };
     }
 </script>
 
-<div class="header">
-    <h1>Nova Turma</h1>
-</div>
+<PageHeader
+    backUrl="/professor/turmas"
+    backText="Voltar para turmas"
+    title="Nova Turma"
+/>
 
-{#if error}
-    <div class="error">
-        <p>{error}</p>
-        <Button variant="secondary" on:click={() => (error = null)}
-            >Tentar novamente</Button
-        >
-    </div>
-{:else}
+<div class="container">
     <form on:submit|preventDefault={handleSubmit} class="form">
+        {#if error}
+            <div class="error-message">{error}</div>
+        {/if}
+
         <div class="form-group">
             <label for="nome_turma">Nome da Turma</label>
             <input
                 type="text"
                 id="nome_turma"
-                bind:value={nomeTurma}
+                bind:value={turma.nome_turma}
                 required
                 placeholder="Digite o nome da turma"
             />
@@ -103,8 +106,9 @@
                         <div class="aluno-item">
                             <div class="aluno-info">
                                 <img
-                                    src="https://via.placeholder.com/32"
-                                    alt="Avatar"
+                                    src={aluno.link_avatar ||
+                                        "/avatars/default.png"}
+                                    alt={aluno.nome_completo}
                                     class="avatar"
                                 />
                                 <div class="aluno-details">
@@ -114,11 +118,11 @@
                                     <span class="email">{aluno.email}</span>
                                 </div>
                             </div>
-                            <button
+                            <Button
+                                variant="danger"
+                                size="icon"
                                 type="button"
-                                class="more-options"
-                                on:click={() =>
-                                    handleRemoveAluno(aluno.id_aluno)}
+                                on:click={() => handleRemoveAluno(aluno.id)}
                                 title="Remover aluno"
                             >
                                 <svg
@@ -133,13 +137,17 @@
                                         fill="currentColor"
                                     />
                                 </svg>
-                            </button>
+                            </Button>
                         </div>
                     {/each}
                 </div>
             {/if}
 
-            <Button variant="secondary" type="button" on:click={handleAddAluno}>
+            <Button
+                variant="secondary"
+                type="button"
+                on:click={() => (searchDialogOpen = true)}
+            >
                 + Adicionar aluno
             </Button>
         </div>
@@ -148,50 +156,79 @@
             <Button
                 variant="secondary"
                 on:click={() => goto("/professor/turmas")}
-                disabled={saving}
+                disabled={loading}
             >
                 Cancelar
             </Button>
             <Button
                 variant="primary"
                 type="submit"
-                loading={saving}
-                disabled={saving}
+                {loading}
+                disabled={loading}
             >
-                {saving ? "Salvando..." : "Salvar"}
+                {loading ? "Criando..." : "Criar Turma"}
             </Button>
         </div>
     </form>
-{/if}
+</div>
 
 <SearchAlunoDialog
     open={searchDialogOpen}
     on:close={() => (searchDialogOpen = false)}
-    on:select={handleAlunoSelected}
-    exclude_turma_id={null}
-    exclude_aluno_ids={alunosMatriculados.map((a) => a.id_aluno)}
+    on:select={handleAddAluno}
+    excludeAlunos={alunosMatriculados}
 />
+
+<Dialog open={changesSummaryOpen} on:close={() => (changesSummaryOpen = false)}>
+    <svelte:fragment slot="header">
+        <h2>Resumo das alterações</h2>
+    </svelte:fragment>
+    <div class="changes-summary-content">
+        {#if error}
+            <div class="error-message">{error}</div>
+        {/if}
+
+        {#if getChangesSummary().nameChanged}
+            <div class="change-item">
+                <span class="change-title">Nome da turma</span>
+                <p class="change-detail">{turma.nome_turma}</p>
+            </div>
+        {/if}
+
+        {#if getChangesSummary().alunosChanged}
+            <div class="change-item">
+                <span class="change-title">Alunos matriculados</span>
+                <ul class="change-list">
+                    {#each alunosMatriculados as aluno}
+                        <li>{aluno.nome_completo}</li>
+                    {/each}
+                </ul>
+            </div>
+        {/if}
+
+        <div class="dialog-actions">
+            <Button
+                variant="secondary"
+                on:click={() => (changesSummaryOpen = false)}
+            >
+                Cancelar
+            </Button>
+            <Button
+                variant="primary"
+                on:click={handleSubmit}
+                disabled={loading}
+            >
+                {loading ? "Criando..." : "Criar Turma"}
+            </Button>
+        </div>
+    </div>
+</Dialog>
 
 <style>
     .container {
-        height: 100%;
-        width: 100%;
+        max-width: 800px;
         margin: 0 auto;
         padding: 2rem;
-        margin-top: 2.5rem;
-        box-sizing: border-box;
-    }
-
-    .header {
-        margin-bottom: 1.2rem;
-        margin-top: 0.5rem;
-    }
-
-    .header h1 {
-        font-size: 1.3rem;
-        font-weight: 700;
-        margin: 0;
-        text-align: left;
     }
 
     .form {
@@ -283,47 +320,67 @@
         border-radius: 50%;
     }
 
-    .more-options {
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 0.3rem;
-        color: #dc3545;
-        border-radius: 4px;
-    }
-
-    .more-options:hover {
-        background-color: #f8f9fa;
-    }
-
     .actions {
         display: flex;
-        gap: 0.7rem;
+        gap: 1rem;
         justify-content: flex-end;
-        margin-top: 1.2rem;
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e9ecef;
     }
 
-    .error {
-        text-align: center;
-        padding: 1.2rem;
-        background: white;
-        border: 1px solid #e9ecef;
-        border-radius: 8px;
-        color: #dc3545;
+    .error-message {
+        background-color: #fee2e2;
+        border: 1px solid #ef4444;
+        color: #b91c1c;
+        padding: 0.75rem 1rem;
+        border-radius: 0.375rem;
+        margin-bottom: 1rem;
+    }
+
+    .changes-summary-content {
+        padding: 1rem;
+    }
+
+    .change-item {
+        margin-bottom: 1.5rem;
+    }
+
+    .change-title {
+        font-weight: 500;
+        color: #1a1a1a;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .change-detail {
+        color: #4a5568;
+        font-size: 0.875rem;
+        margin: 0.25rem 0;
+    }
+
+    .change-list {
+        list-style: none;
+        padding: 0;
+        margin: 0.25rem 0;
+    }
+
+    .change-list li {
+        color: #4a5568;
+        font-size: 0.875rem;
+        padding: 0.25rem 0;
+    }
+
+    .dialog-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
     }
 
     @media (max-width: 768px) {
         .container {
-            padding: 0.5rem;
-            margin-top: 3rem;
-        }
-        .header {
-            margin-top: 0.2rem;
-            margin-bottom: 0.7rem;
-        }
-        .header h1 {
-            font-size: 1.05rem;
-            text-align: center;
+            padding: 0.7rem;
         }
         .form {
             padding: 0.7rem 0.3rem;
@@ -377,14 +434,6 @@
     @media (max-width: 480px) {
         .container {
             padding: 0.1rem;
-            margin-top: 1.2rem;
-        }
-        .header {
-            margin-top: 0.05rem;
-            margin-bottom: 0.2rem;
-        }
-        .header h1 {
-            font-size: 0.93rem;
         }
         .form {
             padding: 0.2rem 0.05rem;
@@ -420,11 +469,11 @@
         }
         .actions {
             gap: 0.1rem;
-            margin-top: 0.2rem;
+            margin-top: 0.3rem;
         }
         .actions button,
         .form :global(button) {
-            padding: 0.3rem 0.1rem;
+            padding: 0.2rem 0.01rem;
             font-size: 0.91rem;
         }
     }

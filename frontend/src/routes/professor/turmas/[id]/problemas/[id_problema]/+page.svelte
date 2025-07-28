@@ -23,6 +23,7 @@
     import { MediaCalculator } from "$lib/utils/utils";
     import CardList from "$lib/components/CardList.svelte";
     import AlunoCard from "$lib/components/AlunoCard.svelte";
+    import PageHeader from "$lib/components/PageHeader.svelte";
 
     let problema: ProblemaModel | null = null;
     let turma: TurmaModel | null = null;
@@ -248,14 +249,13 @@
         <span>{error}</span>
     </div>
 {:else}
-    <div class="content-wrapper">
-        <div class="back-section">
-            <BackButton text="Voltar para problemas" on:click={handleBack} />
-        </div>
-        <div class="header">
-            <h1>Alunos - {problema?.nome_problema || ""}</h1>
-        </div>
+    <PageHeader
+        backUrl="/professor/turmas/{$page.params.id}/problemas"
+        backText="Voltar para problemas"
+        title="Alunos - {problema?.nome_problema || ''}"
+    />
 
+    <div class="content-wrapper">
         <div class="alunos-section">
             <div class="search-section">
                 <SearchBar
@@ -321,22 +321,6 @@
         display: flex;
         flex-direction: column;
         gap: 2rem;
-    }
-
-    .back-section {
-    }
-
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-    }
-
-    .header h1 {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin: 0;
     }
 
     .alunos-section {

@@ -586,7 +586,7 @@
     }
 
     .page-title h1 {
-        font-size: 2rem;
+        font-size: 1.5rem;
         font-weight: 700;
         margin: 0;
         color: #2d3748;
@@ -895,7 +895,7 @@
         }
 
         .page-title h1 {
-            font-size: 1.75rem;
+            font-size: 1.3rem;
         }
 
         .avaliacoes-section {
@@ -960,7 +960,7 @@
         }
 
         .page-title h1 {
-            font-size: 1.5rem;
+            font-size: 1.1rem;
         }
 
         .avaliacoes-section {

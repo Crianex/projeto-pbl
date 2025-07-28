@@ -80,8 +80,8 @@
     }
 
     h1 {
-        font-size: 1.75rem;
-        font-weight: 600;
+        font-size: 1.5rem;
+        font-weight: 700;
         color: #1a1a1a;
         margin: 0 0 2rem 0;
         text-align: center;
@@ -116,7 +116,7 @@
         }
 
         h1 {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
         }
 
         .form-actions {
@@ -134,7 +134,7 @@
         }
 
         h1 {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             margin-bottom: 1.5rem;
         }
 

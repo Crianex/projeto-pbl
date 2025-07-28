@@ -277,5 +277,79 @@
         margin: 1rem;
     }
 
-    /* New styles for arquivos-section */
+    @media (max-width: 768px) {
+        .container {
+            margin: 1rem auto;
+            padding: 0.5rem 1rem;
+        }
+
+        .form {
+            padding: 1.5rem;
+            margin: 0 0.5rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .form-actions :global(button) {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .container {
+            margin: 0.5rem auto;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .form {
+            padding: 1rem;
+            margin: 0 0.25rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+    }
+
+    /* Global styles for form components on mobile */
+    @media (max-width: 768px) {
+        :global(.date-range-container) {
+            flex-direction: column !important;
+            gap: 1rem !important;
+        }
+
+        :global(.date-range-container > div) {
+            width: 100% !important;
+        }
+
+        :global(.criterio-item) {
+            flex-direction: column !important;
+            gap: 0.8rem !important;
+        }
+
+        :global(.criterio-item > div) {
+            width: 100% !important;
+        }
+
+        :global(.arquivo-item) {
+            flex-direction: column !important;
+            gap: 0.8rem !important;
+        }
+
+        :global(.arquivo-item > div) {
+            width: 100% !important;
+        }
+
+        :global(.form-row) {
+            flex-direction: column !important;
+            gap: 1rem !important;
+        }
+
+        :global(.form-row > div) {
+            width: 100% !important;
+        }
+    }
 </style>

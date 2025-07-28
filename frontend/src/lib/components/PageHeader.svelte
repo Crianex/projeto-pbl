@@ -30,7 +30,7 @@
 
 <style>
     .header {
-        margin-bottom: 2rem;
+        margin: 1rem;
     }
 
     .title-section {
@@ -54,7 +54,20 @@
 
     h1 {
         font-size: 1.5rem;
-        font-weight: 600;
+        font-weight: 700;
         margin: 0;
+        color: #1f2937;
+    }
+
+    @media (max-width: 768px) {
+        h1 {
+            font-size: 1.3rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        h1 {
+            font-size: 1.1rem;
+        }
     }
 </style>

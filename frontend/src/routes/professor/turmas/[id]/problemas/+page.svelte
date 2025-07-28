@@ -1,63 +1,60 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { page } from "$app/stores";
-    import Button from "$lib/components/Button.svelte";
-    import { api } from "$lib/utils/api";
     import { goto } from "$app/navigation";
-    import Dialog from "$lib/components/Dialog.svelte";
-    import { problemaStore } from "$lib/utils/stores";
-    import { TurmasService } from "$lib/services/turmas_service";
+    import { api } from "$lib/utils/api";
+    import { logger } from "$lib/utils/logger";
+    import type { ProblemaModel, TurmaModel } from "$lib/interfaces/interfaces";
     import { ProblemasService } from "$lib/services/problemas_service";
-    import { Parsers } from "$lib/interfaces/parsers";
-    import type { ProblemaModel } from "$lib/interfaces/interfaces";
-    import { DateUtils, Utils } from "$lib/utils/utils";
-    import BackButton from "$lib/components/BackButton.svelte";
+    import { TurmasService } from "$lib/services/turmas_service";
+    import { problemaStore } from "$lib/utils/stores";
     import CardList from "$lib/components/CardList.svelte";
     import ProblemaCard from "$lib/components/ProblemaCard.svelte";
-    import { formatToDateTime } from "brazilian-values";
+    import BackButton from "$lib/components/BackButton.svelte";
+    import Button from "$lib/components/Button.svelte";
+    import Dialog from "$lib/components/Dialog.svelte";
+    import PageHeader from "$lib/components/PageHeader.svelte";
 
     const turmaId = $page.params.id;
 
-    let turma = {
-        nome_turma: "",
-        id_professor: "",
-    };
     let problemas: ProblemaModel[] = [];
+    let turma: TurmaModel | null = null;
     let loading = true;
     let error: string | null = null;
     let deleteConfirmOpen = false;
-    let problemaToDelete: any = null;
+    let problemaToDelete: ProblemaModel | null = null;
 
     async function fetchData() {
         try {
             loading = true;
             error = null;
 
-            // Fetch turma details using cache service
-            const turmaData = await TurmasService.getById(turmaId);
-            turma = {
-                nome_turma: turmaData.nome_turma || "",
-                id_professor: turmaData.id_professor?.toString() || "",
-            };
+            // Get both turma and problemas data
+            const [turmaData, problemasData] = await Promise.all([
+                TurmasService.getById(turmaId),
+                ProblemasService.getByTurma(turmaId),
+            ]);
 
-            // Fetch problemas for this turma using cache service
-            const parsedProblemas = await ProblemasService.getByTurma(turmaId);
-            problemas = parsedProblemas;
-            problemaStore.set(parsedProblemas);
-        } catch (err) {
-            error = err instanceof Error ? err.message : "Failed to fetch data";
-            console.error("Error fetching data:", err);
+            turma = turmaData;
+            problemas = problemasData;
+
+            logger.info(
+                `Fetched ${problemas.length} problemas for turma ${turmaId}`,
+            );
+        } catch (err: any) {
+            error = err.message || "Failed to fetch data";
+            logger.error("Error fetching data:", err);
         } finally {
             loading = false;
         }
     }
 
-    async function handleCreateProblema() {
-        await goto(`/professor/turmas/${turmaId}/problemas/novo`);
+    function handleCreateProblema() {
+        goto(`/professor/turmas/${turmaId}/problemas/novo`);
     }
 
-    async function handleEditProblema(problema: ProblemaModel) {
-        await goto(
+    function handleEditProblema(problema: ProblemaModel) {
+        goto(
             `/professor/turmas/${turmaId}/problemas/${problema.id_problema}/editar`,
         );
     }
@@ -80,12 +77,9 @@
             );
             await fetchData();
             closeDeleteConfirm();
-        } catch (err) {
-            error =
-                err instanceof Error
-                    ? err.message
-                    : "Failed to delete problema";
-            console.error("Error deleting problema:", err);
+        } catch (err: any) {
+            error = err.message || "Failed to delete problema";
+            logger.error("Error deleting problema:", err);
         } finally {
             loading = false;
         }
@@ -111,39 +105,40 @@
     });
 </script>
 
-<div class="header">
-    <div class="title-section">
-        <BackButton
-            on:click={() => goto(`/professor/turmas/`)}
-            text="Voltar para turmas"
-        />
-        <h1>Problemas - {turma.nome_turma}</h1>
-    </div>
-    <Button variant="primary" on:click={handleCreateProblema}>
-        + Criar problema
-    </Button>
-</div>
+<PageHeader
+    backUrl="/professor/turmas"
+    backText="Voltar para turmas"
+    title="Problemas - {turma?.nome_turma || ''}"
+/>
 
-<CardList
-    items={problemas}
-    {loading}
-    {error}
-    loadingMessage="Carregando problemas..."
-    emptyMessage="Nenhum problema encontrado para esta turma."
-    showRetryButton={true}
-    onRetry={fetchData}
->
-    <svelte:fragment slot="default">
-        {#each problemas as problema}
-            <ProblemaCard
-                {problema}
-                {turmaId}
-                onEditProblema={handleEditProblema}
-                onOpenDeleteConfirm={openDeleteConfirm}
-            />
-        {/each}
-    </svelte:fragment>
-</CardList>
+<div class="problemas-container">
+    <div class="actions-section">
+        <Button variant="primary" on:click={handleCreateProblema}>
+            + Criar problema
+        </Button>
+    </div>
+
+    <CardList
+        items={problemas}
+        {loading}
+        {error}
+        loadingMessage="Carregando problemas..."
+        emptyMessage="Nenhum problema encontrado para esta turma."
+        showRetryButton={true}
+        onRetry={fetchData}
+    >
+        <svelte:fragment slot="default">
+            {#each problemas as problema}
+                <ProblemaCard
+                    {problema}
+                    {turmaId}
+                    onEditProblema={handleEditProblema}
+                    onOpenDeleteConfirm={openDeleteConfirm}
+                />
+            {/each}
+        </svelte:fragment>
+    </CardList>
+</div>
 
 <Dialog open={deleteConfirmOpen} on:close={closeDeleteConfirm}>
     <svelte:fragment slot="header">
@@ -169,38 +164,23 @@
 </Dialog>
 
 <style>
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.2rem;
-        gap: 0.7rem;
-    }
-
-    .title-section {
+    .problemas-container {
+        width: 100%;
+        height: 100%;
+        margin: 0 auto;
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        margin-top: 1rem;
+        padding: 0 0.5rem;
+        box-sizing: border-box;
     }
 
-    .back-link {
+    .actions-section {
+        margin-bottom: 1.2rem;
+        margin-top: 0.5rem;
         display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #6c757d;
-        text-decoration: none;
-        font-size: 0.875rem;
-    }
-
-    .back-link:hover {
-        color: #0d6efd;
-    }
-
-    .header h1 {
-        font-size: 1.3rem;
-        font-weight: 700;
-        margin: 0;
-        text-align: left;
+        justify-content: flex-end;
+        gap: 0.7rem;
     }
 
     .delete-confirm-content {
@@ -224,22 +204,16 @@
     }
 
     @media (max-width: 768px) {
-        .header {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 1.2rem;
-            margin-bottom: 1.2rem;
+        .problemas-container {
+            margin-top: 1rem;
+            padding: 0 0.1rem;
         }
-        .header h1 {
-            font-size: 1.05rem;
-            text-align: center;
+        .actions-section {
+            margin-top: 0.2rem;
+            margin-bottom: 0.7rem;
+            gap: 0.4rem;
         }
-        .title-section {
-            align-items: center;
-            gap: 0.8rem;
-        }
-        .header :global(button),
-        .header Button {
+        .actions-section :global(button) {
             width: 100%;
             min-width: 0;
             padding: 0.5rem 0.2rem;
@@ -249,18 +223,16 @@
     }
 
     @media (max-width: 480px) {
-        .header {
-            gap: 0.7rem;
-            margin-bottom: 0.7rem;
+        .problemas-container {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
         }
-        .header h1 {
-            font-size: 0.93rem;
+        .actions-section {
+            margin-top: 0.1rem;
+            margin-bottom: 0.3rem;
+            gap: 0.2rem;
         }
-        .title-section {
-            gap: 0.5rem;
-        }
-        .header :global(button),
-        .header Button {
+        .actions-section :global(button) {
             padding: 0.3rem 0.1rem;
             font-size: 0.91rem;
         }
