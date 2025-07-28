@@ -276,7 +276,7 @@
     }
 
     .links a {
-        color: var(--color-primary-main);
+        color: var(--color-nature-main);
         text-decoration: none;
         font-weight: 500;
         font-size: 0.9rem;
@@ -287,8 +287,8 @@
     }
 
     .links a:hover {
-        color: var(--color-primary-light);
-        background: rgba(102, 126, 234, 0.1);
+        color: var(--color-nature-light);
+        background: var(--color-nature-background);
         text-decoration: none;
         transform: translateY(-1px);
     }

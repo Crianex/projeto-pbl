@@ -209,7 +209,7 @@
     }
 
     .back-to-login a {
-        color: #667eea;
+        color: var(--color-nature-main);
         text-decoration: none;
         font-weight: 500;
         font-size: 0.9rem;
@@ -221,8 +221,8 @@
     }
 
     .back-to-login a:hover {
-        color: #5a67d8;
-        background: rgba(102, 126, 234, 0.1);
+        color: var(--color-nature-light);
+        background: var(--color-nature-background);
         text-decoration: none;
         transform: translateY(-1px);
     }

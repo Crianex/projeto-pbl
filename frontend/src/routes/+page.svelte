@@ -548,11 +548,6 @@
             gap: 0.75rem;
             margin-top: 0.5rem;
         }
-        .hero-buttons .button {
-            width: 100%;
-            min-width: 0;
-            font-size: 1.1rem;
-        }
         .hero-illustration {
             margin-top: 0.5rem;
             margin-bottom: 0.5rem;
@@ -582,11 +577,6 @@
         }
     }
     @media (max-width: 480px) {
-        .header-buttons {
-            flex-direction: column;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
         .hero-buttons {
             gap: 0.5rem;
         }

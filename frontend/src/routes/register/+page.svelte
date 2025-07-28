@@ -488,7 +488,7 @@
     }
 
     .login-link a {
-        color: #667eea;
+        color: var(--color-nature-main);
         text-decoration: none;
         margin-left: 0.5rem;
         font-weight: 600;
@@ -498,8 +498,8 @@
     }
 
     .login-link a:hover {
-        color: #5a67d8;
-        background: rgba(102, 126, 234, 0.1);
+        color: var(--color-nature-light);
+        background: var(--color-nature-background);
         text-decoration: none;
         transform: translateY(-1px);
     }
@@ -924,14 +924,4 @@
         }
     }
 
-    .form-warning {
-        color: #e53e3e;
-        background: #fff5f5;
-        border: 1px solid #fed7d7;
-        border-radius: 6px;
-        padding: 0.75rem 1rem;
-        margin-top: 1rem;
-        text-align: center;
-        font-size: 1rem;
-    }
 </style>
