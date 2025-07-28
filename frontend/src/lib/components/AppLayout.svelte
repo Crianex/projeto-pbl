@@ -183,16 +183,27 @@
             : ''}"
     >
         <div
-            class="main-card"
+            class="main-card-wrapper"
             style="max-width: {userType === 'generic'
                 ? '420px'
                 : isMobile
                   ? '90vw'
-                  : '60vw'}; margin: {userType === 'generic'
+                  : '80vw'}; margin: {userType === 'generic'
                 ? '2rem auto'
                 : '2rem auto'};"
         >
-            <slot />
+            <div
+                class="main-card"
+                style="max-width: {userType === 'generic'
+                    ? '420px'
+                    : isMobile
+                      ? '90vw'
+                      : '60vw'}; margin: {userType === 'generic'
+                    ? '2rem auto'
+                    : '2rem auto'};"
+            >
+                <slot />
+            </div>
         </div>
     </main>
 </div>
@@ -243,7 +254,7 @@
         background: rgba(255, 255, 255, 0.98) !important;
         border: none !important;
         padding-bottom: 0 !important;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         width: 250px;
         max-width: 250px;
         height: 100vh;
@@ -292,8 +303,8 @@
         font-size: 1.08rem;
         font-weight: 500;
         transition:
-            background 0.18s,
-            color 0.18s;
+            background 0.12s,
+            color 0.12s;
         width: 100%;
         justify-content: flex-start;
         text-align: left;
@@ -331,8 +342,8 @@
         gap: 1.1rem;
         border-radius: 8px;
         transition:
-            background 0.18s,
-            color 0.18s;
+            background 0.12s,
+            color 0.12s;
         justify-content: flex-start;
         text-align: left;
     }
@@ -350,22 +361,35 @@
         height: 100vh;
         background: rgba(0, 0, 0, 0.55);
         z-index: 2000;
-        transition: opacity 0.2s;
+        transition: opacity 0.15s;
     }
 
     .main-content {
         flex: 1;
         background-color: var(--color-bg-white);
-        overflow-y: scroll;
+        overflow-y: auto;
         margin-left: 250px;
         display: flex;
         align-items: flex-start;
         transition: all 0.3s ease;
+        padding: 2rem;
+        height: 100vh;
     }
 
     .main-content.sidebar-open {
         pointer-events: none;
         filter: blur(2px) grayscale(0.2);
+    }
+
+    .main-card-wrapper {
+        background: transparent;
+        padding: 0;
+        border-radius: 20px;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: calc(100vh - 4rem);
     }
 
     .main-card {
@@ -380,7 +404,7 @@
             0 15px 35px rgba(0, 0, 0, 0.08),
             0 8px 20px rgba(0, 0, 0, 0.06),
             0 3px 8px rgba(0, 0, 0, 0.04);
-        margin: 2rem auto;
+        margin: 0;
         transition: all 0.3s ease;
     }
     .main-card:hover {
