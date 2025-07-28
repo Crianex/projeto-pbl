@@ -377,9 +377,63 @@
                         {#each displayColumns as col}
                             {#if col.key === "actions" && col.render}
                                 {@const renderResult = col.render(row)}
-                                {#if typeof renderResult === "string"}
+                                {#if Array.isArray(renderResult)}
+                                    {#each renderResult as item}
+                                        {#if typeof item === "string"}
+                                            {item}
+                                        {:else if item && typeof item === "object" && "component" in item}
+                                            {#if item.component === "a"}
+                                                <Button
+                                                    variant={item.props
+                                                        .variant || "primary"}
+                                                    href={item.props.href}
+                                                    class={item.props.class ||
+                                                        ""}
+                                                >
+                                                    {item.props.textContent ||
+                                                        item.props.text ||
+                                                        ""}
+                                                </Button>
+                                            {:else if item.component === "button" || item.component === "Button"}
+                                                <Button
+                                                    variant={item.props
+                                                        .variant || "primary"}
+                                                    class={item.props.class ||
+                                                        ""}
+                                                    on:click={item.props
+                                                        .onClick}
+                                                >
+                                                    {typeof item.props.text ===
+                                                    "string"
+                                                        ? item.props.text
+                                                        : String(
+                                                              item.props.text ||
+                                                                  "",
+                                                          )}
+                                                </Button>
+                                            {:else if item.component === "span"}
+                                                <span
+                                                    class={item.props.class ||
+                                                        ""}
+                                                >
+                                                    {typeof item.props.text ===
+                                                    "string"
+                                                        ? item.props.text
+                                                        : String(
+                                                              item.props.text ||
+                                                                  "",
+                                                          )}
+                                                </span>
+                                            {:else if item.component === "html"}
+                                                {@html item.props.html}
+                                            {:else}
+                                                {@html item}
+                                            {/if}
+                                        {/if}
+                                    {/each}
+                                {:else if typeof renderResult === "string"}
                                     {@html renderResult}
-                                {:else if typeof renderResult === "object" && "component" in renderResult}
+                                {:else if renderResult && typeof renderResult === "object" && "component" in renderResult}
                                     {#if renderResult.component === "a"}
                                         <Button
                                             variant={renderResult.props

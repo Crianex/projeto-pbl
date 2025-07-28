@@ -293,13 +293,11 @@
     <div class="back-section">
         <BackButton text="Voltar" on:click={() => history.back()} />
     </div>
-    
     <div class="header">
         <h1>
             Avaliação Individual {isProfessorEvaluation ? "(Professor)" : ""}
         </h1>
     </div>
-    
     <div class="student-info">
         <div class="avatar">
             <img
@@ -313,7 +311,6 @@
             > nesse problema?
         </p>
     </div>
-    
     <form on:submit|preventDefault={handleSubmit}>
         <div class="evaluation-grid">
             {#each Object.entries(criterios) as [tag, criteriosList]}
@@ -327,13 +324,13 @@
                         {#each criteriosList as criterio}
                             {@const criterioKey =
                                 criterio.nome_criterio.toLowerCase()}
-                            <div class="criteria-item">
-                                <div class="criteria-header">
-                                    <span class="criteria-name">{criterio.nome_criterio}</span>
+                            <label>
+                                <span class="criteria-header">
+                                    <span>{criterio.nome_criterio}</span>
                                     <span class="range"
                                         >0,0 a {criterio.nota_maxima}</span
                                     >
-                                </div>
+                                </span>
                                 <div class="input-wrapper">
                                     <div class="slider-container">
                                         <input
@@ -371,13 +368,12 @@
                                         Critérios
                                     </button>
                                 </div>
-                            </div>
+                            </label>
                         {/each}
                     </div>
                 </div>
             {/each}
         </div>
-        
         <div class="submit-btn-container">
             <Button type="submit" variant="primary">Salvar Avaliação</Button>
         </div>
@@ -422,19 +418,18 @@
         position: relative;
         min-height: 100%;
         height: fit-content;
-        padding: 1rem;
     }
     .back-section {
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
     }
     .header {
         display: flex;
         align-items: center;
         gap: 1rem;
-        margin: 0 0 1.5rem 0;
+        margin: 0 0 2rem 0;
     }
     h1 {
-        font-size: 1.5rem;
+        font-size: 1.75rem;
         font-weight: 600;
         color: #1a1a1a;
         margin: 0;
@@ -442,26 +437,25 @@
     .student-info {
         display: flex;
         align-items: center;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
         background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(10px);
-        padding: 1rem;
-        border-radius: 12px;
+        padding: 1.5rem;
+        border-radius: 16px;
         border: 1px solid rgba(255, 255, 255, 0.3);
         box-shadow:
             0 4px 20px rgba(0, 0, 0, 0.08),
             0 2px 10px rgba(0, 0, 0, 0.04);
     }
     .avatar {
-        width: 60px;
-        height: 60px;
+        width: 80px;
+        height: 80px;
         border-radius: 50%;
         overflow: hidden;
         background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
         border: 3px solid rgba(255, 255, 255, 0.8);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        flex-shrink: 0;
     }
     .avatar img {
         width: 100%;
@@ -469,47 +463,41 @@
         object-fit: cover;
     }
     .student-info p {
-        font-size: 1rem;
+        font-size: 1.125rem;
         color: #495057;
         margin: 0;
-        line-height: 1.4;
     }
     .highlight {
         color: #667eea;
         font-weight: 600;
     }
     .evaluation-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
         margin-bottom: 2rem;
     }
+
     .evaluation-section {
         background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(10px);
-        border-radius: 12px;
-        padding: 1rem;
+        border-radius: 16px;
+        padding: 1.5rem;
         border: 1px solid rgba(255, 255, 255, 0.3);
         box-shadow:
             0 4px 20px rgba(0, 0, 0, 0.08),
             0 2px 10px rgba(0, 0, 0, 0.04);
     }
     h2 {
-        font-size: 1.125rem;
+        font-size: 1.25rem;
         font-weight: 600;
         color: #1a1a1a;
-        margin: 0 0 1rem 0;
+        margin: 0 0 1.5rem 0;
     }
     .criteria-group {
         display: flex;
         flex-direction: column;
         gap: 1rem;
-    }
-    .criteria-item {
-        background: rgba(255, 255, 255, 0.5);
-        border-radius: 8px;
-        padding: 0.75rem;
-        border: 1px solid rgba(255, 255, 255, 0.3);
     }
     .criteria-header {
         display: flex;
@@ -518,28 +506,24 @@
         margin-bottom: 0.5rem;
         font-weight: 500;
         color: #495057;
-        font-size: 0.95rem;
-    }
-    .criteria-name {
-        font-weight: 600;
-        color: #1a1a1a;
     }
     .range {
-        font-size: 0.8rem;
+        font-size: 0.875rem;
         color: #6c757d;
     }
     .input-wrapper {
         display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
+        gap: 0.2rem;
+        align-items: center;
     }
     .slider-container {
+        flex: 1;
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 1rem;
         background: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(8px);
-        padding: 0.75rem;
+        padding: 0.5rem 1rem;
         border-radius: 8px;
         border: 1px solid rgba(255, 255, 255, 0.4);
         box-shadow:
@@ -550,9 +534,9 @@
         flex: 1;
         -webkit-appearance: none;
         appearance: none;
-        height: 8px;
+        height: 6px;
         background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
-        border-radius: 4px;
+        border-radius: 3px;
         outline: none;
         opacity: 0.7;
         transition: opacity 0.2s;
@@ -560,8 +544,8 @@
     .slider::-webkit-slider-thumb {
         -webkit-appearance: none;
         appearance: none;
-        width: 24px;
-        height: 24px;
+        width: 18px;
+        height: 18px;
         background: white;
         border-radius: 50%;
         cursor: pointer;
@@ -570,8 +554,8 @@
         transition: all 0.2s ease;
     }
     .slider::-moz-range-thumb {
-        width: 24px;
-        height: 24px;
+        width: 18px;
+        height: 18px;
         background: white;
         border-radius: 50%;
         cursor: pointer;
@@ -591,19 +575,19 @@
         box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
     }
     .value-display {
-        min-width: 3.5rem;
+        min-width: 2rem;
         text-align: center;
         font-weight: 500;
         color: #495057;
         font-size: 1rem;
-        padding: 0.5rem;
+        padding: 0.25rem 0.5rem;
         background: white;
-        border-radius: 6px;
+        border-radius: 4px;
         border: 1px solid rgba(206, 212, 218, 0.4);
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
     .criteria-btn {
-        padding: 0.75rem 1rem;
+        padding: 0.75rem 1.25rem;
         border: 1px solid rgba(255, 255, 255, 0.4);
         border-radius: 8px;
         background: rgba(255, 255, 255, 0.8);
@@ -615,8 +599,6 @@
         box-shadow:
             0 2px 6px rgba(0, 0, 0, 0.05),
             inset 0 1px 0 rgba(255, 255, 255, 0.8);
-        font-size: 0.9rem;
-        text-align: center;
     }
     .criteria-btn:hover {
         background: rgba(255, 255, 255, 0.95);
@@ -624,6 +606,64 @@
         box-shadow:
             0 4px 12px rgba(0, 0, 0, 0.08),
             inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+    @media (max-width: 768px) {
+        .evaluation-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .evaluation-section {
+            padding: 1rem;
+        }
+
+        .student-info {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .avatar {
+            width: 60px;
+            height: 60px;
+        }
+
+        .student-info p {
+            font-size: 1rem;
+        }
+
+        .input-wrapper {
+            flex-direction: row;
+            gap: 0.2rem;
+            align-items: center;
+        }
+
+        .slider-container {
+            flex: 1;
+            padding: 0.2rem;
+            gap: 0.5rem;
+        }
+
+        .slider {
+            height: 4px;
+        }
+
+        .criteria-btn {
+            padding: 0.5rem 0.5rem;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .criteria-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.25rem;
+        }
+
+        .range {
+            font-size: 0.8rem;
+        }
     }
     .submit-btn {
         width: 100%;
@@ -697,157 +737,7 @@
     }
     .submit-btn-container {
         display: flex;
-        justify-content: center;
+        justify-content: flex-end;
         margin-top: 1.5rem;
-        padding: 0 1rem;
-    }
-
-    /* Mobile optimizations */
-    @media (max-width: 768px) {
-        .evaluation-container {
-            padding: 0.5rem;
-        }
-        .header {
-            margin-bottom: 1rem;
-        }
-        h1 {
-            font-size: 1.25rem;
-        }
-        .student-info {
-            padding: 0.75rem;
-            gap: 0.75rem;
-        }
-        .avatar {
-            width: 50px;
-            height: 50px;
-        }
-        .student-info p {
-            font-size: 0.9rem;
-        }
-        .evaluation-section {
-            padding: 0.75rem;
-        }
-        h2 {
-            font-size: 1rem;
-            margin-bottom: 0.75rem;
-        }
-        .criteria-item {
-            padding: 0.5rem;
-        }
-        .criteria-header {
-            font-size: 0.9rem;
-        }
-        .range {
-            font-size: 0.75rem;
-        }
-        .slider-container {
-            padding: 0.5rem;
-        }
-        .slider {
-            height: 6px;
-        }
-        .slider::-webkit-slider-thumb {
-            width: 20px;
-            height: 20px;
-        }
-        .slider::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-        }
-        .value-display {
-            min-width: 3rem;
-            font-size: 0.9rem;
-            padding: 0.25rem 0.5rem;
-        }
-        .criteria-btn {
-            padding: 0.5rem 0.75rem;
-            font-size: 0.85rem;
-        }
-        .submit-btn {
-            padding: 1rem;
-            font-size: 1rem;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .evaluation-container {
-            padding: 0.25rem;
-        }
-        .back-section {
-            margin-bottom: 0.5rem;
-        }
-        .header {
-            margin-bottom: 0.75rem;
-        }
-        h1 {
-            font-size: 1.125rem;
-        }
-        .student-info {
-            padding: 0.5rem;
-            gap: 0.5rem;
-        }
-        .avatar {
-            width: 45px;
-            height: 45px;
-        }
-        .student-info p {
-            font-size: 0.85rem;
-        }
-        .evaluation-section {
-            padding: 0.5rem;
-        }
-        h2 {
-            font-size: 0.95rem;
-            margin-bottom: 0.5rem;
-        }
-        .criteria-group {
-            gap: 0.75rem;
-        }
-        .criteria-item {
-            padding: 0.4rem;
-        }
-        .criteria-header {
-            font-size: 0.85rem;
-        }
-        .range {
-            font-size: 0.7rem;
-        }
-        .slider-container {
-            padding: 0.5rem;
-        }
-        .value-display {
-            min-width: 2.5rem;
-            font-size: 0.85rem;
-            padding: 0.25rem 0.4rem;
-        }
-        .criteria-btn {
-            padding: 0.4rem 0.6rem;
-            font-size: 0.8rem;
-        }
-        .submit-btn {
-            padding: 0.875rem;
-            font-size: 0.95rem;
-        }
-        .submit-btn-container {
-            padding: 0 0.5rem;
-        }
-    }
-
-    /* Touch optimizations */
-    @media (hover: none) and (pointer: coarse) {
-        .slider::-webkit-slider-thumb {
-            width: 28px;
-            height: 28px;
-        }
-        .slider::-moz-range-thumb {
-            width: 28px;
-            height: 28px;
-        }
-        .criteria-btn {
-            min-height: 44px;
-        }
-        .submit-btn {
-            min-height: 48px;
-        }
     }
 </style>
