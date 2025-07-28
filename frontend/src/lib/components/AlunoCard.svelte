@@ -167,15 +167,15 @@
 
     .criterio-value {
         font-weight: 600;
-        color: #059669;
+        color: var(--color-info-main);
     }
 
     .criterio-value.outlier {
-        color: #dc2626;
+        color: var(--color-info-dark);
     }
 
     .criterio-value.not-evaluated {
-        color: #6b7280;
+        color: var(--color-text-muted);
         font-style: italic;
     }
 
@@ -184,19 +184,19 @@
         align-items: center;
         gap: 0.5rem;
         padding: 0.5rem;
-        background: #f0f9ff;
+        background: var(--color-bg-light);
         border-radius: 6px;
     }
 
     .media-label {
         font-weight: 600;
-        color: #0369a1;
+        color: var(--color-text-primary);
         font-size: 0.9rem;
     }
 
     .media-value {
         font-weight: 700;
-        color: #0369a1;
+        color: var(--color-info-main);
         font-size: 1rem;
     }
 
@@ -205,19 +205,19 @@
         align-items: center;
         gap: 0.5rem;
         padding: 0.5rem;
-        background: #fef3c7;
+        background: var(--color-bg-light);
         border-radius: 6px;
     }
 
     .professor-label {
         font-weight: 600;
-        color: #92400e;
+        color: var(--color-text-primary);
         font-size: 0.9rem;
     }
 
     .professor-value {
         font-weight: 700;
-        color: #92400e;
+        color: var(--color-info-main);
         font-size: 1rem;
     }
 

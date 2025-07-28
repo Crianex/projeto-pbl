@@ -326,48 +326,13 @@
     .alunos-section {
         background: white;
         border-radius: 12px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
     .search-section {
         margin-bottom: 1.5rem;
     }
 
-    .pagination {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 0.5rem;
-        margin-top: 1rem;
-    }
-
-    .page-nav {
-        padding: 0.5rem 1rem;
-        border: 1px solid #dee2e6;
-        background: white;
-        cursor: pointer;
-        border-radius: 4px;
-    }
-
-    .page-nav:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .page-number {
-        padding: 0.5rem 1rem;
-        border: 1px solid #dee2e6;
-        background: white;
-        border-radius: 4px;
-    }
-
-    .page-number.active {
-        background: #0d6efd;
-        color: white;
-        border-color: #0d6efd;
-    }
-
-    .loading-container {
+   .loading-container {
         display: flex;
         justify-content: center;
         align-items: center;
