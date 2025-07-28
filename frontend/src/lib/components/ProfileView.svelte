@@ -5,20 +5,26 @@
     import { currentUser } from "$lib/utils/auth";
 
     export let onEdit: () => void;
+
+    // Debug info for avatar
+    $: avatarSrc = $currentUser?.link_avatar || "";
+    $: avatarUrl = avatarSrc ? avatarSrc : "/avatars/default.png";
+    $: debugInfo = { userId: $currentUser?.id, avatarSrc, avatarUrl };
+    $: console.log("ProfileView Debug:", debugInfo);
 </script>
 
 <div class="profile-view">
     <div class="profile-header">
         <Avatar
-            src={get(currentUser)?.link_avatar || ""}
-            alt={get(currentUser)?.nome_completo || ""}
+            src={avatarUrl}
+            alt={$currentUser?.nome_completo || ""}
             size="lg"
         />
 
         <div class="profile-info">
             <div class="user-details">
-                <h1>{get(currentUser)?.nome_completo || ""}</h1>
-                <p class="email">{get(currentUser)?.email || ""}</p>
+                <h1>{$currentUser?.nome_completo || ""}</h1>
+                <p class="email">{$currentUser?.email || ""}</p>
             </div>
         </div>
     </div>

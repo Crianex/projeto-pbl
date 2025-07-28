@@ -27,7 +27,15 @@
 </script>
 
 <div class="avatar-container {size}">
-    <img {src} {alt} class="avatar" />
+    <img 
+        {src} 
+        {alt} 
+        class="avatar" 
+        on:error={(e) => {
+            console.log("Erro ao carregar avatar:", src);
+            e.target.src = "/avatars/default.png";
+        }}
+    />
     
     {#if editable}
         <div class="avatar-actions">
