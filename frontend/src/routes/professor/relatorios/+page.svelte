@@ -872,6 +872,9 @@
                 </div>
 
                 <div class="matrix-container">
+                    <div class="scroll-hint">
+                        📱 Deslize horizontalmente para ver todas as colunas
+                    </div>
                     <div class="matrix-wrapper">
                         <table class="evaluation-matrix">
                             <thead>
@@ -1184,36 +1187,45 @@
 
     .matrix-container {
         overflow-x: auto;
+        overflow-y: visible;
         border: 1px solid #e3e6ed;
         border-radius: 6px;
         background: #f8fafc;
         margin-bottom: 0.5rem;
+        max-width: 100%;
+        white-space: nowrap;
     }
 
     .matrix-wrapper {
         min-width: max-content;
+        width: fit-content;
     }
 
     .evaluation-matrix {
-        width: 100%;
+        width: auto;
+        min-width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        font-size: 0.93rem;
+        font-size: 0.95rem;
         background: #fff;
+        table-layout: auto;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
     .evaluation-matrix th {
         background: #e0e7ff;
         font-weight: 700;
         color: #22223b;
-        padding: 0.5rem 0.3rem;
+        padding: 0.75rem 0.5rem;
         border-bottom: 2px solid #bfc6e0;
+        height: 50px;
     }
 
     .evaluation-matrix td {
-        padding: 0.5rem 0.3rem;
+        padding: 0.75rem 0.5rem;
         text-align: center;
         border-bottom: 1px solid #f0f0f0;
+        height: 50px;
     }
 
     .evaluation-matrix tr:nth-child(even) td {
@@ -1225,13 +1237,14 @@
         background: #f3f4fa !important;
         font-weight: 600;
         text-align: left;
-        min-width: 90px;
-        max-width: 120px;
+        min-width: 120px;
+        max-width: 160px;
         position: sticky;
         left: 0;
         z-index: 10;
         border-right: 1px solid #e0e7ff;
-        font-size: 0.93rem;
+        font-size: 0.95rem;
+        padding: 0.75rem 0.75rem;
     }
 
     .student-number-header,
@@ -1239,13 +1252,14 @@
         background: #f3f4fa !important;
         font-weight: 600;
         text-align: center;
-        min-width: 35px;
-        max-width: 45px;
+        min-width: 50px;
+        max-width: 60px;
         position: sticky;
-        left: 90px;
+        left: 120px;
         z-index: 10;
         border-right: 1px solid #e0e7ff;
-        font-size: 0.93rem;
+        font-size: 0.95rem;
+        padding: 0.75rem 0.5rem;
     }
 
     .average-header,
@@ -1253,20 +1267,52 @@
         background: #e0e7ff !important;
         font-weight: 700;
         color: #6c63ff;
-        min-width: 50px;
-        max-width: 60px;
+        min-width: 70px;
+        max-width: 80px;
         position: sticky;
-        left: 135px;
+        left: 170px;
         z-index: 10;
         text-align: center;
         border-right: 1px solid #e0e7ff;
-        font-size: 0.93rem;
+        font-size: 0.95rem;
+        padding: 0.75rem 0.5rem;
     }
 
     .grade-cell {
         background: #fff !important;
-        font-size: 0.93rem;
+        font-size: 0.95rem;
         border-radius: 3px;
+        min-width: 60px;
+        width: 60px;
+        white-space: nowrap;
+        font-weight: 600;
+        padding: 0.75rem 0.5rem;
+    }
+
+    .student-header {
+        min-width: 60px;
+        width: 60px;
+        white-space: nowrap;
+        text-align: center;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .scroll-hint {
+        background: #e0f2fe;
+        color: #0277bd;
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        text-align: center;
+        border-bottom: 1px solid #b3e5fc;
+        font-weight: 500;
+        display: none;
+    }
+
+    @media (max-width: 1024px) {
+        .scroll-hint {
+            display: block;
+        }
     }
 
     .grade-cell.self-evaluation {
@@ -1401,7 +1447,7 @@
             font-size: 0.7rem;
         }
         .matrix-container {
-            font-size: 0.85rem;
+            font-size: 0.9rem;
         }
         .matrix-legend {
             padding: 0.2rem 0.1rem;
@@ -1412,26 +1458,27 @@
         }
         .student-name-header,
         .student-name {
-            min-width: 70px;
-            max-width: 90px;
-            font-size: 0.85rem;
+            min-width: 90px;
+            max-width: 110px;
+            font-size: 0.88rem;
         }
         .student-number-header,
         .student-number {
-            min-width: 25px;
-            max-width: 35px;
-            left: 70px;
-            font-size: 0.85rem;
+            min-width: 35px;
+            max-width: 45px;
+            left: 90px;
+            font-size: 0.88rem;
         }
         .average-header,
         .average-cell {
-            min-width: 35px;
-            max-width: 45px;
-            left: 95px;
-            font-size: 0.85rem;
+            min-width: 45px;
+            max-width: 55px;
+            left: 125px;
+            font-size: 0.88rem;
         }
         .grade-cell {
-            font-size: 0.85rem;
+            font-size: 0.88rem;
+            min-width: 45px;
         }
     }
     @media (max-width: 480px) {
