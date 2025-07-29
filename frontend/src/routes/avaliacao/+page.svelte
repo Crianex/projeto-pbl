@@ -144,7 +144,7 @@
             avaliacaoData = {
                 aluno: {
                     nome: aluno.nome_completo,
-                    avatar: aluno.link_avatar,
+                    avatar: aluno.link_avatar || "/images/default_avatar.png",
                 },
                 notas: { ...currentValues },
             };
@@ -446,8 +446,14 @@
     <div class="student-info">
         <div class="avatar">
             <img
-                src={avaliacaoData.aluno.avatar}
-                alt={avaliacaoData.aluno.nome}
+                src={avaliacaoData.aluno.avatar || "/images/default_avatar.png"}
+                alt={avaliacaoData.aluno.nome || "Avatar do aluno"}
+                on:error={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (target) {
+                        target.src = "/images/default_avatar.png";
+                    }
+                }}
             />
         </div>
         <p>
