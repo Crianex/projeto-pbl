@@ -32,6 +32,7 @@ export interface Avaliacao {
     id_aluno_avaliador: number | null;
     id_aluno_avaliado: number | null;
     notas: string;
+    faltou_selecionado: boolean;
 }
 
 export interface Problema {

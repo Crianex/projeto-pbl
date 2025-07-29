@@ -1,10 +1,12 @@
 <script lang="ts">
+    import Button from "./Button.svelte";
+
     export let src: string;
     export let alt: string;
     export let size: "sm" | "md" | "lg" | "xl" = "md";
     export let editable = false;
+
     export let onUpload: ((file: File) => void) | undefined = undefined;
-    export let onRemove: (() => void) | undefined = undefined;
 
     let fileInput: HTMLInputElement;
 
@@ -19,27 +21,21 @@
         fileInput?.click();
     }
 
-    function handleRemoveClick() {
-        if (onRemove) {
-            onRemove();
+    function handleOnError(e: Event) {
+        console.log("Erro ao carregar avatar:", src);
+        const target = e.target as HTMLImageElement;
+        if (target) {
+            target.src = "/images/default_avatar.png";
         }
     }
 </script>
 
 <div class="avatar-container {size}">
-    <img
-        {src}
-        {alt}
-        class="avatar"
-        on:error={(e) => {
-            console.log("Erro ao carregar avatar:", src);
-            e.target.src = "/images/default_avatar.png";
-        }}
-    />
+    <img {src} {alt} class="avatar" on:error={handleOnError} />
 
     {#if editable}
         <div class="avatar-actions">
-            <button
+            <Button
                 type="button"
                 class="action-btn upload-btn"
                 on:click={handleUploadClick}
@@ -57,7 +53,7 @@
                     <polyline points="17 8 12 3 7 8" />
                     <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
-            </button>
+            </Button>
         </div>
 
         <input

@@ -8,7 +8,6 @@
     export let onSave: () => void;
     export let onCancel: () => void;
     export let onAvatarUpload: (file: File) => void;
-    export let onAvatarRemove: () => void;
     export let loading = false;
     export let avatarPreview: string | undefined;
 
@@ -33,7 +32,6 @@
                 size="lg"
                 editable={true}
                 onUpload={onAvatarUpload}
-                onRemove={onAvatarRemove}
             />
         </div>
 

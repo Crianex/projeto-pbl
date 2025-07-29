@@ -11,7 +11,7 @@ export const AvaliacaoController: EndpointController = {
     name: 'avaliacoes',
     routes: {
         'list': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            const { id_problema, id_aluno, id_avaliacao } = req.query;
+            const { id_problema, id_aluno, id_avaliacao, id_professor, id_aluno_avaliado } = req.query;
 
             var query = supabase
                 .from('avaliacoes')
@@ -32,6 +32,14 @@ export const AvaliacaoController: EndpointController = {
 
             if (id_avaliacao) {
                 query = query.eq('id_avaliacao', id_avaliacao);
+            }
+
+            if (id_professor) {
+                query = query.eq('id_professor', id_professor);
+            }
+
+            if (id_aluno_avaliado) {
+                query = query.eq('id_aluno_avaliado', id_aluno_avaliado);
             }
 
             const { data, error } = await query;

@@ -121,18 +121,21 @@
             // Validate required parameters
             if (!id_problema || !id_aluno_avaliado) {
                 error = "Parâmetros obrigatórios não fornecidos.";
+                toastMessage = error || "Erro ao carregar avaliação";
                 return;
             }
 
             if (!isProfessorEvaluation && !id_aluno_avaliador) {
                 error =
                     "ID do aluno avaliador é obrigatório para avaliações de alunos.";
+                toastMessage = error || "Erro ao carregar avaliação";
                 return;
             }
 
             if (isProfessorEvaluation && !id_professor) {
                 error =
                     "ID do professor é obrigatório para avaliações de professores.";
+                toastMessage = error || "Erro ao carregar avaliação";
                 return;
             }
 
@@ -161,15 +164,20 @@
             // Get existing evaluation if any
             let avaliacoes;
             if (isProfessorEvaluation) {
-                // For professor evaluations, filter by professor
+                // For professor evaluations, filter by professor and student being evaluated
                 avaliacoes = await api.get(
-                    `/avaliacoes/list?id_problema=${id_problema}&id_professor=${id_professor}`,
+                    `/avaliacoes/list?id_problema=${id_problema}&id_professor=${id_professor}&id_aluno_avaliado=${id_aluno_avaliado}`,
                 );
             } else {
                 // For student evaluations, filter by student evaluator
                 avaliacoes = await api.get(
                     `/avaliacoes/list?id_problema=${id_problema}&id_aluno=${id_aluno_avaliador}`,
                 );
+            }
+
+            // Ensure avaliacoes is always an array
+            if (!Array.isArray(avaliacoes)) {
+                avaliacoes = avaliacoes ? [avaliacoes] : [];
             }
 
             const existingAvaliacao = avaliacoes.find(
@@ -193,6 +201,7 @@
             error = e.message || "Erro ao carregar dados";
             toastType = "error";
             showToast = true;
+            logger.error(e);
         } finally {
             loading = false;
         }
@@ -462,7 +471,9 @@
             showToast = true;
             history.back();
         } catch (e: any) {
+            logger.error(e);
             error = e.message || "Erro ao salvar avaliação";
+            toastMessage = error || "Erro ao salvar avaliação";
             toastType = "error";
             showToast = true;
         } finally {
@@ -804,7 +815,7 @@
     }
     .evaluation-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
         gap: 1.5rem;
         margin-bottom: 2rem;
     }

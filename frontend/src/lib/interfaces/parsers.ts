@@ -122,7 +122,8 @@ function parseAvaliacao(data: any): AvaliacaoModel {
         aluno_avaliador: data.avaliador ? parseAluno(data.avaliador) : null,
         aluno_avaliado: data.avaliado ? parseAluno(data.avaliado) : null,
         notas: data.notas ? JSON.parse(data.notas) : {},
-        id_professor: data.id_professor || null
+        id_professor: data.id_professor || null,
+        faltou_selecionado: data.faltou_selecionado || false
     };
 }
 
