@@ -23,7 +23,7 @@
                         stroke-linejoin="round"
                     />
                 </svg>
-                {backText}
+                <span class="back-text">{backText}</span>
             </a>
         {/if}
         <h1>{title}</h1>
@@ -54,6 +54,10 @@
         color: #0d6efd;
     }
 
+    .back-text {
+        display: inline;
+    }
+
     h1 {
         font-size: 1.5rem;
         font-weight: 700;
@@ -62,6 +66,14 @@
     }
 
     @media (max-width: 768px) {
+        .back-text {
+            display: none;
+        }
+
+        .back-link {
+            gap: 0;
+        }
+
         h1 {
             font-size: 1.3rem;
         }

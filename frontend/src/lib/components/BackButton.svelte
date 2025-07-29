@@ -26,7 +26,7 @@
             stroke-linejoin="round"
         />
     </svg>
-    {text}
+    <span class="back-text">{text}</span>
 </button>
 
 <style>
@@ -48,5 +48,19 @@
     .back-btn:hover {
         background: rgba(0, 0, 0, 0.05);
         color: #333;
+    }
+
+    .back-text {
+        display: inline;
+    }
+
+    @media (max-width: 768px) {
+        .back-text {
+            display: none;
+        }
+
+        .back-btn {
+            padding: 0.5rem;
+        }
     }
 </style>
