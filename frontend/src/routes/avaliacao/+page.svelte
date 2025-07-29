@@ -2,7 +2,6 @@
     import { page } from "$app/stores";
     import { api } from "$lib/utils/api";
     import { onMount } from "svelte";
-    import Toast from "$lib/components/Toast.svelte";
     import Dialog from "$lib/components/Dialog.svelte";
     import Container from "$lib/components/Container.svelte";
     import BackButton from "$lib/components/BackButton.svelte";
@@ -17,8 +16,10 @@
     import { MediaCalculator } from "$lib/utils/utils";
     import { currentUser } from "$lib/utils/auth";
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
+    import { ProblemasService } from "$lib/services/problemas_service";
     import { DateUtils } from "$lib/utils/utils";
     import Button from "$lib/components/Button.svelte";
+    import { toastStore } from "$lib/utils/toast";
 
     interface AvaliacaoData {
         aluno: {
@@ -46,19 +47,124 @@
     };
     let loading = true;
     let error: string | null = null;
-    let showToast = false;
-    let toastMessage: string = "";
-    let toastType: "success" | "error" | "info" = "error";
     let criterioAtual: { tag: string; criterio: any } | null = null;
     let showDialog = false;
-    let showLoadingDialog = false;
-    let loadingMessage = "";
     let currentValues: { [tag: string]: { [criterio: string]: number } } = {};
     let isSubmitting = false;
 
-    // Confirm dialog states
-    let showConfirmFaltaAbertura = false;
-    let showConfirmFaltaFechamento = false;
+    let faltaLoading = false;
+    let dummyTrigger = 0; // Dummy variable to force reactivity
+
+    // Helper function to check if a student has a falta for a specific tag
+    function hasFalta(tag: string): boolean {
+        if (!problema || !id_aluno_avaliado) return false;
+
+        // Clean up any empty keys in faltas_por_tag
+        if (
+            problema.faltas_por_tag &&
+            Object.keys(problema.faltas_por_tag).includes("")
+        ) {
+            console.warn("Found empty key in faltas_por_tag, cleaning up");
+            const cleanedFaltasPorTag = { ...problema.faltas_por_tag };
+            delete cleanedFaltasPorTag[""];
+            problema.faltas_por_tag = cleanedFaltasPorTag;
+        }
+
+        const hasFaltaResult =
+            problema.faltas_por_tag?.[tag]?.[parseInt(id_aluno_avaliado)] ||
+            false;
+        console.log(
+            `hasFalta(${tag}):`,
+            hasFaltaResult,
+            problema.faltas_por_tag?.[tag],
+            dummyTrigger,
+        );
+        return hasFaltaResult;
+    }
+
+    // Reactive statement to track falta status for UI updates
+    $: faltaStatus =
+        problema && dummyTrigger
+            ? {
+                  "Análise do Problema": hasFalta("Análise do Problema"),
+                  "Resolução do Problema": hasFalta("Resolução do Problema"),
+              }
+            : {};
+
+    // Helper function to toggle falta status
+    async function toggleFalta(tag: string) {
+        try {
+            faltaLoading = true;
+            if (!problema || !id_aluno_avaliado) return;
+
+            // Validate tag is not empty
+            if (!tag || tag.trim() === "") {
+                throw new Error("Tag inválida");
+            }
+
+            const currentFaltaStatus = hasFalta(tag);
+            const newFaltaStatus = !currentFaltaStatus;
+
+            console.log("Toggle falta:", {
+                tag,
+                currentFaltaStatus,
+                newFaltaStatus,
+                alunoId: id_aluno_avaliado,
+                currentFaltasPorTag: problema.faltas_por_tag,
+            });
+
+            // Update the backend first
+            const updatedFaltasPorTag = {
+                ...problema.faltas_por_tag,
+                [tag]: {
+                    ...problema.faltas_por_tag?.[tag],
+                    [parseInt(id_aluno_avaliado)]: newFaltaStatus,
+                },
+            };
+
+            console.log("Updated faltas_por_tag:", updatedFaltasPorTag);
+
+            const faltasPorTagString = JSON.stringify(updatedFaltasPorTag);
+
+            // Call the backend to update the problema
+            await ProblemasService.update(id_problema, {
+                nome_problema: problema.nome_problema || "",
+                id_turma: problema.id_turma || 0,
+                criterios: JSON.stringify(problema.criterios),
+                definicao_arquivos_de_avaliacao: JSON.stringify(
+                    problema.definicao_arquivos_de_avaliacao,
+                ),
+                data_e_hora_criterios_e_arquivos: JSON.stringify(
+                    problema.data_e_hora_criterios_e_arquivos,
+                ),
+                faltas_por_tag: faltasPorTagString,
+            });
+
+            // Update the local state after successful backend update
+            problema = {
+                ...problema,
+                faltas_por_tag: updatedFaltasPorTag,
+            };
+
+            // Force reactivity using dummy variable
+            dummyTrigger++;
+
+            console.log("Updated problema state:", problema.faltas_por_tag);
+
+            toastStore.success(
+                newFaltaStatus
+                    ? `Falta registrada na ${tag}!`
+                    : `Falta removida da ${tag}.`,
+            );
+        } catch (e: any) {
+            logger.error(e);
+            const errorMessage = e.message || `Erro ao registrar/remover falta`;
+            error = errorMessage;
+            toastStore.error(errorMessage);
+        } finally {
+            faltaLoading = false;
+        }
+    }
 
     // Helper to check if a tag is currently active (for alunos only)
     function isTagActive(tag: string): boolean {
@@ -84,6 +190,14 @@
             id_professor,
             isProfessorEvaluation,
         });
+    }
+
+    // Reactive statement to trigger UI updates when problema changes
+    $: if (problema && dummyTrigger) {
+        console.log(
+            "Problema updated, faltas_por_tag:",
+            problema.faltas_por_tag,
+        );
     }
 
     function initializeNotas() {
@@ -121,21 +235,64 @@
             // Validate required parameters
             if (!id_problema || !id_aluno_avaliado) {
                 error = "Parâmetros obrigatórios não fornecidos.";
-                toastMessage = error || "Erro ao carregar avaliação";
+                toastStore.error(error || "Erro ao carregar avaliação");
                 return;
+            }
+
+            // Clean up corrupted faltas_por_tag data if needed
+            async function cleanupFaltasPorTag() {
+                if (problema?.faltas_por_tag) {
+                    const hasEmptyKey = Object.keys(
+                        problema.faltas_por_tag,
+                    ).includes("");
+                    if (hasEmptyKey) {
+                        console.warn(
+                            "Cleaning up corrupted faltas_por_tag data",
+                        );
+                        const cleanedFaltasPorTag = {
+                            ...problema.faltas_por_tag,
+                        };
+                        delete cleanedFaltasPorTag[""];
+
+                        // Update the backend with cleaned data
+                        await ProblemasService.update(id_problema, {
+                            nome_problema: problema.nome_problema || "",
+                            id_turma: problema.id_turma || 0,
+                            criterios: JSON.stringify(problema.criterios),
+                            definicao_arquivos_de_avaliacao: JSON.stringify(
+                                problema.definicao_arquivos_de_avaliacao,
+                            ),
+                            data_e_hora_criterios_e_arquivos: JSON.stringify(
+                                problema.data_e_hora_criterios_e_arquivos,
+                            ),
+                            faltas_por_tag: JSON.stringify(cleanedFaltasPorTag),
+                        });
+
+                        // Update local state
+                        problema = {
+                            ...problema,
+                            faltas_por_tag: cleanedFaltasPorTag,
+                        };
+
+                        console.log(
+                            "Cleaned faltas_por_tag:",
+                            cleanedFaltasPorTag,
+                        );
+                    }
+                }
             }
 
             if (!isProfessorEvaluation && !id_aluno_avaliador) {
                 error =
                     "ID do aluno avaliador é obrigatório para avaliações de alunos.";
-                toastMessage = error || "Erro ao carregar avaliação";
+                toastStore.error(error || "Erro ao carregar avaliação");
                 return;
             }
 
             if (isProfessorEvaluation && !id_professor) {
                 error =
                     "ID do professor é obrigatório para avaliações de professores.";
-                toastMessage = error || "Erro ao carregar avaliação";
+                toastStore.error(error || "Erro ao carregar avaliação");
                 return;
             }
 
@@ -145,6 +302,9 @@
             );
             problema = Parsers.parseProblema(problemaResponse);
             criterios = problema.criterios;
+
+            // Clean up corrupted faltas_por_tag data if needed
+            await cleanupFaltasPorTag();
 
             // Get the student details (who is being evaluated)
             const aluno = await api.get(
@@ -199,8 +359,7 @@
             }
         } catch (e: any) {
             error = e.message || "Erro ao carregar dados";
-            toastType = "error";
-            showToast = true;
+            toastStore.error(error || "Erro ao carregar dados");
             logger.error(e);
         } finally {
             loading = false;
@@ -230,159 +389,6 @@
         avaliacaoData.notas = { ...currentValues };
         // Força uma atualização reativa
         currentValues = { ...currentValues };
-    }
-
-    async function zerarTodasAvaliacoesDoAluno(
-        tagEspecifica: string | null = null,
-    ) {
-        try {
-            if (!id_problema || !id_aluno_avaliado) {
-                throw new Error("Parâmetros obrigatórios não fornecidos.");
-            }
-
-            // 1. Buscar todas as avaliações do problema
-            loadingMessage = "Buscando avaliações relacionadas...";
-            const allAvaliacoes = await AvaliacoesService.getByProblema(
-                id_problema.toString(),
-                true,
-            );
-
-            // 2. Filtrar avaliações onde o aluno aparece APENAS como avaliado (não como avaliador)
-            loadingMessage = "Identificando avaliações para remover...";
-            const avaliacoesParaDeletar = allAvaliacoes.filter((av) => {
-                const alunoEhAvaliado =
-                    av.aluno_avaliado?.id === parseInt(id_aluno_avaliado!);
-                // Não deletar avaliações onde ele é o avaliador (para não afetar notas de colegas)
-                return alunoEhAvaliado;
-            });
-
-            console.log(
-                "Avaliações para deletar (apenas onde é avaliado):",
-                avaliacoesParaDeletar,
-            );
-
-            // 3. Deletar apenas as avaliações onde o aluno foi avaliado
-            loadingMessage = `Removendo ${avaliacoesParaDeletar.length} avaliação(ões) recebidas...`;
-            for (const av of avaliacoesParaDeletar) {
-                await AvaliacoesService.delete(
-                    av.id_avaliacao.toString(),
-                    id_problema.toString(),
-                );
-            }
-
-            // 4. Criar novas avaliações zeradas para a tag específica ou todas
-            loadingMessage = "Preparando novas avaliações...";
-            const notasZeradas: {
-                [tag: string]: { [criterio: string]: number };
-            } = {};
-
-            Object.entries(criterios).forEach(([tag, criteriosList]) => {
-                // Se foi especificada uma tag, só zerar essa tag, senão zerar tudo
-                if (!tagEspecifica || tag === tagEspecifica) {
-                    notasZeradas[tag] = {};
-                    criteriosList.forEach((criterio) => {
-                        const criterioKey =
-                            criterio.nome_criterio.toLowerCase();
-                        notasZeradas[tag][criterioKey] = 0;
-                    });
-                } else if (currentValues[tag]) {
-                    // Manter valores existentes para outras tags
-                    notasZeradas[tag] = { ...currentValues[tag] };
-                }
-            });
-
-            // 5. Salvar a avaliação atual com notas zeradas
-            loadingMessage = "Salvando nova avaliação...";
-            if (isProfessorEvaluation) {
-                const payload = {
-                    id_problema: parseInt(id_problema),
-                    id_professor: parseInt(id_professor!),
-                    id_aluno_avaliado: parseInt(id_aluno_avaliado),
-                    notas: JSON.stringify(notasZeradas),
-                };
-                await AvaliacoesService.create(payload);
-            } else {
-                const media =
-                    MediaCalculator.calculateCurrentMedia(notasZeradas);
-                const notasWithMedia = {
-                    ...notasZeradas,
-                    media,
-                };
-                const payload = {
-                    id_problema: parseInt(id_problema),
-                    id_aluno_avaliador: parseInt(id_aluno_avaliador!),
-                    id_aluno_avaliado: parseInt(id_aluno_avaliado),
-                    notas: JSON.stringify(notasWithMedia),
-                };
-                await AvaliacoesService.create(payload);
-            }
-
-            // 6. Atualizar estado local
-            loadingMessage = "Finalizando processo...";
-            currentValues = { ...notasZeradas };
-            avaliacaoData.notas = { ...notasZeradas };
-
-            return true;
-        } catch (e: any) {
-            console.error("Erro ao zerar avaliações:", e);
-            throw e;
-        }
-    }
-
-    function showConfirmFaltaAberturaDialog() {
-        showConfirmFaltaAbertura = true;
-    }
-
-    function showConfirmFaltaFechamentoDialog() {
-        showConfirmFaltaFechamento = true;
-    }
-
-    function hideConfirmFaltaAberturaDialog() {
-        showConfirmFaltaAbertura = false;
-    }
-
-    function hideConfirmFaltaFechamentoDialog() {
-        showConfirmFaltaFechamento = false;
-    }
-
-    async function handleFaltaAbertura() {
-        try {
-            showLoadingDialog = true;
-            loadingMessage = "Registrando falta na Análise do Problema...";
-
-            await zerarTodasAvaliacoesDoAluno("Análise do Problema");
-
-            showLoadingDialog = false;
-            toastType = "success";
-            toastMessage =
-                "Falta registrada na Análise do Problema! Avaliações recebidas pelo aluno foram zeradas.";
-            showToast = true;
-        } catch (e: any) {
-            showLoadingDialog = false;
-            error = e.message || "Erro ao registrar falta na abertura";
-            toastType = "error";
-            showToast = true;
-        }
-    }
-
-    async function handleFaltaFechamento() {
-        try {
-            showLoadingDialog = true;
-            loadingMessage = "Registrando falta na Resolução do Problema...";
-
-            await zerarTodasAvaliacoesDoAluno("Resolução do Problema");
-
-            showLoadingDialog = false;
-            toastType = "success";
-            toastMessage =
-                "Falta registrada na Resolução do Problema! Avaliações recebidas pelo aluno foram zeradas.";
-            showToast = true;
-        } catch (e: any) {
-            showLoadingDialog = false;
-            error = e.message || "Erro ao registrar falta no fechamento";
-            toastType = "error";
-            showToast = true;
-        }
     }
 
     async function handleSubmit() {
@@ -466,16 +472,12 @@
                 await AvaliacoesService.create(payload);
             }
 
-            toastType = "success";
-            toastMessage = "Avaliação salva com sucesso!";
-            showToast = true;
+            toastStore.success("Avaliação salva com sucesso!");
             history.back();
         } catch (e: any) {
             logger.error(e);
             error = e.message || "Erro ao salvar avaliação";
-            toastMessage = error || "Erro ao salvar avaliação";
-            toastType = "error";
-            showToast = true;
+            toastStore.error(error || "Erro ao salvar avaliação");
         } finally {
             isSubmitting = false;
         }
@@ -523,29 +525,20 @@
                     <div class="section-header">
                         <h2>{tag}</h2>
                         {#if isProfessorEvaluation}
-                            {#if tag === "Análise do Problema"}
+                            {#if tag === "Análise do Problema" || tag === "Resolução do Problema"}
                                 <Button
                                     type="button"
-                                    variant="danger"
-                                    on:click={() =>
-                                        showConfirmFaltaAberturaDialog()}
-                                    title="Registrar falta na Análise do Problema - zera avaliações recebidas pelo aluno"
-                                    disabled={!isTagActive(tag) ||
-                                        showLoadingDialog}
+                                    variant={faltaStatus[tag]
+                                        ? "warning"
+                                        : "danger"}
+                                    on:click={() => toggleFalta(tag)}
+                                    title="{faltaStatus[tag]
+                                        ? 'Remover'
+                                        : 'Registrar'} falta na {tag}"
+                                    disabled={!isTagActive(tag) || faltaLoading}
+                                    loading={faltaLoading}
                                 >
-                                    Falta
-                                </Button>
-                            {:else if tag === "Resolução do Problema"}
-                                <Button
-                                    type="button"
-                                    variant="danger"
-                                    on:click={() =>
-                                        showConfirmFaltaFechamentoDialog()}
-                                    title="Registrar falta na Resolução do Problema - zera avaliações recebidas pelo aluno"
-                                    disabled={!isTagActive(tag) ||
-                                        showLoadingDialog}
-                                >
-                                    Falta
+                                    {faltaStatus[tag] ? "Desfazer" : "Faltou"}
                                 </Button>
                             {/if}
                         {/if}
@@ -615,7 +608,7 @@
                 <Button
                     type="submit"
                     variant="primary"
-                    disabled={showLoadingDialog || isSubmitting}
+                    disabled={isSubmitting}
                     loading={isSubmitting}
                 >
                     Salvar Avaliação
@@ -647,111 +640,6 @@
             </div>
         </div>
     </Dialog>
-{/if}
-
-{#if showConfirmFaltaAbertura}
-    <Dialog
-        open={showConfirmFaltaAbertura}
-        closeOnClickOutside={true}
-        on:close={hideConfirmFaltaAberturaDialog}
-    >
-        <h3 slot="header">Confirmar Falta - Análise do Problema</h3>
-        <div class="confirm-dialog-content">
-            <p class="confirm-message">
-                Tem certeza que deseja registrar falta na <strong
-                    >Análise do Problema</strong
-                >
-                para o aluno <strong>{avaliacaoData.aluno.nome}</strong>?
-            </p>
-            <p class="confirm-warning">
-                ⚠️ Esta ação irá zerar todas as avaliações recebidas pelo aluno
-                nesta etapa.
-            </p>
-            <div class="confirm-actions">
-                <button
-                    type="button"
-                    class="confirm-btn cancel-btn"
-                    on:click={hideConfirmFaltaAberturaDialog}
-                >
-                    Cancelar
-                </button>
-                <button
-                    type="button"
-                    class="confirm-btn confirm-falta-btn"
-                    on:click={() => {
-                        hideConfirmFaltaAberturaDialog();
-                        handleFaltaAbertura();
-                    }}
-                >
-                    Confirmar Falta
-                </button>
-            </div>
-        </div>
-    </Dialog>
-{/if}
-
-{#if showConfirmFaltaFechamento}
-    <Dialog
-        open={showConfirmFaltaFechamento}
-        closeOnClickOutside={true}
-        on:close={hideConfirmFaltaFechamentoDialog}
-    >
-        <h3 slot="header">Confirmar Falta - Resolução do Problema</h3>
-        <div class="confirm-dialog-content">
-            <p class="confirm-message">
-                Tem certeza que deseja registrar falta na <strong
-                    >Resolução do Problema</strong
-                >
-                para o aluno <strong>{avaliacaoData.aluno.nome}</strong>?
-            </p>
-            <p class="confirm-warning">
-                ⚠️ Esta ação irá zerar todas as avaliações recebidas pelo aluno
-                nesta etapa.
-            </p>
-            <div class="confirm-actions">
-                <button
-                    type="button"
-                    class="confirm-btn cancel-btn"
-                    on:click={hideConfirmFaltaFechamentoDialog}
-                >
-                    Cancelar
-                </button>
-                <button
-                    type="button"
-                    class="confirm-btn confirm-falta-btn"
-                    on:click={() => {
-                        hideConfirmFaltaFechamentoDialog();
-                        handleFaltaFechamento();
-                    }}
-                >
-                    Confirmar Falta
-                </button>
-            </div>
-        </div>
-    </Dialog>
-{/if}
-
-{#if showLoadingDialog}
-    <Dialog open={showLoadingDialog} closeOnClickOutside={false}>
-        <h3 slot="header">Processando Falta</h3>
-        <div class="loading-dialog-content">
-            <div class="loading-container">
-                <LoadingSpinner size="lg" />
-                <p class="loading-text">{loadingMessage}</p>
-                <p class="loading-subtitle">
-                    Removendo avaliações recebidas pelo aluno...
-                </p>
-            </div>
-        </div>
-    </Dialog>
-{/if}
-
-{#if showToast}
-    <Toast
-        message={toastMessage}
-        type={toastType}
-        on:close={() => (showToast = false)}
-    />
 {/if}
 
 <style>
@@ -1104,117 +992,5 @@
 
     .falta-section-btn:active:not(:disabled) {
         transform: translateY(-1px);
-    }
-
-    .loading-dialog-content {
-        padding: 1rem 0;
-    }
-
-    .loading-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 1rem;
-        text-align: center;
-        min-height: 200px;
-        justify-content: center;
-    }
-
-    .loading-text {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #495057;
-        margin: 0;
-    }
-
-    .loading-subtitle {
-        font-size: 0.9rem;
-        color: #6c757d;
-        margin: 0;
-        max-width: 300px;
-        line-height: 1.4;
-    }
-
-    /* Confirm Dialog Styles */
-    .confirm-dialog-content {
-        padding: 1rem 0;
-    }
-
-    .confirm-message {
-        font-size: 1rem;
-        color: #495057;
-        margin: 0 0 1rem 0;
-        line-height: 1.5;
-    }
-
-    .confirm-warning {
-        font-size: 0.9rem;
-        color: #dc3545;
-        background: rgba(220, 53, 69, 0.1);
-        padding: 0.75rem;
-        border-radius: 8px;
-        border-left: 4px solid #dc3545;
-        margin: 0 0 1.5rem 0;
-        line-height: 1.4;
-    }
-
-    .confirm-actions {
-        display: flex;
-        gap: 1rem;
-        justify-content: flex-end;
-        margin-top: 1.5rem;
-    }
-
-    .confirm-btn {
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 0.9rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        min-width: 120px;
-    }
-
-    .cancel-btn {
-        background: rgba(108, 117, 125, 0.1);
-        color: #6c757d;
-        border: 1px solid rgba(108, 117, 125, 0.3);
-    }
-
-    .cancel-btn:hover {
-        background: rgba(108, 117, 125, 0.2);
-        transform: translateY(-1px);
-    }
-
-    .confirm-falta-btn {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        color: white;
-        box-shadow: 0 3px 10px rgba(220, 53, 69, 0.3);
-    }
-
-    .confirm-falta-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
-    }
-
-    @media (max-width: 768px) {
-        .confirm-actions {
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .confirm-btn {
-            width: 100%;
-            min-width: auto;
-        }
-
-        .confirm-message {
-            font-size: 0.95rem;
-        }
-
-        .confirm-warning {
-            font-size: 0.85rem;
-        }
     }
 </style>

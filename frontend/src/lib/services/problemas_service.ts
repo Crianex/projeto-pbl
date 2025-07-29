@@ -117,6 +117,7 @@ async function update(id: string, problemaData: {
     criterios: string;
     definicao_arquivos_de_avaliacao?: string;
     data_e_hora_criterios_e_arquivos?: string;
+    faltas_por_tag?: string;
 }): Promise<ProblemaModel> {
     try {
         logger.info(`Updating problema ${id}`, problemaData);

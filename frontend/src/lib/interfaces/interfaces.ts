@@ -1,6 +1,7 @@
 
 
 
+
 // DB interfaces
 
 export interface AlunoDB {
@@ -21,7 +22,6 @@ export interface AvaliacaoDB {
     id_aluno_avaliado: number | null;
     notas: string;
     id_professor: number | null; 
-    faltou_selecionado: boolean;
 }
 
 export interface ProblemaDB {
@@ -32,6 +32,7 @@ export interface ProblemaDB {
     media_geral: number | null;
     criterios: string;
     definicao_arquivos_de_avaliacao: string;
+    faltas_por_tag: string;
 }
 
 export interface ProfessorDB {
@@ -78,6 +79,11 @@ export interface ProblemaModel {
     data_e_hora_criterios_e_arquivos: {
         [tag: string]: DataEHoraDefinition;
     };
+    faltas_por_tag: {
+        [tag: string]: {
+            [id_aluno: number]: boolean;
+        }
+    }
 }
 
 export interface TurmaModel {
@@ -131,7 +137,6 @@ export interface AvaliacaoModel {
     aluno_avaliado: AlunoModel | null;
     notas: AvaliacaoNota;
     id_professor?: number | null; // NEW: track professor evaluations
-    faltou_selecionado: boolean;
 }
 
 

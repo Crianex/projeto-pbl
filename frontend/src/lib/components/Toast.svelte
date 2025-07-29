@@ -52,18 +52,9 @@
 
 {#if visible}
     <div
-        class="toast {type} {position}"
+        class="toast {type}"
         transition:fly={{
-            x: position.includes("right")
-                ? 100
-                : position.includes("left")
-                  ? -100
-                  : 0,
-            y: position.includes("top")
-                ? -100
-                : position.includes("bottom")
-                  ? 100
-                  : 0,
+            y: -100,
             duration: 300,
         }}
     >
@@ -107,6 +98,9 @@
 <style>
     .toast {
         position: fixed;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
         z-index: 10000;
         max-width: 400px;
         min-width: 320px;
@@ -120,33 +114,6 @@
             0 10px 25px rgba(0, 0, 0, 0.1),
             0 5px 12px rgba(0, 0, 0, 0.08);
         transition: all 0.3s ease;
-    }
-
-    /* Positioning */
-    .top-right {
-        top: 0;
-        right: 0;
-    }
-
-    .top-left {
-        top: 0;
-        left: 0;
-    }
-
-    .bottom-right {
-        bottom: 0;
-        right: 0;
-    }
-
-    .bottom-left {
-        bottom: 0;
-        left: 0;
-    }
-
-    .top-center {
-        top: 0;
-        left: 50%;
-        transform: translateX(-50%);
     }
 
     .toast-content {
@@ -310,14 +277,6 @@
 
         .message {
             font-size: 0.85rem;
-        }
-        /* Force toast to top center on mobile */
-        .toast {
-            top: 0 !important;
-            left: 50% !important;
-            right: auto !important;
-            bottom: auto !important;
-            transform: translateX(-50%) !important;
         }
     }
 

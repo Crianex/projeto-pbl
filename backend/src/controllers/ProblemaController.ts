@@ -156,7 +156,7 @@ export const ProblemaController: EndpointController = {
                 logger.error('No id_problema provided');
                 return res.status(400).json({ error: 'No id_problema provided' });
             }
-            const { nome_problema, id_turma, criterios, media_geral, definicao_arquivos_de_avaliacao, data_e_hora_criterios_e_arquivos } = req.body;
+            const { nome_problema, id_turma, criterios, media_geral, definicao_arquivos_de_avaliacao, data_e_hora_criterios_e_arquivos, faltas_por_tag } = req.body;
             logger.info(`Updating problema ${id_problema} with new data: ${JSON.stringify(req.body)}`);
 
             const { data, error } = await supabase
@@ -167,7 +167,8 @@ export const ProblemaController: EndpointController = {
                     criterios,
                     media_geral,
                     definicao_arquivos_de_avaliacao,
-                    data_e_hora_criterios_e_arquivos
+                    data_e_hora_criterios_e_arquivos,
+                    faltas_por_tag
                 })
                 .eq('id_problema', id_problema)
                 .select(`

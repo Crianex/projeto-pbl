@@ -32,7 +32,6 @@ export interface Avaliacao {
     id_aluno_avaliador: number | null;
     id_aluno_avaliado: number | null;
     notas: string;
-    faltou_selecionado: boolean;
 }
 
 export interface Problema {
@@ -46,6 +45,7 @@ export interface Problema {
     criterios: string;
     definicao_arquivos_de_avaliacao: string;
     data_e_hora_criterios_e_arquivos: string;
+    faltas_por_tag: string;
 }
 
 export interface Professor {

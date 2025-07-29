@@ -45,6 +45,12 @@ function parseProblema(data: any): ProblemaModel {
         };
     });
 
+    var faltas_por_tag_json = data.faltas_por_tag ? JSON.parse(data.faltas_por_tag) : {};
+    var faltas_por_tag: { [tag: string]: { [id_aluno: number]: boolean } } = {};
+    Object.keys(faltas_por_tag_json).forEach((key: string) => {
+        faltas_por_tag[key] = faltas_por_tag_json[key];
+    });
+
     return {
         id_problema: data.id_problema,
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
@@ -54,7 +60,8 @@ function parseProblema(data: any): ProblemaModel {
         turma: data.turma ? parseTurma(data.turma) : null,
         criterios: data.criterios ? parseCriterios(data.criterios) : {},
         definicao_arquivos_de_avaliacao: definicao_arquivos_de_avaliacao,
-        data_e_hora_criterios_e_arquivos: data_e_hora_criterios_e_arquivos
+        data_e_hora_criterios_e_arquivos: data_e_hora_criterios_e_arquivos,
+        faltas_por_tag: faltas_por_tag
     };
 }
 
@@ -123,7 +130,6 @@ function parseAvaliacao(data: any): AvaliacaoModel {
         aluno_avaliado: data.avaliado ? parseAluno(data.avaliado) : null,
         notas: data.notas ? JSON.parse(data.notas) : {},
         id_professor: data.id_professor || null,
-        faltou_selecionado: data.faltou_selecionado || false
     };
 }
 

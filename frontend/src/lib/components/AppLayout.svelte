@@ -6,6 +6,8 @@
     import { fade, fly } from "svelte/transition";
     import { goto } from "$app/navigation";
     import Container from "./Container.svelte";
+    import Toast from "./Toast.svelte";
+    import { toastStore } from "$lib/utils/toast";
 
     export let userType: "aluno" | "professor" | "generic" = "aluno";
 
@@ -193,6 +195,19 @@
             <slot />
         </div>
     </main>
+
+    <!-- Global Toast -->
+    {#if $toastStore}
+        <Toast
+            message={$toastStore.message}
+            type={$toastStore.type}
+            title={$toastStore.title}
+            duration={$toastStore.duration}
+            dismissible={$toastStore.dismissible}
+            persistent={$toastStore.persistent}
+            on:close={() => toastStore.hide()}
+        />
+    {/if}
 </div>
 
 <style>
@@ -370,6 +385,7 @@
         padding: 2rem;
         height: 100dvh;
         min-height: 100dvh;
+        box-sizing: border-box;
     }
 
     .main-content.generic-layout {

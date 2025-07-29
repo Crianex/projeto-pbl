@@ -1,5 +1,10 @@
 <script lang="ts">
-    export let variant: "primary" | "secondary" | "danger" | "ghost" = "primary";
+    export let variant:
+        | "primary"
+        | "secondary"
+        | "danger"
+        | "ghost"
+        | "warning" = "primary";
     export let size: "sm" | "md" | "large" | "icon" = "md";
     export let disabled = false;
     export let type: "button" | "submit" | "reset" = "button";
@@ -133,6 +138,21 @@
 
     .ghost:active:not(:disabled) {
         background: rgba(255, 255, 255, 0.2);
+    }
+
+    .warning {
+        background: #f59e0b;
+        color: white;
+        border-color: #f59e0b;
+    }
+
+    .warning:hover:not(:disabled) {
+        background: #d97706;
+        border-color: #d97706;
+    }
+
+    .warning:active:not(:disabled) {
+        background: #b45309;
     }
 
     /* Size variants */
