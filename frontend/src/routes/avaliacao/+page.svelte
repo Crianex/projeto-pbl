@@ -6,6 +6,7 @@
     import Dialog from "$lib/components/Dialog.svelte";
     import Container from "$lib/components/Container.svelte";
     import BackButton from "$lib/components/BackButton.svelte";
+    import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
     import type {
         CriteriosGroup,
         ProblemaModel,
@@ -50,6 +51,8 @@
     let toastType: "success" | "error" | "info" = "error";
     let criterioAtual: { tag: string; criterio: any } | null = null;
     let showDialog = false;
+    let showLoadingDialog = false;
+    let loadingMessage = "";
     let currentValues: { [tag: string]: { [criterio: string]: number } } = {};
 
     // Helper to check if a tag is currently active (for alunos only)
@@ -196,6 +199,148 @@
         showDialog = false;
     }
 
+    function zerarTodasNotas() {
+        Object.entries(criterios).forEach(([tag, criteriosList]) => {
+            if (!currentValues[tag]) {
+                currentValues[tag] = {};
+            }
+            criteriosList.forEach((criterio) => {
+                const criterioKey = criterio.nome_criterio.toLowerCase();
+                currentValues[tag][criterioKey] = 0;
+            });
+        });
+        avaliacaoData.notas = { ...currentValues };
+        // Força uma atualização reativa
+        currentValues = { ...currentValues };
+    }
+
+    async function zerarTodasAvaliacoesDoAluno(tagEspecifica: string | null = null) {
+        try {
+            if (!id_problema || !id_aluno_avaliado) {
+                throw new Error("Parâmetros obrigatórios não fornecidos.");
+            }
+
+            // 1. Buscar todas as avaliações do problema
+            loadingMessage = "Buscando avaliações relacionadas...";
+            const allAvaliacoes = await AvaliacoesService.getByProblema(
+                id_problema.toString(),
+                true,
+            );
+
+            // 2. Filtrar avaliações onde o aluno aparece APENAS como avaliado (não como avaliador)
+            loadingMessage = "Identificando avaliações para remover...";
+            const avaliacoesParaDeletar = allAvaliacoes.filter((av) => {
+                const alunoEhAvaliado = av.aluno_avaliado?.id === parseInt(id_aluno_avaliado!);
+                // Não deletar avaliações onde ele é o avaliador (para não afetar notas de colegas)
+                return alunoEhAvaliado;
+            });
+
+            console.log("Avaliações para deletar (apenas onde é avaliado):", avaliacoesParaDeletar);
+
+            // 3. Deletar apenas as avaliações onde o aluno foi avaliado
+            loadingMessage = `Removendo ${avaliacoesParaDeletar.length} avaliação(ões) recebidas...`;
+            for (const av of avaliacoesParaDeletar) {
+                await AvaliacoesService.delete(
+                    av.id_avaliacao.toString(),
+                    id_problema.toString(),
+                );
+            }
+
+            // 4. Criar novas avaliações zeradas para a tag específica ou todas
+            loadingMessage = "Preparando novas avaliações...";
+            const notasZeradas: { [tag: string]: { [criterio: string]: number } } = {};
+            
+            Object.entries(criterios).forEach(([tag, criteriosList]) => {
+                // Se foi especificada uma tag, só zerar essa tag, senão zerar tudo
+                if (!tagEspecifica || tag === tagEspecifica) {
+                    notasZeradas[tag] = {};
+                    criteriosList.forEach((criterio) => {
+                        const criterioKey = criterio.nome_criterio.toLowerCase();
+                        notasZeradas[tag][criterioKey] = 0;
+                    });
+                } else if (currentValues[tag]) {
+                    // Manter valores existentes para outras tags
+                    notasZeradas[tag] = { ...currentValues[tag] };
+                }
+            });
+
+            // 5. Salvar a avaliação atual com notas zeradas
+            loadingMessage = "Salvando nova avaliação...";
+            if (isProfessorEvaluation) {
+                const payload = {
+                    id_problema: parseInt(id_problema),
+                    id_professor: parseInt(id_professor!),
+                    id_aluno_avaliado: parseInt(id_aluno_avaliado),
+                    notas: JSON.stringify(notasZeradas),
+                };
+                await AvaliacoesService.create(payload);
+            } else {
+                const media = MediaCalculator.calculateCurrentMedia(notasZeradas);
+                const notasWithMedia = {
+                    ...notasZeradas,
+                    media,
+                };
+                const payload = {
+                    id_problema: parseInt(id_problema),
+                    id_aluno_avaliador: parseInt(id_aluno_avaliador!),
+                    id_aluno_avaliado: parseInt(id_aluno_avaliado),
+                    notas: JSON.stringify(notasWithMedia),
+                };
+                await AvaliacoesService.create(payload);
+            }
+
+            // 6. Atualizar estado local
+            loadingMessage = "Finalizando processo...";
+            currentValues = { ...notasZeradas };
+            avaliacaoData.notas = { ...notasZeradas };
+
+            return true;
+        } catch (e: any) {
+            console.error("Erro ao zerar avaliações:", e);
+            throw e;
+        }
+    }
+
+    async function handleFaltaAbertura() {
+        try {
+            showLoadingDialog = true;
+            loadingMessage = "Registrando falta na Análise do Problema...";
+            
+            await zerarTodasAvaliacoesDoAluno("Análise do Problema");
+            
+            showLoadingDialog = false;
+            toastType = "success";
+            toastMessage = "Falta registrada na Análise do Problema! Avaliações recebidas pelo aluno foram zeradas.";
+            showToast = true;
+        } catch (e: any) {
+            showLoadingDialog = false;
+            error = e.message || "Erro ao registrar falta na abertura";
+            toastType = "error";
+            showToast = true;
+        }
+    }
+
+    async function handleFaltaFechamento() {
+        try {
+            showLoadingDialog = true;
+            loadingMessage = "Registrando falta na Resolução do Problema...";
+            
+            await zerarTodasAvaliacoesDoAluno("Resolução do Problema");
+            
+            showLoadingDialog = false;
+            toastType = "success";
+            toastMessage = "Falta registrada na Resolução do Problema! Avaliações recebidas pelo aluno foram zeradas.";
+            showToast = true;
+        } catch (e: any) {
+            showLoadingDialog = false;
+            error = e.message || "Erro ao registrar falta no fechamento";
+            toastType = "error";
+            showToast = true;
+        }
+    }
+
+
+
     async function handleSubmit() {
         try {
             if (!id_problema || !id_aluno_avaliado) {
@@ -319,7 +464,30 @@
                         ? ''
                         : 'inactive-section'}"
                 >
-                    <h2>{tag}</h2>
+                    <div class="section-header">
+                        <h2>{tag}</h2>
+                        {#if tag === "Análise do Problema"}
+                            <button
+                                type="button"
+                                class="falta-section-btn"
+                                on:click={() => handleFaltaAbertura()}
+                                title="Registrar falta na Análise do Problema - zera avaliações recebidas pelo aluno"
+                                disabled={!isTagActive(tag) || showLoadingDialog}
+                            >
+                                Falta
+                            </button>
+                        {:else if tag === "Resolução do Problema"}
+                            <button
+                                type="button"
+                                class="falta-section-btn"
+                                on:click={() => handleFaltaFechamento()}
+                                title="Registrar falta na Resolução do Problema - zera avaliações recebidas pelo aluno"
+                                disabled={!isTagActive(tag) || showLoadingDialog}
+                            >
+                                Falta
+                            </button>
+                        {/if}
+                    </div>
                     <div class="criteria-group">
                         {#each criteriosList as criterio}
                             {@const criterioKey =
@@ -375,7 +543,9 @@
             {/each}
         </div>
         <div class="submit-btn-container">
-            <Button type="submit" variant="primary">Salvar Avaliação</Button>
+            <Button type="submit" variant="primary" disabled={showLoadingDialog}>
+                Salvar Avaliação
+            </Button>
         </div>
     </form>
 </div>
@@ -399,6 +569,24 @@
                 {#each criterioAtual.criterio.descricao_criterio.split("\n") as line}
                     <p>{line}</p>
                 {/each}
+            </div>
+        </div>
+    </Dialog>
+{/if}
+
+{#if showLoadingDialog}
+    <Dialog
+        open={showLoadingDialog}
+        closeOnClickOutside={false}
+    >
+        <h3 slot="header">Processando Falta</h3>
+        <div class="loading-dialog-content">
+            <div class="loading-container">
+                <LoadingSpinner size="lg" />
+                <p class="loading-text">{loadingMessage}</p>
+                <p class="loading-subtitle">
+                    Removendo avaliações recebidas pelo aluno...
+                </p>
             </div>
         </div>
     </Dialog>
@@ -492,7 +680,7 @@
         font-size: 1.25rem;
         font-weight: 600;
         color: #1a1a1a;
-        margin: 0 0 1.5rem 0;
+        margin: 0;
     }
     .criteria-group {
         display: flex;
@@ -664,51 +852,24 @@
         .range {
             font-size: 0.8rem;
         }
+
+        .submit-btn-container {
+            justify-content: center;
+        }
+
+        .section-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .falta-section-btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            align-self: flex-end;
+        }
     }
-    .submit-btn {
-        width: 100%;
-        padding: 1.25rem;
-        border: none;
-        border-radius: 16px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        font-weight: 600;
-        font-size: 1.1rem;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow:
-            0 8px 25px rgba(102, 126, 234, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        position: relative;
-        overflow: hidden;
-    }
-    .submit-btn::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(255, 255, 255, 0.2),
-            transparent
-        );
-        transition: left 0.5s;
-    }
-    .submit-btn:hover {
-        transform: translateY(-3px);
-        box-shadow:
-            0 12px 35px rgba(102, 126, 234, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    }
-    .submit-btn:hover::before {
-        left: 100%;
-    }
-    .submit-btn:active {
-        transform: translateY(-1px);
-    }
+
     .dialog-content {
         padding: 1rem 0;
     }
@@ -737,7 +898,77 @@
     }
     .submit-btn-container {
         display: flex;
-        justify-content: flex-end;
+        justify-content: center;
         margin-top: 1.5rem;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-header h2 {
+        margin: 0;
+    }
+
+    .falta-section-btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 3px 10px rgba(220, 53, 69, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .falta-section-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .falta-section-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+    }
+
+    .falta-section-btn:active:not(:disabled) {
+        transform: translateY(-1px);
+    }
+
+    .loading-dialog-content {
+        padding: 1rem 0;
+    }
+
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        text-align: center;
+        min-height: 200px;
+        justify-content: center;
+    }
+
+    .loading-text {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #495057;
+        margin: 0;
+    }
+
+    .loading-subtitle {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin: 0;
+        max-width: 300px;
+        line-height: 1.4;
     }
 </style>

@@ -74,12 +74,12 @@
                     selectedProblema = problemasData[0];
                     await fetchAvaliacoes(problemasData[0].id_problema);
                     break;
-                }
-            } catch (err) {
+                    }
+                } catch (err) {
                 console.error(
                     `Error fetching problemas for turma ${turma.id_turma}:`,
-                    err,
-                );
+                        err,
+                    );
             }
         }
     }
@@ -194,7 +194,7 @@
             selectedProblema = null;
             problemas = [];
             avaliacoes = [];
-            evaluationMatrix = {};
+        evaluationMatrix = {};
             await fetchProblemas(turmaId);
         } else {
             // Handle case where no turma is selected
@@ -775,7 +775,7 @@
                     {/each}
                 </select>
             </div>
-        </div>
+            </div>
 
         <!--  {#if selectedProblema}
             <div class="debug-section">
@@ -844,32 +844,32 @@
                     Exportar PDF
                 </Button>
             </div>
-            <div class="matrix-section">
+        <div class="matrix-section">
                 <h2>Matriz de Avaliações - {selectedProblema.nome_problema}</h2>
-                <p class="matrix-subtitle">
+            <p class="matrix-subtitle">
                     Linhas: Quem avaliou | Colunas: Quem foi avaliado (por
                     número)
-                </p>
+            </p>
 
                 <!-- Statistics Header -->
-                <div class="statistics-header">
-                    <div class="stat-card">
+            <div class="statistics-header">
+                <div class="stat-card">
                         <div class="stat-value">{statistics.totalAlunos}</div>
                         <div class="stat-label">Total Alunos</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value">{statistics.maiorNota}</div>
                         <div class="stat-label">Maior Nota</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">{statistics.mediaGeral}</div>
-                        <div class="stat-label">Média Geral</div>
-                    </div>
-                    <div class="stat-card">
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{statistics.mediaGeral}</div>
+                    <div class="stat-label">Média Geral</div>
+                </div>
+                <div class="stat-card">
                         <div class="stat-value">{statistics.menorNota}</div>
                         <div class="stat-label">Menor Nota</div>
-                    </div>
                 </div>
+            </div>
 
                 <div class="matrix-container">
                     <div class="scroll-hint">
@@ -877,12 +877,12 @@
                     </div>
                     <div class="matrix-wrapper">
                         <table class="evaluation-matrix">
-                            <thead>
-                                <tr>
-                                    <th class="student-name-header">Aluno</th>
+                        <thead>
+                            <tr>
+                                <th class="student-name-header">Aluno</th>
                                     <th class="student-number-header">Número</th
                                     >
-                                    <th class="average-header">Média</th>
+                                <th class="average-header">Média</th>
                                     {#each alunos as aluno, index}
                                         <th
                                             class="student-header"
@@ -890,10 +890,10 @@
                                         >
                                             {index + 1}
                                         </th>
-                                    {/each}
-                                </tr>
-                            </thead>
-                            <tbody>
+                                {/each}
+                            </tr>
+                        </thead>
+                        <tbody>
                                 {#each alunos as evaluator, evaluatorIndex}
                                     <tr>
                                         <td
@@ -913,7 +913,7 @@
                                                 "-"}
                                         </td>
                                         {#each alunos as evaluated}
-                                            {@const grade =
+                                        {@const grade =
                                                 evaluationMatrix[
                                                     evaluator.id
                                                 ]?.[evaluated.id]}
@@ -922,7 +922,7 @@
                                                     class="grade-cell self-evaluation"
                                                 >
                                                     <span>X</span>
-                                                </td>
+                                        </td>
                                             {:else if grade === undefined || grade === null}
                                                 <td class="grade-cell">N</td>
                                             {:else if grade > 0}
@@ -942,9 +942,9 @@
                                             {:else}
                                                 <td class="grade-cell">N</td>
                                             {/if}
-                                        {/each}
-                                    </tr>
-                                {/each}
+                                    {/each}
+                                </tr>
+                            {/each}
                                 <tr class="professor-row">
                                     <td
                                         class="student-name"
@@ -982,8 +982,8 @@
                                         {/if}
                                     {/each}
                                 </tr>
-                            </tbody>
-                        </table>
+                        </tbody>
+                    </table>
                     </div>
                 </div>
 
@@ -1022,19 +1022,19 @@
                             > Nota fora do padrão dos colegas
                         </li>
                     </ul>
-                </div>
-            </div>
+                    </div>
+                    </div>
         {/if}
 
         {#if turmas.length === 0 && !loading}
             <div class="empty-state">
                 <p>Nenhuma turma encontrada.</p>
-            </div>
+                    </div>
         {:else if selectedTurma && problemas.length === 0 && !loading}
-            <div class="empty-state">
+                <div class="empty-state">
                 <p>Nenhum problema encontrado para esta turma.</p>
-            </div>
-        {/if}
+                </div>
+            {/if}
     {/if}
 </div>
 

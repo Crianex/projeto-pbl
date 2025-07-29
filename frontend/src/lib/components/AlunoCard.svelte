@@ -23,9 +23,24 @@
 
 <div class="aluno-item">
     <div class="aluno-info">
-        <h3 class="aluno-nome">
-            {aluno.nome_completo || "Nome não disponível"}
-        </h3>
+        <div class="aluno-header">
+            <div class="avatar-container">
+                <img
+                    src={aluno.link_avatar || "/avatars/default.svg"}
+                    alt={aluno.nome_completo || "Avatar do aluno"}
+                    class="aluno-avatar"
+                    on:error={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        if (target) {
+                            target.src = "/avatars/default.svg";
+                        }
+                    }}
+                />
+            </div>
+            <h3 class="aluno-nome">
+                {aluno.nome_completo || "Nome não disponível"}
+            </h3>
+        </div>
 
         <div class="criterios-section">
             <h4 class="criterios-title">Critérios:</h4>
@@ -122,6 +137,33 @@
         display: flex;
         flex-direction: column;
         gap: 0.8rem;
+    }
+
+    .aluno-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .avatar-container {
+        flex-shrink: 0;
+    }
+
+    .aluno-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #e5e7eb;
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+    }
+
+    .aluno-avatar:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
 
     .aluno-nome {
@@ -285,6 +327,15 @@
             font-size: 1rem;
         }
 
+        .aluno-header {
+            gap: 0.5rem;
+        }
+
+        .aluno-avatar {
+            width: 40px;
+            height: 40px;
+        }
+
         .criterio-item {
             font-size: 0.8rem;
         }
@@ -297,6 +348,15 @@
 
         .aluno-nome {
             font-size: 0.95rem;
+        }
+
+        .aluno-header {
+            gap: 0.4rem;
+        }
+
+        .aluno-avatar {
+            width: 36px;
+            height: 36px;
         }
 
         .criterios-grid {
