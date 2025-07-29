@@ -22,6 +22,19 @@
     let passwordError = "";
     let confirmPasswordError = "";
 
+    // Extract email and token from URL query parameters
+    const email = $page.url.searchParams.get("email");
+    const tokenHash = $page.url.searchParams.get("token");
+
+    // Check if required parameters are present
+    if (!email || !tokenHash) {
+        errorMessage =
+            "Link de redefinição inválido. Verifique se o link está correto.";
+        showToast = true;
+        toastType = "error";
+        toastMessage = errorMessage;
+    }
+
     // Password strength validation
     function validatePassword(pass: string) {
         if (pass.length < 8) {
@@ -55,6 +68,21 @@
 
         try {
             logger.info("Attempting password reset");
+
+            // Check if email and token are available
+            if (!email || !tokenHash) {
+                throw new Error("Email ou token não encontrados na URL");
+            }
+
+            const { data: data_recovery, error: error_recovery } =
+                await supabase.auth.verifyOtp({
+                    type: "recovery",
+                    token_hash: tokenHash,
+                });
+
+            if (error_recovery) {
+                throw error_recovery;
+            }
 
             const { error } = await supabase.auth.updateUser({
                 password: password,
@@ -91,96 +119,81 @@
 </svelte:head>
 
 {#if passwordReset}
-    <Container
-        maxWidth="md"
-        glass={true}
-        shadow={true}
-        needsContainerStyle={true}
-    >
-        <div class="success-container">
-            <div class="success-icon">✓</div>
-            <h1>Senha Redefinida!</h1>
-            <p class="success-message">Sua senha foi redefinida com sucesso.</p>
-            <p class="instructions">
-                Você será redirecionado para a página de login em alguns
-                segundos.
-            </p>
+    <div class="success-container">
+        <div class="success-icon">✓</div>
+        <h1>Senha Redefinida!</h1>
+        <p class="success-message">Sua senha foi redefinida com sucesso.</p>
+        <p class="instructions">
+            Você será redirecionado para a página de login em alguns segundos.
+        </p>
 
-            <div class="actions">
-                <Button variant="primary" on:click={() => goto("/login")}>
-                    Ir para o login
-                </Button>
-            </div>
+        <div class="actions">
+            <Button variant="primary" on:click={() => goto("/login")}>
+                Ir para o login
+            </Button>
         </div>
-    </Container>
+    </div>
 {:else}
-    <Container
-        maxWidth="md"
-        glass={true}
-        shadow={true}
-        needsContainerStyle={true}
-    >
-        <div class="header">
-            <h1>Nova Senha</h1>
-            <p class="subtitle">Digite sua nova senha segura</p>
+    <div class="header">
+        <h1>Nova Senha</h1>
+        <p class="subtitle">Digite sua nova senha segura</p>
+    </div>
+
+    <form on:submit|preventDefault={handleResetPassword}>
+        <div class="form-group">
+            <Input
+                type="password"
+                id="password"
+                label="Nova senha"
+                bind:value={password}
+                placeholder="Digite sua nova senha"
+                error={passwordError}
+                required
+                disabled={loading}
+                autocomplete="new-password"
+            />
+
+            {#if password && !passwordError}
+                <div class="password-strength">
+                    <div class="strength-indicator strong"></div>
+                    <span class="strength-text">Senha forte ✓</span>
+                </div>
+            {/if}
         </div>
 
-        <form on:submit|preventDefault={handleResetPassword}>
-            <div class="form-group">
-                <Input
-                    type="password"
-                    id="password"
-                    label="Nova senha"
-                    bind:value={password}
-                    placeholder="Digite sua nova senha"
-                    error={passwordError}
-                    required
-                    disabled={loading}
-                    autocomplete="new-password"
-                />
-
-                {#if password && !passwordError}
-                    <div class="password-strength">
-                        <div class="strength-indicator strong"></div>
-                        <span class="strength-text">Senha forte ✓</span>
-                    </div>
-                {/if}
-            </div>
-
-            <div class="form-group">
-                <Input
-                    type="password"
-                    id="confirmPassword"
-                    label="Confirme a nova senha"
-                    bind:value={confirmPassword}
-                    placeholder="Digite novamente sua nova senha"
-                    error={confirmPasswordError}
-                    required
-                    disabled={loading}
-                    autocomplete="new-password"
-                />
-            </div>
-
-            <div class="button-group">
-                <Button
-                    type="submit"
-                    variant="primary"
-                    disabled={!!passwordError ||
-                        !!confirmPasswordError ||
-                        !password ||
-                        !confirmPassword ||
-                        loading}
-                    {loading}
-                >
-                    {loading ? "Redefinindo..." : "Redefinir senha"}
-                </Button>
-            </div>
-        </form>
-
-        <div class="back-to-login">
-            <a href="/login">Voltar para o login</a>
+        <div class="form-group">
+            <Input
+                type="password"
+                id="confirmPassword"
+                label="Confirme a nova senha"
+                bind:value={confirmPassword}
+                placeholder="Digite novamente sua nova senha"
+                error={confirmPasswordError}
+                required
+                disabled={loading}
+                autocomplete="new-password"
+            />
         </div>
-    </Container>
+
+        <div class="button-group">
+            <Button
+                type="submit"
+                variant="primary"
+                disabled={!!passwordError ||
+                    !!confirmPasswordError ||
+                    !password ||
+                    !confirmPassword ||
+                    loading}
+                {loading}
+            >
+                {loading ? "Redefinindo..." : "Redefinir senha"}
+            </Button>
+        </div>
+    </form>
+
+    <div class="back-to-login">
+        <a href="/login">Voltar para o login</a>
+    </div>
 {/if}
 
 {#if loading}
