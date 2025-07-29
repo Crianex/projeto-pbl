@@ -466,26 +466,28 @@
                 >
                     <div class="section-header">
                         <h2>{tag}</h2>
-                        {#if tag === "Análise do Problema"}
-                            <button
-                                type="button"
-                                class="falta-section-btn"
-                                on:click={() => handleFaltaAbertura()}
-                                title="Registrar falta na Análise do Problema - zera avaliações recebidas pelo aluno"
-                                disabled={!isTagActive(tag) || showLoadingDialog}
-                            >
-                                Falta
-                            </button>
-                        {:else if tag === "Resolução do Problema"}
-                            <button
-                                type="button"
-                                class="falta-section-btn"
-                                on:click={() => handleFaltaFechamento()}
-                                title="Registrar falta na Resolução do Problema - zera avaliações recebidas pelo aluno"
-                                disabled={!isTagActive(tag) || showLoadingDialog}
-                            >
-                                Falta
-                            </button>
+                        {#if isProfessorEvaluation}
+                            {#if tag === "Análise do Problema"}
+                                <button
+                                    type="button"
+                                    class="falta-section-btn"
+                                    on:click={() => handleFaltaAbertura()}
+                                    title="Registrar falta na Análise do Problema - zera avaliações recebidas pelo aluno"
+                                    disabled={!isTagActive(tag) || showLoadingDialog}
+                                >
+                                    Falta
+                                </button>
+                            {:else if tag === "Resolução do Problema"}
+                                <button
+                                    type="button"
+                                    class="falta-section-btn"
+                                    on:click={() => handleFaltaFechamento()}
+                                    title="Registrar falta na Resolução do Problema - zera avaliações recebidas pelo aluno"
+                                    disabled={!isTagActive(tag) || showLoadingDialog}
+                                >
+                                    Falta
+                                </button>
+                            {/if}
                         {/if}
                     </div>
                     <div class="criteria-group">
