@@ -32,6 +32,10 @@
     let currentPage = 1;
     let itemsPerPage = 10;
     let searchTerm = "";
+    let windowWidth = 0;
+
+    // Responsive items per page
+    $: itemsPerPage = windowWidth <= 768 ? 5 : 10;
     let alunos: Array<AlunoModel & { medias: Record<string, number> | null }> =
         [];
     let criteriosList: { nome_criterio: string; descricao_criterio: string }[] =
@@ -62,75 +66,98 @@
         );
     }
 
-    onMount(async () => {
-        try {
-            const { id_problema, id } = $page.params;
-            logger.info(
-                `Loading problema details for id_problema: ${id_problema}, turma: ${id}`,
-            );
-            // Get both problema and turma data using cache services
-            logger.info("Fetching problema, turma, and avaliações data...");
-            const [problemaData, turmaData, fetchedAvaliacoesData] =
-                await Promise.all([
-                    ProblemasService.getById(id_problema),
-                    TurmasService.getById(id),
-                    AvaliacoesService.getByProblema(id_problema),
-                ]);
-            logger.info("Data fetched successfully", {
-                problemaData: !!problemaData,
-                turmaData: !!turmaData,
-                avaliacoesCount: fetchedAvaliacoesData?.length || 0,
-            });
-            problema = problemaData;
-            turma = turmaData;
-            avaliacoesData = fetchedAvaliacoesData;
-            // Build evaluation matrix (same as relatorios)
-            if (turma && turma.alunos) {
-                evaluationMatrix = {};
-                turma.alunos.forEach((evaluator) => {
-                    evaluationMatrix[evaluator.id] = {};
-                    turma!.alunos!.forEach((evaluated) => {
-                        evaluationMatrix[evaluator.id][evaluated.id] = 0;
+    onMount(() => {
+        // Set initial window width
+        windowWidth = window.innerWidth;
+
+        // Add resize listener
+        const handleResize = () => {
+            windowWidth = window.innerWidth;
+        };
+
+        window.addEventListener("resize", handleResize);
+
+        // Load data
+        (async () => {
+            try {
+                const { id_problema, id } = $page.params;
+                logger.info(
+                    `Loading problema details for id_problema: ${id_problema}, turma: ${id}`,
+                );
+                // Get both problema and turma data using cache services
+                logger.info("Fetching problema, turma, and avaliações data...");
+                const [problemaData, turmaData, fetchedAvaliacoesData] =
+                    await Promise.all([
+                        ProblemasService.getById(id_problema),
+                        TurmasService.getById(id),
+                        AvaliacoesService.getByProblema(id_problema),
+                    ]);
+                logger.info("Data fetched successfully", {
+                    problemaData: !!problemaData,
+                    turmaData: !!turmaData,
+                    avaliacoesCount: fetchedAvaliacoesData?.length || 0,
+                });
+                problema = problemaData;
+                turma = turmaData;
+                avaliacoesData = fetchedAvaliacoesData;
+                // Build evaluation matrix (same as relatorios)
+                if (turma && turma.alunos) {
+                    evaluationMatrix = {};
+                    turma.alunos.forEach((evaluator) => {
+                        evaluationMatrix[evaluator.id] = {};
+                        turma!.alunos!.forEach((evaluated) => {
+                            evaluationMatrix[evaluator.id][evaluated.id] = 0;
+                        });
                     });
-                });
-                avaliacoesData.forEach((avaliacao) => {
-                    if (avaliacao.aluno_avaliador && avaliacao.aluno_avaliado) {
-                        const average =
-                            MediaCalculator.calculateSimpleMediaFromAvaliacao(
-                                avaliacao,
-                            );
-                        console.log(`average: ${average}`);
+                    avaliacoesData.forEach((avaliacao) => {
                         if (
-                            evaluationMatrix[avaliacao.aluno_avaliador.id] &&
-                            evaluationMatrix[avaliacao.aluno_avaliador.id][
-                                avaliacao.aluno_avaliado.id
-                            ] !== undefined
+                            avaliacao.aluno_avaliador &&
+                            avaliacao.aluno_avaliado
                         ) {
-                            evaluationMatrix[avaliacao.aluno_avaliador.id][
-                                avaliacao.aluno_avaliado.id
-                            ] = average;
+                            const average =
+                                MediaCalculator.calculateSimpleMediaFromAvaliacao(
+                                    avaliacao,
+                                );
+                            console.log(`average: ${average}`);
+                            if (
+                                evaluationMatrix[
+                                    avaliacao.aluno_avaliador.id
+                                ] &&
+                                evaluationMatrix[avaliacao.aluno_avaliador.id][
+                                    avaliacao.aluno_avaliado.id
+                                ] !== undefined
+                            ) {
+                                evaluationMatrix[avaliacao.aluno_avaliador.id][
+                                    avaliacao.aluno_avaliado.id
+                                ] = average;
+                            }
                         }
-                    }
+                    });
+                }
+                logger.info("Data parsed successfully", {
+                    problema: problema?.nome_problema,
+                    turma: turma?.nome_turma,
+                    alunosCount: turma?.alunos?.length || 0,
                 });
+                if (!turma?.alunos) {
+                    throw new Error("Não há alunos nesta turma");
+                }
+                logger.info(
+                    `Successfully loaded data, waiting for criterios processing`,
+                );
+            } catch (e: any) {
+                logger.error("Error loading problema details:", e);
+                error = e.message || "Erro ao carregar os dados";
+            } finally {
+                loading = false;
+                logger.info("Loading completed");
             }
-            logger.info("Data parsed successfully", {
-                problema: problema?.nome_problema,
-                turma: turma?.nome_turma,
-                alunosCount: turma?.alunos?.length || 0,
-            });
-            if (!turma?.alunos) {
-                throw new Error("Não há alunos nesta turma");
-            }
-            logger.info(
-                `Successfully loaded data, waiting for criterios processing`,
-            );
-        } catch (e: any) {
-            logger.error("Error loading problema details:", e);
-            error = e.message || "Erro ao carregar os dados";
-        } finally {
-            loading = false;
-            logger.info("Loading completed");
-        }
+        })();
+
+        // Return cleanup function
+        return () => {
+            window.removeEventListener("resize", handleResize);
+        };
     });
 
     // Process alunos - show all alunos even if there are no evaluations yet
@@ -237,6 +264,18 @@
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage,
     );
+
+    // Debug pagination
+    $: console.log("Pagination debug:", {
+        totalAlunos: alunos.length,
+        filteredAlunos: filteredAlunos.length,
+        currentPage,
+        itemsPerPage,
+        totalPages,
+        paginatedAlunosLength: paginatedAlunos.length,
+        startIndex: (currentPage - 1) * itemsPerPage,
+        endIndex: currentPage * itemsPerPage,
+    });
 </script>
 
 {#if loading}
@@ -332,7 +371,7 @@
         margin-bottom: 1.5rem;
     }
 
-   .loading-container {
+    .loading-container {
         display: flex;
         justify-content: center;
         align-items: center;

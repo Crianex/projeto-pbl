@@ -122,7 +122,7 @@
         padding: 1.2rem;
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
+        align-items: stretch;
         gap: 1rem;
         margin-bottom: 0.5rem;
         transition: box-shadow 0.2s ease;
@@ -293,6 +293,9 @@
         flex-direction: column;
         gap: 0.5rem;
         align-items: stretch;
+        justify-content: center;
+        flex: 0.3;
+        min-height: 0;
     }
 
     .actions :global(button) {
