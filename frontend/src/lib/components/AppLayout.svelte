@@ -206,8 +206,8 @@
     .mobile-menu-btn {
         display: none;
         position: fixed;
-        top: 1rem;
-        left: 1rem;
+        bottom: 1rem;
+        right: 1rem;
         z-index: 1001;
         background: var(--color-layout-sidebar-bg);
         border: 1px solid var(--color-layout-sidebar-border);
@@ -217,10 +217,14 @@
         color: var(--color-layout-sidebar-text);
         box-shadow: 0 2px 4px var(--color-shadow-main);
         transition: all 0.2s ease;
+        height: 40px;
+        width: 40px;
+        align-items: center;
+        justify-content: center;
     }
 
     .mobile-menu-btn.visible {
-        display: block;
+        display: flex;
     }
 
     .mobile-menu-btn:hover {
@@ -359,11 +363,13 @@
         overflow-y: auto;
         margin-left: 250px;
         display: flex;
+        grid-template-columns: 1fr;
         align-items: flex-start;
         justify-content: center;
         transition: all 0.3s ease;
         padding: 2rem;
         height: 100vh;
+        min-height: 100vh;
     }
 
     .main-content.generic-layout {
@@ -381,6 +387,7 @@
         width: 100%;
         padding: 1rem;
         flex-direction: column;
+
         box-shadow:
             0 15px 35px rgba(0, 0, 0, 0.08),
             0 8px 20px rgba(0, 0, 0, 0.06),
@@ -400,13 +407,22 @@
         transform: translateY(-2px);
     }
     @media (max-width: 768px) {
+        .mobile-menu-btn {
+            display: flex;
+        }
+
         .main-card {
-            margin: 0.8rem 0.1rem;
+            margin: 0;
+            padding: 0.5rem;
             max-width: 100vw;
+            box-sizing: border-box;
             border-radius: 16px;
+            width: 100%;
+            text-align: left;
+            justify-self: center;
         }
         .layout {
-            overflow: scroll;
+            overflow: visible;
         }
         .sidebar,
         .sidebar-content,
@@ -463,15 +479,19 @@
             margin-left: 0;
             width: 100vw;
             min-width: 0;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            height: 100vh;
+            display: grid;
+            min-height: 100vh;
             transition: all 0.3s ease;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            position: relative;
+            justify-content: center;
         }
 
         .main-content.generic-layout {
             align-items: center;
+            justify-content: center;
+            padding: 0.8rem;
         }
     }
     @media (max-width: 480px) {

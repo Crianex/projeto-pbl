@@ -214,7 +214,7 @@ Componente de avatar com suporte a upload e edição.
     }
     
     function handleAvatarRemove() {
-        userAvatar = "/avatars/default.png";
+        userAvatar = "/images/default_avatar.png";
     }
 </script>
 
@@ -296,7 +296,7 @@ Formulário completo para edição de perfil com validação.
     }
     
     function handleAvatarRemove() {
-        avatarPreview = "/avatars/default.png";
+        avatarPreview = "/images/default_avatar.png";
     }
 </script>
 

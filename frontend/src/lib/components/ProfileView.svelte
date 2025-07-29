@@ -8,7 +8,7 @@
 
     // Debug info for avatar
     $: avatarSrc = $currentUser?.link_avatar || "";
-    $: avatarUrl = avatarSrc ? avatarSrc : "/avatars/default.png";
+    $: avatarUrl = avatarSrc ? avatarSrc : "/images/default_avatar.png";
     $: debugInfo = { userId: $currentUser?.id, avatarSrc, avatarUrl };
     $: console.log("ProfileView Debug:", debugInfo);
 </script>

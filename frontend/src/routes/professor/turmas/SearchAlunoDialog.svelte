@@ -190,7 +190,7 @@
                         <div class="aluno-info">
                             <Avatar
                                 src={aluno.link_avatar ||
-                                    "/avatars/default.png"}
+                                    "/images/default_avatar.png"}
                                 alt={`Avatar de ${aluno.nome_completo}`}
                                 size="sm"
                             />

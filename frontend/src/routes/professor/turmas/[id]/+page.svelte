@@ -10,6 +10,8 @@
     import { TurmasService } from "$lib/services/turmas_service";
     import type { AlunoModel } from "$lib/interfaces/interfaces";
     import PageHeader from "$lib/components/PageHeader.svelte";
+    import Input from "$lib/components/Input.svelte";
+    import TrashIcon from "$lib/components/TrashIcon.svelte";
 
     const turmaId = $page.params.id;
 
@@ -39,8 +41,8 @@
             }
 
             turma = {
-                nome_turma: turmaData.nome_turma,
-                id_professor: turmaData.id_professor,
+                nome_turma: turmaData.nome_turma || "",
+                id_professor: turmaData.id_professor?.toString() || "",
             };
             originalTurma = { ...turma };
 
@@ -103,11 +105,14 @@
         checkForChanges();
     }
 
-    function handleAddAluno(aluno: AlunoModel) {
-        if (!alunosMatriculados.find((a) => a.id === aluno.id)) {
-            alunosMatriculados = [...alunosMatriculados, aluno];
-            checkForChanges();
+    function handleAddAluno(event: CustomEvent<AlunoModel[]>) {
+        const selectedAlunos = event.detail;
+        for (const aluno of selectedAlunos) {
+            if (!alunosMatriculados.find((a) => a.id === aluno.id)) {
+                alunosMatriculados = [...alunosMatriculados, aluno];
+            }
         }
+        checkForChanges();
         searchDialogOpen = false;
     }
 
@@ -171,7 +176,7 @@
 
             <div class="form-group">
                 <label for="nome_turma">Nome da Turma</label>
-                <input
+                <Input
                     type="text"
                     id="nome_turma"
                     bind:value={turma.nome_turma}
@@ -188,7 +193,7 @@
                             <div class="aluno-info">
                                 <img
                                     src={aluno.link_avatar ||
-                                        "/avatars/default.png"}
+                                        "/images/default_avatar.png"}
                                     alt={aluno.nome_completo}
                                     class="avatar"
                                 />
@@ -202,9 +207,12 @@
                             <Button
                                 type="button"
                                 variant="danger"
+                                size="icon"
+                                class="remove-button"
                                 on:click={() => handleRemoveAluno(aluno.id)}
+                                title="Remover aluno"
                             >
-                                Remover
+                                <TrashIcon size="sm" />
                             </Button>
                         </div>
                     {/each}
@@ -239,7 +247,7 @@
     open={searchDialogOpen}
     on:close={() => (searchDialogOpen = false)}
     on:select={handleAddAluno}
-    excludeAlunos={alunosMatriculados}
+    exclude_aluno_ids={alunosMatriculados.map((aluno) => aluno.id)}
 />
 
 <Dialog open={changesSummaryOpen} on:close={() => (changesSummaryOpen = false)}>
@@ -309,9 +317,7 @@
 
 <style>
     .container {
-        max-width: 800px;
         margin: 0 auto;
-        padding: 2rem;
     }
 
     .loading,
@@ -327,7 +333,7 @@
 
     .form {
         background: white;
-        padding: 2rem;
+        padding: 1rem;
         border-radius: 8px;
         border: 1px solid #e9ecef;
     }
@@ -462,10 +468,45 @@
     .actions {
         display: flex;
         gap: 1rem;
-        justify-content: flex-end;
+        justify-content: space-between;
         margin-top: 2rem;
         padding-top: 1rem;
         border-top: 1px solid #e9ecef;
+    }
+
+    .actions button {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .remove-button {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .button-text {
+        display: inline;
+    }
+
+    .trash-icon {
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .remove-button {
+            padding: 0.5rem;
+            min-width: 2.5rem;
+            justify-content: center;
+        }
+
+        .button-text {
+            display: none;
+        }
+
+        .trash-icon {
+            display: block;
+        }
     }
 
     .error-message {

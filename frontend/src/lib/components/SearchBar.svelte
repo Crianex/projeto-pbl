@@ -94,9 +94,7 @@
         }
 
         input {
-            width: 100%;
-            padding: 1rem;
-            font-size: 1.1rem;
+            width: -webkit-fill-available;
         }
 
         :global(.action-button) {
