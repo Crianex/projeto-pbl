@@ -343,8 +343,10 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.75rem;
+        padding: 0.75rem 0;
         border-bottom: 1px solid #e9ecef;
+        min-width: 0;
+        overflow: hidden;
     }
 
     .aluno-item:last-child {
@@ -355,27 +357,42 @@
         display: flex;
         align-items: center;
         gap: 0.75rem;
+        min-width: 0;
+        flex: 1;
     }
 
     .aluno-details {
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
+        min-width: 0;
+        flex: 1;
+        padding-right: 0.3rem;
     }
 
     .aluno-details .nome {
         font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
     }
 
     .aluno-details .email {
         font-size: 0.875rem;
         color: #6c757d;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
     }
 
     .avatar {
         width: 32px;
         height: 32px;
         border-radius: 50%;
+        aspect-ratio: 1;
+        object-fit: cover;
     }
 
     .more-options {

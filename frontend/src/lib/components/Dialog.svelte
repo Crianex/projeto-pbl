@@ -85,7 +85,7 @@
 	}
 
 	.dialog-content {
-		padding: 1rem 2.5rem 2rem 2.5rem;
+		padding: 1rem 2.5rem;
 	}
 
 	@keyframes dialog-appear {
@@ -145,11 +145,11 @@
 		}
 
 		.dialog-header {
-			padding: 1.25rem 1.5rem 0.75rem 1.5rem;
+			padding: 1.25rem 1.5rem;
 		}
 
 		.dialog-content {
-			padding: 0.75rem 1.5rem 1.25rem 1.5rem;
+			padding: 0.75rem 1.5rem;
 		}
 
 		.dialog-overlay {

@@ -24,6 +24,7 @@
     import type { AlunoModel } from "$lib/interfaces/interfaces";
     import { Parsers } from "$lib/interfaces/parsers";
     import { AlunosService } from "$lib/services/alunos_service";
+    import Input from "$lib/components/Input.svelte";
     const dispatch = createEventDispatcher();
 
     // Fetch first page when dialog opens
@@ -139,12 +140,11 @@
         <h2>Adicionar Aluno</h2>
 
         <div class="search-container">
-            <input
+            <Input
                 type="text"
                 bind:value={searchQuery}
                 on:input={handleSearch}
                 placeholder="Buscar aluno por nome..."
-                class="search-input"
             />
         </div>
 
@@ -230,7 +230,6 @@
 
 <style>
     .dialog-content {
-        min-width: 500px;
     }
 
     h2 {
@@ -241,20 +240,6 @@
 
     .search-container {
         margin-bottom: 1rem;
-    }
-
-    .search-input {
-        width: 100%;
-        padding: 0.75rem;
-        border: 1px solid #dee2e6;
-        border-radius: 4px;
-        font-size: 1rem;
-    }
-
-    .search-input:focus {
-        outline: none;
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
     }
 
     .status-message {
@@ -325,6 +310,7 @@
 
     .actions {
         display: flex;
+        gap: 1rem;
         justify-content: flex-end;
         margin-top: 1rem;
     }
