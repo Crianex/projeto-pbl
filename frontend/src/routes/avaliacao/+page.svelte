@@ -56,6 +56,10 @@
     let currentValues: { [tag: string]: { [criterio: string]: number } } = {};
     let isSubmitting = false;
 
+    // Confirm dialog states
+    let showConfirmFaltaAbertura = false;
+    let showConfirmFaltaFechamento = false;
+
     // Helper to check if a tag is currently active (for alunos only)
     function isTagActive(tag: string): boolean {
         if (isProfessorEvaluation) return true;
@@ -316,6 +320,22 @@
         }
     }
 
+    function showConfirmFaltaAberturaDialog() {
+        showConfirmFaltaAbertura = true;
+    }
+
+    function showConfirmFaltaFechamentoDialog() {
+        showConfirmFaltaFechamento = true;
+    }
+
+    function hideConfirmFaltaAberturaDialog() {
+        showConfirmFaltaAbertura = false;
+    }
+
+    function hideConfirmFaltaFechamentoDialog() {
+        showConfirmFaltaFechamento = false;
+    }
+
     async function handleFaltaAbertura() {
         try {
             showLoadingDialog = true;
@@ -496,7 +516,8 @@
                                 <button
                                     type="button"
                                     class="falta-section-btn"
-                                    on:click={() => handleFaltaAbertura()}
+                                    on:click={() =>
+                                        showConfirmFaltaAberturaDialog()}
                                     title="Registrar falta na Análise do Problema - zera avaliações recebidas pelo aluno"
                                     disabled={!isTagActive(tag) ||
                                         showLoadingDialog}
@@ -507,7 +528,8 @@
                                 <button
                                     type="button"
                                     class="falta-section-btn"
-                                    on:click={() => handleFaltaFechamento()}
+                                    on:click={() =>
+                                        showConfirmFaltaFechamentoDialog()}
                                     title="Registrar falta na Resolução do Problema - zera avaliações recebidas pelo aluno"
                                     disabled={!isTagActive(tag) ||
                                         showLoadingDialog}
@@ -611,6 +633,88 @@
                 {#each criterioAtual.criterio.descricao_criterio.split("\n") as line}
                     <p>{line}</p>
                 {/each}
+            </div>
+        </div>
+    </Dialog>
+{/if}
+
+{#if showConfirmFaltaAbertura}
+    <Dialog
+        open={showConfirmFaltaAbertura}
+        closeOnClickOutside={true}
+        on:close={hideConfirmFaltaAberturaDialog}
+    >
+        <h3 slot="header">Confirmar Falta - Análise do Problema</h3>
+        <div class="confirm-dialog-content">
+            <p class="confirm-message">
+                Tem certeza que deseja registrar falta na <strong
+                    >Análise do Problema</strong
+                >
+                para o aluno <strong>{avaliacaoData.aluno.nome}</strong>?
+            </p>
+            <p class="confirm-warning">
+                ⚠️ Esta ação irá zerar todas as avaliações recebidas pelo aluno
+                nesta etapa.
+            </p>
+            <div class="confirm-actions">
+                <button
+                    type="button"
+                    class="confirm-btn cancel-btn"
+                    on:click={hideConfirmFaltaAberturaDialog}
+                >
+                    Cancelar
+                </button>
+                <button
+                    type="button"
+                    class="confirm-btn confirm-falta-btn"
+                    on:click={() => {
+                        hideConfirmFaltaAberturaDialog();
+                        handleFaltaAbertura();
+                    }}
+                >
+                    Confirmar Falta
+                </button>
+            </div>
+        </div>
+    </Dialog>
+{/if}
+
+{#if showConfirmFaltaFechamento}
+    <Dialog
+        open={showConfirmFaltaFechamento}
+        closeOnClickOutside={true}
+        on:close={hideConfirmFaltaFechamentoDialog}
+    >
+        <h3 slot="header">Confirmar Falta - Resolução do Problema</h3>
+        <div class="confirm-dialog-content">
+            <p class="confirm-message">
+                Tem certeza que deseja registrar falta na <strong
+                    >Resolução do Problema</strong
+                >
+                para o aluno <strong>{avaliacaoData.aluno.nome}</strong>?
+            </p>
+            <p class="confirm-warning">
+                ⚠️ Esta ação irá zerar todas as avaliações recebidas pelo aluno
+                nesta etapa.
+            </p>
+            <div class="confirm-actions">
+                <button
+                    type="button"
+                    class="confirm-btn cancel-btn"
+                    on:click={hideConfirmFaltaFechamentoDialog}
+                >
+                    Cancelar
+                </button>
+                <button
+                    type="button"
+                    class="confirm-btn confirm-falta-btn"
+                    on:click={() => {
+                        hideConfirmFaltaFechamentoDialog();
+                        handleFaltaFechamento();
+                    }}
+                >
+                    Confirmar Falta
+                </button>
             </div>
         </div>
     </Dialog>
@@ -1018,5 +1122,88 @@
         margin: 0;
         max-width: 300px;
         line-height: 1.4;
+    }
+
+    /* Confirm Dialog Styles */
+    .confirm-dialog-content {
+        padding: 1rem 0;
+    }
+
+    .confirm-message {
+        font-size: 1rem;
+        color: #495057;
+        margin: 0 0 1rem 0;
+        line-height: 1.5;
+    }
+
+    .confirm-warning {
+        font-size: 0.9rem;
+        color: #dc3545;
+        background: rgba(220, 53, 69, 0.1);
+        padding: 0.75rem;
+        border-radius: 8px;
+        border-left: 4px solid #dc3545;
+        margin: 0 0 1.5rem 0;
+        line-height: 1.4;
+    }
+
+    .confirm-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 1.5rem;
+    }
+
+    .confirm-btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 120px;
+    }
+
+    .cancel-btn {
+        background: rgba(108, 117, 125, 0.1);
+        color: #6c757d;
+        border: 1px solid rgba(108, 117, 125, 0.3);
+    }
+
+    .cancel-btn:hover {
+        background: rgba(108, 117, 125, 0.2);
+        transform: translateY(-1px);
+    }
+
+    .confirm-falta-btn {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        box-shadow: 0 3px 10px rgba(220, 53, 69, 0.3);
+    }
+
+    .confirm-falta-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+    }
+
+    @media (max-width: 768px) {
+        .confirm-actions {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .confirm-btn {
+            width: 100%;
+            min-width: auto;
+        }
+
+        .confirm-message {
+            font-size: 0.95rem;
+        }
+
+        .confirm-warning {
+            font-size: 0.85rem;
+        }
     }
 </style>
