@@ -141,7 +141,7 @@
         width: 100%;
         box-sizing: border-box;
         font-family: inherit;
-        min-height: 2.5rem;
+        min-height: 15rem;
     }
 
     .textarea:focus {

@@ -82,7 +82,7 @@ export const TurmaController: EndpointController = {
 
         'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
             const { id_turma } = req.query;
-            const { nome_turma, id_professor } = req.body;
+            const { nome_turma, id_professor, alunos } = req.body;
             const { data, error } = await supabase
                 .from('turmas')
                 .update({ nome_turma, id_professor })
@@ -93,6 +93,7 @@ export const TurmaController: EndpointController = {
                 `)
                 .single();
 
+
             if (error) {
                 logger.error(`Error updating turma ${id_turma}: ${error.message}`);
                 return res.status(500).json({ error: error.message });
@@ -101,6 +102,25 @@ export const TurmaController: EndpointController = {
             if (!data) {
                 return res.status(404).json({ error: 'Turma not found' });
             }
+
+            for (const aluno of alunos) {
+                const { data: alunoData, error: alunoError } = await supabase
+                    .from('alunos')
+                    .update({ id_turma })
+                    .eq('id_aluno', aluno).select("id_aluno");
+
+                if (alunoError) {
+                    logger.error(`Error updating aluno ${aluno}: ${alunoError.message}`);
+                    return res.status(500).json({ error: alunoError.message });
+                }
+
+                if (!alunoData) {
+                    logger.error(`Aluno ${aluno} not found`);
+                    return res.status(404).json({ error: 'Aluno not found' });
+                }
+            }
+
+
 
             return res.json(data);
         }),

@@ -249,7 +249,6 @@
         background: white;
         padding: 2rem;
         border-radius: 8px;
-        border: 1px solid #e9ecef;
     }
 
     .form-group {
