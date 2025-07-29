@@ -43,7 +43,7 @@
 	}
 
 	.app {
-		min-height: 100vh;
+		min-height: 100dvh;
 		width: 100vw;
 		display: flex;
 	}
@@ -76,13 +76,13 @@
 	.page-container.home {
 		position: static;
 		height: auto;
-		min-height: 100vh;
+		min-height: 100dvh;
 		justify-content: flex-start;
 		align-items: stretch;
 	}
 
 	main.home {
 		height: auto;
-		min-height: 100vh;
+		min-height: 100dvh;
 	}
 </style>

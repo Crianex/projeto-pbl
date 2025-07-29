@@ -139,7 +139,7 @@
 	@media (max-width: 480px) {
 		.dialog {
 			max-width: 100vw;
-			max-height: 100vh;
+			max-height: 100dvh;
 			border-radius: 16px;
 			margin: 0.5rem;
 		}

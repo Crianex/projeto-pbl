@@ -226,7 +226,7 @@
     :global(body) {
         margin: 0;
         padding: 0;
-        min-height: 100vh;
+        min-height: 100dvh;
         background: linear-gradient(
             135deg,
             var(--color-nature-background-light, #e3fbec) 0%,
@@ -241,7 +241,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        min-height: 100vh;
+        min-height: 100dvh;
         padding: 2rem;
         box-sizing: border-box;
     }

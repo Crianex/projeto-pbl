@@ -213,7 +213,7 @@
     :global(body) {
         margin: 0;
         padding: 0;
-        min-height: 100vh;
+        min-height: 100dvh;
         background: linear-gradient(
             135deg,
             #ffffff 0%,
@@ -228,7 +228,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        min-height: 100vh;
+        min-height: 100dvh;
         padding: 2rem;
         box-sizing: border-box;
     }
@@ -400,13 +400,13 @@
         :global(main) {
             padding: 0;
             align-items: stretch;
-            min-height: 100vh;
+            min-height: 100dvh;
         }
 
         :global(.container) {
             max-width: 100% !important;
             width: 100%;
-            height: 100vh;
+            height: 100dvh;
             border-radius: 0;
             margin: 0;
             display: flex;
@@ -645,7 +645,7 @@
         }
 
         :global(.container) {
-            height: 100vh;
+            height: 100dvh;
             border-radius: 0;
             justify-content: center;
         }

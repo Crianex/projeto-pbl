@@ -196,7 +196,7 @@
     :global(body) {
         margin: 0;
         padding: 0;
-        min-height: 100vh;
+        min-height: 100dvh;
         background: var(--color-bg-gradient);
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
             sans-serif;
@@ -206,7 +206,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        min-height: 100vh;
+        min-height: 100dvh;
         padding: 2rem;
         box-sizing: border-box;
         width: 100%;
@@ -316,14 +316,14 @@
         :global(main) {
             padding: 0;
             align-items: center;
-            min-height: 100vh;
+            min-height: 100dvh;
             justify-content: center;
         }
 
         .login-container {
             max-width: 100%;
             width: 100%;
-            height: 100vh;
+            height: 100dvh;
             padding: 1.5rem 1.5rem; /* Increased left/right padding for mobile */
             border-radius: 12px;
             margin: 0;
@@ -438,7 +438,7 @@
         }
 
         .login-container {
-            height: 100vh;
+            height: 100dvh;
             border-radius: 0;
             justify-content: center;
         }

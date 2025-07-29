@@ -208,7 +208,7 @@
 <style>
     :global(body) {
         background: var(--color-bg-gradient);
-        min-height: 100vh;
+        min-height: 100dvh;
     }
 
     .page-wrapper {

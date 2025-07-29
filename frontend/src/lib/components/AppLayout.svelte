@@ -236,8 +236,8 @@
         position: fixed;
         top: 0;
         left: 0;
-        height: 100vh;
-        min-height: 100vh;
+        height: 100dvh;
+        min-height: 100dvh;
         overflow: hidden !important;
         overflow-y: hidden !important;
         z-index: 3000;
@@ -248,8 +248,8 @@
         transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         width: 250px;
         max-width: 250px;
-        height: 100vh;
-        min-height: 100vh;
+        height: 100dvh;
+        min-height: 100dvh;
         overflow-y: visible;
         padding-left: 1.2rem;
         padding-right: 1.2rem;
@@ -269,7 +269,7 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        min-height: 100vh;
+        min-height: 100dvh;
         padding: 0.5rem 0;
         align-items: flex-start;
     }
@@ -351,7 +351,7 @@
         top: 0;
         left: 0;
         width: 100vw;
-        height: 100vh;
+        height: 100dvh;
         background: rgba(0, 0, 0, 0.55);
         z-index: 2000;
         transition: opacity 0.15s;
@@ -368,8 +368,8 @@
         justify-content: center;
         transition: all 0.3s ease;
         padding: 2rem;
-        height: 100vh;
-        min-height: 100vh;
+        height: 100dvh;
+        min-height: 100dvh;
     }
 
     .main-content.generic-layout {
@@ -470,7 +470,7 @@
             top: 0;
             left: 0;
             width: 100vw;
-            height: 100vh;
+            height: 100dvh;
             background: rgba(0, 0, 0, 0.5);
             z-index: 2000;
         }
@@ -480,7 +480,7 @@
             width: 100vw;
             min-width: 0;
             display: grid;
-            min-height: 100vh;
+            min-height: 100dvh;
             transition: all 0.3s ease;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
