@@ -29,9 +29,21 @@
         try {
             loading = true;
             error = null;
-            const fetchedTurmas = await TurmasService.getAll(forceRefresh);
+
+            // Get current user to get professor ID
+            const user = $currentUser;
+            if (!user || user.tipo !== "professor") {
+                throw new Error("User not authenticated or not a professor");
+            }
+
+            const fetchedTurmas = await TurmasService.getAll(
+                user.id,
+                forceRefresh,
+            );
             turmas = fetchedTurmas;
-            logger.info(`Fetched ${turmas.length} turmas`);
+            logger.info(
+                `Fetched ${turmas.length} turmas for professor ${user.id}`,
+            );
         } catch (err: any) {
             error = err.message || "Failed to fetch turmas";
             logger.error("Error fetching turmas:", err);

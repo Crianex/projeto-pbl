@@ -26,13 +26,13 @@
         <div class="aluno-header">
             <div class="avatar-container">
                 <img
-                    src={aluno.link_avatar || "/avatars/default.svg"}
+                    src={aluno.link_avatar || "/images/default_avatar.png"}
                     alt={aluno.nome_completo || "Avatar do aluno"}
                     class="aluno-avatar"
                     on:error={(e) => {
                         const target = e.target as HTMLImageElement;
                         if (target) {
-                            target.src = "/avatars/default.svg";
+                            target.src = "/images/default_avatar.png";
                         }
                     }}
                 />

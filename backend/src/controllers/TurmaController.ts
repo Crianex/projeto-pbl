@@ -11,13 +11,24 @@ export const TurmaController: EndpointController = {
     name: 'turmas',
     routes: {
         'list': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            const { data, error } = await supabase
+            const { id_professor } = req.query;
+
+            let query = supabase
                 .from('turmas')
                 .select(`
                     *,
                     professor:professores(*),
                     alunos(*)
                 `);
+
+            if (id_professor) {
+                query = query.eq('id_professor', id_professor);
+                logger.info(`Filtering turmas by professor ${id_professor}`);
+            } else {
+                logger.info('Fetching all turmas (no professor filter)');
+            }
+
+            const { data, error } = await query;
 
             if (error) {
                 logger.error(`Error fetching turmas: ${error.message}`);
@@ -83,6 +94,8 @@ export const TurmaController: EndpointController = {
         'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
             const { id_turma } = req.query;
             const { nome_turma, id_professor, alunos } = req.body;
+
+            // First, update the turma basic info
             const { data, error } = await supabase
                 .from('turmas')
                 .update({ nome_turma, id_professor })
@@ -93,7 +106,6 @@ export const TurmaController: EndpointController = {
                 `)
                 .single();
 
-
             if (error) {
                 logger.error(`Error updating turma ${id_turma}: ${error.message}`);
                 return res.status(500).json({ error: error.message });
@@ -103,24 +115,169 @@ export const TurmaController: EndpointController = {
                 return res.status(404).json({ error: 'Turma not found' });
             }
 
-            for (const aluno of alunos) {
+            // Get all current alunos in this turma
+            const { data: currentAlunos, error: currentAlunosError } = await supabase
+                .from('alunos')
+                .select('id_aluno')
+                .eq('id_turma', id_turma);
+
+            if (currentAlunosError) {
+                logger.error(`Error fetching current alunos for turma ${id_turma}: ${currentAlunosError.message}`);
+                return res.status(500).json({ error: currentAlunosError.message });
+            }
+
+            const currentAlunoIds = currentAlunos?.map(aluno => aluno.id_aluno) || [];
+            const newAlunoIds = alunos || [];
+
+            // Remove alunos that are no longer in the list
+            const alunosToRemove = currentAlunoIds.filter(id => !newAlunoIds.includes(id));
+            logger.info(`Starting removal process for turma ${id_turma}: ${alunosToRemove.length} alunos to remove`);
+
+            for (const alunoId of alunosToRemove) {
+                logger.info(`Processing removal of aluno ${alunoId} from turma ${id_turma}`);
+
+                // First, get all problems in this turma
+                logger.info(`Fetching problemas for turma ${id_turma}`);
+                const { data: problemas, error: problemasError } = await supabase
+                    .from('problemas')
+                    .select('id_problema')
+                    .eq('id_turma', id_turma);
+
+                if (problemasError) {
+                    logger.error(`Error fetching problemas for turma ${id_turma}: ${problemasError.message}`);
+                    return res.status(500).json({ error: problemasError.message });
+                }
+
+                logger.info(`Found ${problemas?.length || 0} problemas in turma ${id_turma}`);
+
+                // Delete all evaluations where this student was involved in problems of this turma
+                if (problemas && problemas.length > 0) {
+                    const problemaIds = problemas.map(p => p.id_problema);
+                    logger.info(`Processing ${problemaIds.length} problemas for aluno ${alunoId}`);
+
+                    // Delete evaluations where the student was the evaluator
+                    logger.info(`Deleting evaluations where aluno ${alunoId} was evaluator`);
+                    const { error: deleteEvaluatorError } = await supabase
+                        .from('avaliacoes')
+                        .delete()
+                        .eq('id_aluno_avaliador', alunoId)
+                        .in('id_problema', problemaIds);
+
+                    if (deleteEvaluatorError) {
+                        logger.error(`Error deleting evaluations where aluno ${alunoId} was evaluator: ${deleteEvaluatorError.message}`);
+                        return res.status(500).json({ error: deleteEvaluatorError.message });
+                    }
+                    logger.info(`Successfully deleted evaluations where aluno ${alunoId} was evaluator`);
+
+                    // Delete evaluations where the student was evaluated
+                    logger.info(`Deleting evaluations where aluno ${alunoId} was evaluated`);
+                    const { error: deleteEvaluatedError } = await supabase
+                        .from('avaliacoes')
+                        .delete()
+                        .eq('id_aluno_avaliado', alunoId)
+                        .in('id_problema', problemaIds);
+
+                    if (deleteEvaluatedError) {
+                        logger.error(`Error deleting evaluations where aluno ${alunoId} was evaluated: ${deleteEvaluatedError.message}`);
+                        return res.status(500).json({ error: deleteEvaluatedError.message });
+                    }
+                    logger.info(`Successfully deleted evaluations where aluno ${alunoId} was evaluated`);
+
+                    logger.info(`Deleted all evaluations for aluno ${alunoId} in problemas of turma ${id_turma}`);
+
+                    // Update media_geral for all affected problems
+                    logger.info(`Updating media_geral for ${problemas.length} problemas after removing aluno ${alunoId}`);
+                    for (const problema of problemas) {
+                        logger.info(`Processing problema ${problema.id_problema} for media_geral update`);
+
+                        const { data: remainingAvaliacoes, error: avaliacoesError } = await supabase
+                            .from('avaliacoes')
+                            .select('notas')
+                            .eq('id_problema', problema.id_problema);
+
+                        if (avaliacoesError) {
+                            logger.error(`Error fetching remaining avaliacoes for problema ${problema.id_problema}: ${avaliacoesError.message}`);
+                            continue;
+                        }
+
+                        logger.info(`Found ${remainingAvaliacoes?.length || 0} remaining avaliacoes for problema ${problema.id_problema}`);
+
+                        if (remainingAvaliacoes) {
+                            // Calculate new average if there are remaining evaluations
+                            if (remainingAvaliacoes.length > 0) {
+                                const notas = remainingAvaliacoes.map(a => MediaCalculator.calculateSimpleMedia(a.notas));
+                                const media = notas.reduce((sum, nota) => sum + nota, 0) / notas.length;
+
+                                logger.info(`Calculated new media_geral for problema ${problema.id_problema}: ${media} (from ${notas.length} avaliacoes)`);
+
+                                const { error: updateError } = await supabase
+                                    .from('problemas')
+                                    .update({ media_geral: media })
+                                    .eq('id_problema', problema.id_problema);
+
+                                if (updateError) {
+                                    logger.error(`Error updating media_geral for problema ${problema.id_problema}: ${updateError.message}`);
+                                } else {
+                                    logger.info(`Successfully updated media_geral for problema ${problema.id_problema} to ${media}`);
+                                }
+                            } else {
+                                // No evaluations left, set media_geral to 0
+                                logger.info(`No avaliacoes remaining for problema ${problema.id_problema}, setting media_geral to 0`);
+
+                                const { error: updateError } = await supabase
+                                    .from('problemas')
+                                    .update({ media_geral: 0 })
+                                    .eq('id_problema', problema.id_problema);
+
+                                if (updateError) {
+                                    logger.error(`Error setting media_geral to 0 for problema ${problema.id_problema}: ${updateError.message}`);
+                                } else {
+                                    logger.info(`Successfully set media_geral to 0 for problema ${problema.id_problema}`);
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    logger.info(`No problemas found in turma ${id_turma}, skipping avaliações deletion for aluno ${alunoId}`);
+                }
+
+                // Finally, remove the student from the turma
+                logger.info(`Removing aluno ${alunoId} from turma ${id_turma}`);
+                const { error: removeError } = await supabase
+                    .from('alunos')
+                    .update({ id_turma: null })
+                    .eq('id_aluno', alunoId);
+
+                if (removeError) {
+                    logger.error(`Error removing aluno ${alunoId} from turma ${id_turma}: ${removeError.message}`);
+                    return res.status(500).json({ error: removeError.message });
+                }
+
+                logger.info(`Successfully removed aluno ${alunoId} from turma ${id_turma}`);
+            }
+
+            logger.info(`Completed removal process for turma ${id_turma}: ${alunosToRemove.length} alunos removed`);
+
+            // Add new alunos to the turma
+            for (const alunoId of newAlunoIds) {
                 const { data: alunoData, error: alunoError } = await supabase
                     .from('alunos')
                     .update({ id_turma })
-                    .eq('id_aluno', aluno).select("id_aluno");
+                    .eq('id_aluno', alunoId)
+                    .select("id_aluno");
 
                 if (alunoError) {
-                    logger.error(`Error updating aluno ${aluno}: ${alunoError.message}`);
+                    logger.error(`Error updating aluno ${alunoId}: ${alunoError.message}`);
                     return res.status(500).json({ error: alunoError.message });
                 }
 
                 if (!alunoData) {
-                    logger.error(`Aluno ${aluno} not found`);
+                    logger.error(`Aluno ${alunoId} not found`);
                     return res.status(404).json({ error: 'Aluno not found' });
                 }
             }
 
-
+            logger.info(`Updated turma ${id_turma}: removed ${alunosToRemove.length} alunos, added ${newAlunoIds.length} alunos`);
 
             return res.json(data);
         }),

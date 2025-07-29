@@ -21,7 +21,7 @@ All services now include complete CRUD operations with built-in cache invalidati
 import { TurmasService } from "$lib/services/turmas_service";
 
 // All operations automatically handle cache invalidation
-await TurmasService.create({ nome_turma: "Nova Turma", id_professor: 1 });
+await TurmasService.create({ nome_turma: "Nova Turma", id_professor:  });
 await TurmasService.update("123", { nome_turma: "Turma Atualizada" });
 await TurmasService.delete("123");
 await TurmasService.addAluno("123", 456);

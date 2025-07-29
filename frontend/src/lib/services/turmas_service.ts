@@ -15,21 +15,21 @@ export const TurmasService = {
     invalidateCache,
 };
 
-async function getAll(forceRefresh = false): Promise<TurmaModel[]> {
-    const cacheKey = 'all';
+async function getAll(professorId: number, forceRefresh = false): Promise<TurmaModel[]> {
+    const cacheKey = `professor_${professorId}`;
 
     // Return cached data if available and fresh
     if (!forceRefresh && turmasCache.isFresh(cacheKey)) {
         const cached = turmasCache.getCached(cacheKey);
         if (cached) {
-            logger.info('Returning cached turmas');
+            logger.info(`Returning cached turmas for professor ${professorId}`);
             return cached;
         }
     }
 
     // Check if already loading
     if (turmasCache.isLoading(cacheKey)) {
-        logger.info('Turmas already loading, waiting...');
+        logger.info(`Turmas already loading for professor ${professorId}, waiting...`);
         // Wait for loading to complete
         return new Promise((resolve) => {
             const unsubscribe = turmasCache.subscribe((store) => {
@@ -44,8 +44,8 @@ async function getAll(forceRefresh = false): Promise<TurmaModel[]> {
 
     try {
         turmasCache.setLoading(cacheKey, true);
-        logger.info('Fetching turmas from API');
-        const data = await api.get('/turmas/list');
+        logger.info(`Fetching turmas for professor ${professorId} from API`);
+        const data = await api.get(`/turmas/list?id_professor=${professorId}`);
         const parsed = Parsers.parseTurmas(data);
         turmasCache.setData(cacheKey, parsed);
         return parsed;

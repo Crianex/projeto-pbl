@@ -11,6 +11,7 @@
     import PageHeader from "$lib/components/PageHeader.svelte";
     import Input from "$lib/components/Input.svelte";
     import TrashIcon from "$lib/components/TrashIcon.svelte";
+    import { currentUser } from "$lib/utils/auth";
 
     let turma = {
         nome_turma: "",
@@ -56,7 +57,7 @@
 
             const payload = {
                 nome_turma: turma.nome_turma,
-                id_professor: parseInt(turma.id_professor),
+                id_professor: $currentUser?.id!,
                 alunos: alunosMatriculados.map((aluno) => aluno.id),
             };
 
