@@ -192,6 +192,9 @@
         flex-direction: column;
         align-items: center;
         gap: 0.7rem;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
     }
 
     .delete-confirm-content {
@@ -223,11 +226,21 @@
             margin-top: 0.2rem;
             margin-bottom: 0.7rem;
             gap: 0.4rem;
+            max-width: 90%;
         }
 
-        .search-section :global(button) {
+        .search-section :global(.search-bar) {
             width: 100%;
+            max-width: 400px;
+        }
+        
+        .search-section :global(.search-bar input),
+        .search-section :global(.search-bar .action-button) {
+            flex: 1;
             min-width: 0;
+        }
+        
+        .search-section :global(.action-button) {
             padding: 0.5rem 0.2rem;
             font-size: 0.97rem;
             box-sizing: border-box;
@@ -243,9 +256,20 @@
             margin-top: 0.1rem;
             margin-bottom: 0.3rem;
             gap: 0.2rem;
+            max-width: 95%;
         }
 
-        .search-section :global(button) {
+        .search-section :global(.search-bar) {
+            max-width: 350px;
+        }
+
+        .search-section :global(.search-bar input),
+        .search-section :global(.search-bar .action-button) {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .search-section :global(.action-button) {
             padding: 0.3rem 0.1rem;
             font-size: 0.91rem;
         }

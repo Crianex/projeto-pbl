@@ -144,7 +144,7 @@
             avaliacaoData = {
                 aluno: {
                     nome: aluno.nome_completo,
-                    avatar: aluno.link_avatar,
+                    avatar: aluno.link_avatar || "/images/default_avatar.png",
                 },
                 notas: { ...currentValues },
             };
@@ -446,8 +446,14 @@
     <div class="student-info">
         <div class="avatar">
             <img
-                src={avaliacaoData.aluno.avatar}
-                alt={avaliacaoData.aluno.nome}
+                src={avaliacaoData.aluno.avatar || "/images/default_avatar.png"}
+                alt={avaliacaoData.aluno.nome || "Avatar do aluno"}
+                on:error={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (target) {
+                        target.src = "/images/default_avatar.png";
+                    }
+                }}
             />
         </div>
         <p>
@@ -466,26 +472,28 @@
                 >
                     <div class="section-header">
                         <h2>{tag}</h2>
-                        {#if tag === "Análise do Problema"}
-                            <button
-                                type="button"
-                                class="falta-section-btn"
-                                on:click={() => handleFaltaAbertura()}
-                                title="Registrar falta na Análise do Problema - zera avaliações recebidas pelo aluno"
-                                disabled={!isTagActive(tag) || showLoadingDialog}
-                            >
-                                Falta
-                            </button>
-                        {:else if tag === "Resolução do Problema"}
-                            <button
-                                type="button"
-                                class="falta-section-btn"
-                                on:click={() => handleFaltaFechamento()}
-                                title="Registrar falta na Resolução do Problema - zera avaliações recebidas pelo aluno"
-                                disabled={!isTagActive(tag) || showLoadingDialog}
-                            >
-                                Falta
-                            </button>
+                        {#if isProfessorEvaluation}
+                            {#if tag === "Análise do Problema"}
+                                <button
+                                    type="button"
+                                    class="falta-section-btn"
+                                    on:click={() => handleFaltaAbertura()}
+                                    title="Registrar falta na Análise do Problema - zera avaliações recebidas pelo aluno"
+                                    disabled={!isTagActive(tag) || showLoadingDialog}
+                                >
+                                    Falta
+                                </button>
+                            {:else if tag === "Resolução do Problema"}
+                                <button
+                                    type="button"
+                                    class="falta-section-btn"
+                                    on:click={() => handleFaltaFechamento()}
+                                    title="Registrar falta na Resolução do Problema - zera avaliações recebidas pelo aluno"
+                                    disabled={!isTagActive(tag) || showLoadingDialog}
+                                >
+                                    Falta
+                                </button>
+                            {/if}
                         {/if}
                     </div>
                     <div class="criteria-group">
