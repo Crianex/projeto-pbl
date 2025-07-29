@@ -33,6 +33,8 @@
     let itemsPerPage = 10;
     let searchTerm = "";
     let windowWidth = 0;
+    let sortBy = "nome_completo";
+    let sortOrder = "asc";
 
     // Responsive items per page
     $: itemsPerPage = windowWidth <= 768 ? 5 : 10;
@@ -215,6 +217,18 @@
         currentPage = 1; // Reset to first page when searching
     }
 
+    function handleSort(newSortBy: string) {
+        if (sortBy === newSortBy) {
+            // Toggle sort order if clicking the same column
+            sortOrder = sortOrder === "asc" ? "desc" : "asc";
+        } else {
+            // Set new sort column and default to ascending
+            sortBy = newSortBy;
+            sortOrder = "asc";
+        }
+        currentPage = 1; // Reset to first page when sorting
+    }
+
     function getReceivedAverage(studentId: number): number {
         const receivedGrades: number[] = [];
         if (!evaluationMatrix) return 0;
@@ -250,17 +264,76 @@
         return Math.abs(grade - avg) > 2;
     }
 
-    // Filter alunos based on search term
-    $: filteredAlunos = searchTerm
-        ? alunos.filter((aluno) =>
-              aluno.nome_completo
-                  ?.toLowerCase()
-                  .includes(searchTerm.toLowerCase()),
-          )
-        : alunos;
+    // Filter and sort alunos
+    $: filteredAndSortedAlunos = (() => {
+        let filtered = searchTerm
+            ? alunos.filter((aluno) =>
+                  aluno.nome_completo
+                      ?.toLowerCase()
+                      .includes(searchTerm.toLowerCase()),
+              )
+            : alunos;
 
-    $: totalPages = Math.ceil(filteredAlunos.length / itemsPerPage);
-    $: paginatedAlunos = filteredAlunos.slice(
+        // Sort the filtered results
+        return filtered.sort((a, b) => {
+            let aValue: any;
+            let bValue: any;
+
+            switch (sortBy) {
+                case "nome_completo":
+                    aValue = a.nome_completo || "";
+                    bValue = b.nome_completo || "";
+                    break;
+                case "media":
+                    aValue = getReceivedAverage(a.id);
+                    bValue = getReceivedAverage(b.id);
+                    break;
+                case "avaliacoes":
+                    aValue = Object.keys(evaluationMatrix).filter(
+                        (evaluatorId) => {
+                            const grade =
+                                evaluationMatrix[Number(evaluatorId)][a.id];
+                            return grade > 0 && Number(evaluatorId) !== a.id;
+                        },
+                    ).length;
+                    bValue = Object.keys(evaluationMatrix).filter(
+                        (evaluatorId) => {
+                            const grade =
+                                evaluationMatrix[Number(evaluatorId)][b.id];
+                            return grade > 0 && Number(evaluatorId) !== b.id;
+                        },
+                    ).length;
+                    break;
+                default:
+                    aValue = a.nome_completo || "";
+                    bValue = b.nome_completo || "";
+            }
+
+            // Handle string comparison
+            if (typeof aValue === "string" && typeof bValue === "string") {
+                const comparison = aValue.localeCompare(bValue, "pt-BR", {
+                    sensitivity: "base",
+                });
+                return sortOrder === "asc" ? comparison : -comparison;
+            }
+
+            // Handle number comparison
+            if (typeof aValue === "number" && typeof bValue === "number") {
+                return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
+            }
+
+            // Fallback to string comparison
+            const aStr = String(aValue || "");
+            const bStr = String(bValue || "");
+            const comparison = aStr.localeCompare(bStr, "pt-BR", {
+                sensitivity: "base",
+            });
+            return sortOrder === "asc" ? comparison : -comparison;
+        });
+    })();
+
+    $: totalPages = Math.ceil(filteredAndSortedAlunos.length / itemsPerPage);
+    $: paginatedAlunos = filteredAndSortedAlunos.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage,
     );
@@ -268,7 +341,7 @@
     // Debug pagination
     $: console.log("Pagination debug:", {
         totalAlunos: alunos.length,
-        filteredAlunos: filteredAlunos.length,
+        filteredAlunos: filteredAndSortedAlunos.length,
         currentPage,
         itemsPerPage,
         totalPages,
@@ -303,6 +376,48 @@
                     showButton={false}
                     on:search={handleSearch}
                 />
+            </div>
+
+            <div class="sort-section">
+                <div class="sort-buttons">
+                    <Button
+                        variant={sortBy === "nome_completo"
+                            ? "primary"
+                            : "secondary"}
+                        size="sm"
+                        on:click={() => handleSort("nome_completo")}
+                    >
+                        Nome {sortBy === "nome_completo"
+                            ? sortOrder === "asc"
+                                ? "↑"
+                                : "↓"
+                            : ""}
+                    </Button>
+                    <Button
+                        variant={sortBy === "media" ? "primary" : "secondary"}
+                        size="sm"
+                        on:click={() => handleSort("media")}
+                    >
+                        Média {sortBy === "media"
+                            ? sortOrder === "asc"
+                                ? "↑"
+                                : "↓"
+                            : ""}
+                    </Button>
+                    <Button
+                        variant={sortBy === "avaliacoes"
+                            ? "primary"
+                            : "secondary"}
+                        size="sm"
+                        on:click={() => handleSort("avaliacoes")}
+                    >
+                        Avaliações {sortBy === "avaliacoes"
+                            ? sortOrder === "asc"
+                                ? "↑"
+                                : "↓"
+                            : ""}
+                    </Button>
+                </div>
             </div>
 
             <CardList
@@ -369,6 +484,21 @@
 
     .search-section {
         margin-bottom: 1.5rem;
+    }
+
+    .sort-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .sort-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .sort-buttons button {
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
     }
 
     .loading-container {

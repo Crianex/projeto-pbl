@@ -91,17 +91,26 @@
         fetchTurmas();
     });
 
-    // Filter turmas based on search query
-    $: filteredTurmas = searchQuery
-        ? turmas.filter((turma) =>
-              turma.nome_turma
-                  ?.toLowerCase()
-                  .includes(searchQuery.toLowerCase()),
-          )
-        : turmas;
+    // Filter and sort turmas
+    $: filteredAndSortedTurmas = (() => {
+        let filtered = searchQuery
+            ? turmas.filter((turma) =>
+                  turma.nome_turma
+                      ?.toLowerCase()
+                      .includes(searchQuery.toLowerCase()),
+              )
+            : turmas;
 
-    $: totalPages = Math.ceil(filteredTurmas.length / itemsPerPage);
-    $: paginatedTurmas = filteredTurmas.slice(
+        // Sort alphabetically by turma name
+        return filtered.sort((a, b) =>
+            (a.nome_turma || "").localeCompare(b.nome_turma || "", "pt-BR", {
+                sensitivity: "base",
+            }),
+        );
+    })();
+
+    $: totalPages = Math.ceil(filteredAndSortedTurmas.length / itemsPerPage);
+    $: paginatedTurmas = filteredAndSortedTurmas.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage,
     );
@@ -233,13 +242,13 @@
             width: 100%;
             max-width: 400px;
         }
-        
+
         .search-section :global(.search-bar input),
         .search-section :global(.search-bar .action-button) {
             flex: 1;
             min-width: 0;
         }
-        
+
         .search-section :global(.action-button) {
             padding: 0.5rem 0.2rem;
             font-size: 0.97rem;
@@ -268,7 +277,7 @@
             flex: 1;
             min-width: 0;
         }
-        
+
         .search-section :global(.action-button) {
             padding: 0.3rem 0.1rem;
             font-size: 0.91rem;

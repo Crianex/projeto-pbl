@@ -87,6 +87,16 @@
                 alunosMatriculados = [...alunosMatriculados, aluno];
             }
         }
+        // Sort alunos alphabetically by name
+        alunosMatriculados = alunosMatriculados.sort((a, b) =>
+            (a.nome_completo || "").localeCompare(
+                b.nome_completo || "",
+                "pt-BR",
+                {
+                    sensitivity: "base",
+                },
+            ),
+        );
         checkForChanges();
         searchDialogOpen = false;
     }

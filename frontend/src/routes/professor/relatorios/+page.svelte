@@ -62,7 +62,15 @@
                 // Show all turmas (consistent with /professor/turmas/ page behavior)
                 // Note: The application allows professors to see all turmas, not just their own
                 // This enables collaboration and administrative oversight
-                turmas = allTurmas;
+                turmas = allTurmas.sort((a, b) =>
+                    (a.nome_turma || "").localeCompare(
+                        b.nome_turma || "",
+                        "pt-BR",
+                        {
+                            sensitivity: "base",
+                        },
+                    ),
+                );
 
                 // Auto-select first turma that has problems
                 await autoSelectFirstTurmaWithProblems();
@@ -101,7 +109,15 @@
 
                 // Select the first turma regardless of whether it has problems or avaliações
                 selectedTurma = turma;
-                problemas = problemasData;
+                problemas = problemasData.sort((a: ProblemaDB, b: ProblemaDB) =>
+                    (a.nome_problema || "").localeCompare(
+                        b.nome_problema || "",
+                        "pt-BR",
+                        {
+                            sensitivity: "base",
+                        },
+                    ),
+                );
 
                 // Auto-select first problem if available
                 if (problemasData.length > 0) {
@@ -140,7 +156,15 @@
             console.log("fetchProblemas - API response:", data);
             console.log("fetchProblemas - data type:", typeof data);
             console.log("fetchProblemas - isArray:", Array.isArray(data));
-            problemas = data;
+            problemas = data.sort((a: ProblemaDB, b: ProblemaDB) =>
+                (a.nome_problema || "").localeCompare(
+                    b.nome_problema || "",
+                    "pt-BR",
+                    {
+                        sensitivity: "base",
+                    },
+                ),
+            );
 
             // Auto-select first problem if available
             if (data.length > 0) {
@@ -615,17 +639,16 @@
     async function exportMatrixAsPDF() {
         if (!alunos.length || !Object.keys(evaluationMatrix).length) return;
         const pdfDoc = await PDFDocument.create();
-        const page = pdfDoc.addPage([
-            Math.max(800, 120 + alunos.length * 70),
-            100 + (alunos.length + 2) * 40,
-        ]);
         const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        let y = page.getHeight() - 50;
-        const leftMargin = 40;
-        const cellHeight = 32;
+
+        // Define all variables first
+        const leftMargin = 30; // Reduced from 40 to 30
+        const cellHeight = 25; // Reduced from 32 to 25
+        const nameFontSize = 11; // Reduced from 13 to 11
+        const namePadding = 15; // Reduced from 20 to 15
+        const otherColWidth = 55; // Reduced from 70 to 55
+
         // Dynamically calculate the max width needed for the name column
-        const nameFontSize = 13;
-        const namePadding = 20;
         const maxNameWidth = Math.max(
             ...alunos.map((a) =>
                 font.widthOfTextAtSize(
@@ -635,15 +658,26 @@
             ),
         );
         const nameColWidth = Math.ceil(maxNameWidth) + namePadding;
-        const otherColWidth = 70;
+
+        // Calculate page size based on table width
+        const tableWidth =
+            leftMargin + nameColWidth + otherColWidth * (alunos.length + 2); // +2 for number and average columns
+        const pageWidth = Math.max(800, tableWidth + 40); // Add some margin
+        const pageHeight = Math.max(
+            600,
+            100 + (alunos.length + 3) * cellHeight,
+        ); // +3 for header, students, and professor row
+
+        const page = pdfDoc.addPage([pageWidth, pageHeight]);
+        let y = page.getHeight() - 40; // Reduced from 50 to 40
         const headerBg = rgb(0.88, 0.91, 1);
         const borderColor = rgb(0.8, 0.8, 0.8);
         // Title
         page.drawText(
             `Matriz de Avaliações - ${selectedProblema?.nome_problema || "Problema"}`,
-            { x: leftMargin, y, size: 22, font, color: rgb(0, 0, 0) },
+            { x: leftMargin, y, size: 18, font, color: rgb(0, 0, 0) }, // Reduced from 22 to 18
         );
-        y -= 40;
+        y -= 30; // Reduced from 40 to 30
         // Table header
         let x = leftMargin;
         const headers = [
@@ -664,9 +698,9 @@
                 borderWidth: 1,
             });
             page.drawText(header, {
-                x: x + 10,
-                y: y + 12,
-                size: 15,
+                x: x + 8, // Reduced from 10 to 8
+                y: y + 10, // Reduced from 12 to 10
+                size: 12, // Reduced from 15 to 12
                 font,
                 color: rgb(0, 0, 0),
             });
@@ -682,13 +716,13 @@
                 "N/A";
             const nameLines = wrapText(
                 name,
-                nameColWidth - 10,
+                nameColWidth - 8, // Reduced from 10 to 8
                 font,
                 nameFontSize,
             );
             const rowHeight = Math.max(
                 cellHeight,
-                nameLines.length * (nameFontSize + 2) + 8,
+                nameLines.length * (nameFontSize + 1) + 6, // Reduced spacing
             );
             page.drawRectangle({
                 x,
@@ -700,8 +734,8 @@
             });
             nameLines.forEach((line, i) => {
                 page.drawText(line, {
-                    x: x + 10,
-                    y: y + rowHeight - 14 - i * (nameFontSize + 2),
+                    x: x + 8, // Reduced from 10 to 8
+                    y: y + rowHeight - 12 - i * (nameFontSize + 1), // Reduced spacing
                     size: nameFontSize,
                     font,
                     color: rgb(0, 0, 0),
@@ -718,9 +752,9 @@
                 borderWidth: 1,
             });
             page.drawText((evaluatorIdx + 1).toString(), {
-                x: x + 24,
-                y: y + rowHeight / 2 - 6,
-                size: 13,
+                x: x + 20, // Reduced from 24 to 20
+                y: y + rowHeight / 2 - 5, // Reduced from 6 to 5
+                size: 11, // Reduced from 13 to 11
                 font,
                 color: rgb(0, 0, 0),
             });
@@ -736,9 +770,9 @@
                 borderWidth: 1,
             });
             page.drawText(avg.toString(), {
-                x: x + 24,
-                y: y + rowHeight / 2 - 6,
-                size: 13,
+                x: x + 20, // Reduced from 24 to 20
+                y: y + rowHeight / 2 - 5, // Reduced from 6 to 5
+                size: 11, // Reduced from 13 to 11
                 font,
                 color: rgb(0, 0, 0),
             });
@@ -767,9 +801,9 @@
                               : "-";
                 }
                 page.drawText(text, {
-                    x: x + 30,
-                    y: y + rowHeight / 2 - 6,
-                    size: 13,
+                    x: x + 22, // Reduced from 30 to 22
+                    y: y + rowHeight / 2 - 5, // Reduced from 6 to 5
+                    size: 11, // Reduced from 13 to 11
                     font,
                     color: rgb(0, 0, 0),
                 });
@@ -785,13 +819,13 @@
                 "Professor";
             const nameLines = wrapText(
                 name,
-                nameColWidth - 10,
+                nameColWidth - 8, // Reduced from 10 to 8
                 font,
                 nameFontSize,
             );
             const rowHeight = Math.max(
                 cellHeight,
-                nameLines.length * (nameFontSize + 2) + 8,
+                nameLines.length * (nameFontSize + 1) + 6, // Reduced spacing
             );
             page.drawRectangle({
                 x,
@@ -803,8 +837,8 @@
             });
             nameLines.forEach((line, i) => {
                 page.drawText(line, {
-                    x: x + 10,
-                    y: y + rowHeight - 14 - i * (nameFontSize + 2),
+                    x: x + 8, // Reduced from 10 to 8
+                    y: y + rowHeight - 12 - i * (nameFontSize + 1), // Reduced spacing
                     size: nameFontSize,
                     font,
                     color: rgb(0, 0, 0),
@@ -821,9 +855,9 @@
                 borderWidth: 1,
             });
             page.drawText("Prof.", {
-                x: x + 10,
-                y: y + rowHeight / 2 - 6,
-                size: 13,
+                x: x + 8, // Reduced from 10 to 8
+                y: y + rowHeight / 2 - 5, // Reduced from 6 to 5
+                size: 11, // Reduced from 13 to 11
                 font,
                 color: rgb(0, 0, 0),
             });
@@ -838,9 +872,9 @@
                 borderWidth: 1,
             });
             page.drawText("-", {
-                x: x + 24,
-                y: y + rowHeight / 2 - 6,
-                size: 13,
+                x: x + 20, // Reduced from 24 to 20
+                y: y + rowHeight / 2 - 5, // Reduced from 6 to 5
+                size: 11, // Reduced from 13 to 11
                 font,
                 color: rgb(0, 0, 0),
             });
@@ -863,9 +897,9 @@
                     text = grade !== null ? `${grade}` : "-";
                 }
                 page.drawText(text, {
-                    x: x + 30,
-                    y: y + rowHeight / 2 - 6,
-                    size: 13,
+                    x: x + 22, // Reduced from 30 to 22
+                    y: y + rowHeight / 2 - 5, // Reduced from 6 to 5
+                    size: 11, // Reduced from 13 to 11
                     font,
                     color: rgb(0, 0, 0),
                 });

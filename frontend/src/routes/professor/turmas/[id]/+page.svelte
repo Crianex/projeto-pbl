@@ -47,8 +47,18 @@
             originalTurma = { ...turma };
 
             if (turmaData.alunos) {
-                alunosMatriculados = [...turmaData.alunos];
-                originalAlunosMatriculados = [...turmaData.alunos];
+                // Sort alunos alphabetically by name
+                const sortedAlunos = [...turmaData.alunos].sort((a, b) =>
+                    (a.nome_completo || "").localeCompare(
+                        b.nome_completo || "",
+                        "pt-BR",
+                        {
+                            sensitivity: "base",
+                        },
+                    ),
+                );
+                alunosMatriculados = sortedAlunos;
+                originalAlunosMatriculados = sortedAlunos;
             }
         } catch (err: any) {
             error = err.message || "Erro ao carregar turma";

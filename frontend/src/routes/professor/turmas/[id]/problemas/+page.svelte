@@ -103,6 +103,13 @@
             problemas = value;
         }
     });
+
+    // Sort problemas alphabetically by name
+    $: sortedProblemas = problemas.sort((a, b) =>
+        (a.nome_problema || "").localeCompare(b.nome_problema || "", "pt-BR", {
+            sensitivity: "base",
+        }),
+    );
 </script>
 
 <PageHeader
@@ -119,7 +126,7 @@
     </div>
 
     <CardList
-        items={problemas}
+        items={sortedProblemas}
         {loading}
         {error}
         loadingMessage="Carregando problemas..."
@@ -128,7 +135,7 @@
         onRetry={fetchData}
     >
         <svelte:fragment slot="default">
-            {#each problemas as problema}
+            {#each sortedProblemas as problema}
                 <ProblemaCard
                     {problema}
                     {turmaId}

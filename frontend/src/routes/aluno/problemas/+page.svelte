@@ -103,6 +103,17 @@
 
             problems = Parsers.parseProblemas(problems);
 
+            // Sort problems alphabetically by name
+            problems.sort((a, b) =>
+                (a.nome_problema || "").localeCompare(
+                    b.nome_problema || "",
+                    "pt-BR",
+                    {
+                        sensitivity: "base",
+                    },
+                ),
+            );
+
             if (problems.length === 0) {
                 toastType = "info";
                 toastMessage = "Nenhum problema foi encontrado no momento.";
