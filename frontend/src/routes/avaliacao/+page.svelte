@@ -40,7 +40,7 @@
     let avaliacaoData: AvaliacaoData = {
         aluno: {
             nome: "",
-            avatar: "/avatars/default.png",
+            avatar: "/images/default_avatar.png",
         },
         notas: {},
     };

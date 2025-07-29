@@ -229,14 +229,14 @@
                         id: av.id,
                         aluno: aluno?.nome_completo || "Aluno",
                         aluno_avatar:
-                            aluno?.link_avatar || "/avatars/default.png",
+                            aluno?.link_avatar || "/images/default_avatar.png",
                         notas: formatNotas(av.notas),
                         enviada_para:
                             alunoAvaliado?.nome_completo ||
                             "Aluno não encontrado",
                         enviada_para_avatar:
                             alunoAvaliado?.link_avatar ||
-                            "/avatars/default.png",
+                            "/images/default_avatar.png",
                     };
                 });
 
@@ -256,11 +256,11 @@
                         aluno: alunoAvaliador?.nome_completo || "Aluno",
                         aluno_avatar:
                             alunoAvaliador?.link_avatar ||
-                            "/avatars/default.png",
+                            "/images/default_avatar.png",
                         notas: formatNotas(av.notas),
                         enviada_para: aluno?.nome_completo || "Aluno",
                         enviada_para_avatar:
-                            aluno?.link_avatar || "/avatars/default.png",
+                            aluno?.link_avatar || "/images/default_avatar.png",
                     };
                 });
 
@@ -365,7 +365,7 @@
         <div class="aluno-info">
             <div class="aluno-profile">
                 <Avatar
-                    src={aluno?.link_avatar || "/avatars/default.png"}
+                    src={aluno?.link_avatar || "/images/default_avatar.png"}
                     alt={`Avatar de ${aluno?.nome_completo || "Aluno"}`}
                     size="md"
                 />
@@ -447,7 +447,7 @@
                 >
                     <Avatar
                         src={turma.professor.link_avatar ||
-                            "/avatars/default.png"}
+                            "/images/default_avatar.png"}
                         alt={`Avatar de ${turma.professor.nome_completo || "Professor"}`}
                         size="md"
                     />

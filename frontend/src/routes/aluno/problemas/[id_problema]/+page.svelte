@@ -198,7 +198,7 @@
                         nome: avaliacao.aluno_avaliado?.nome_completo || "",
                         avatar:
                             avaliacao.aluno_avaliado?.link_avatar ||
-                            "/avatars/default.png",
+                            "/images/default_avatar.png",
                     },
                     nota: media,
                     enviada: true,
@@ -225,7 +225,8 @@
                                 id: aluno.id,
                                 nome: aluno.nome_completo || "",
                                 avatar:
-                                    aluno.link_avatar || "/avatars/default.png",
+                                    aluno.link_avatar ||
+                                    "/images/default_avatar.png",
                             },
                             enviada: false,
                             isCurrentUser: false,

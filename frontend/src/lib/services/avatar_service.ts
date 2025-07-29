@@ -46,19 +46,19 @@ export class AvatarService {
 
     static getAvatarUrl(avatarPath: string | null): string {
         if (!avatarPath) {
-            return '/avatars/default.png';
+            return '/images/default_avatar.png';
         }
-        
+
         // Se já é uma URL completa (Supabase), retorna como está
         if (avatarPath.startsWith('http')) {
             return avatarPath;
         }
-        
+
         // Para caminhos relativos antigos (fallback)
         if (avatarPath.startsWith('/uploads/')) {
             return `${API_BASE_URL}${avatarPath}`;
         }
-        
+
         return avatarPath;
     }
 } 

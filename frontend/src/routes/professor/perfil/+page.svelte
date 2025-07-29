@@ -40,7 +40,7 @@
 
     function handleAvatarRemove() {
         newAvatar = null;
-        avatarPreview = "/avatars/default.png";
+        avatarPreview = "/images/default_avatar.png";
     }
 
     async function handleSave() {
