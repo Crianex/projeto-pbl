@@ -96,13 +96,17 @@
     function handleValueChange(tag: string, criterioKey: string, event: Event) {
         const input = event.target as HTMLInputElement;
         const value = parseFloat(input.value);
-        if (!currentValues[tag]) {
-            currentValues[tag] = {};
-        }
         if (!isNaN(value)) {
-            currentValues[tag][criterioKey] = value;
+            // Create a new object to ensure reactivity
+            currentValues = {
+                ...currentValues,
+                [tag]: {
+                    ...currentValues[tag],
+                    [criterioKey]: value,
+                },
+            };
+            avaliacaoData.notas = { ...currentValues };
         }
-        avaliacaoData.notas = { ...currentValues };
     }
 
     async function fetchData() {
@@ -540,6 +544,12 @@
                                                     criterioKey,
                                                     e,
                                                 )}
+                                            on:change={(e) =>
+                                                handleValueChange(
+                                                    tag,
+                                                    criterioKey,
+                                                    e,
+                                                )}
                                             class="slider"
                                             disabled={!isTagActive(tag)}
                                         />
@@ -757,28 +767,37 @@
         outline: none;
         opacity: 0.7;
         transition: opacity 0.2s;
+        /* Improve touch handling on mobile */
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
     }
     .slider::-webkit-slider-thumb {
         -webkit-appearance: none;
         appearance: none;
-        width: 18px;
-        height: 18px;
+        width: 20px;
+        height: 20px;
         background: white;
         border-radius: 50%;
         cursor: pointer;
         border: 2px solid #667eea;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         transition: all 0.2s ease;
+        /* Improve touch target size */
+        min-height: 20px;
+        min-width: 20px;
     }
     .slider::-moz-range-thumb {
-        width: 18px;
-        height: 18px;
+        width: 20px;
+        height: 20px;
         background: white;
         border-radius: 50%;
         cursor: pointer;
         border: 2px solid #667eea;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         transition: all 0.2s ease;
+        /* Improve touch target size */
+        min-height: 20px;
+        min-width: 20px;
     }
     .slider:hover {
         opacity: 1;
