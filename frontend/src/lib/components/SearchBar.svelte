@@ -54,10 +54,11 @@
         gap: 1rem;
         align-items: center;
         width: 100%;
+        max-width: 500px;
     }
 
     input {
-        flex: 3;
+        flex: 1;
         padding: 0.75rem;
         border: 1px solid #ddd;
         border-radius: 8px;
@@ -79,6 +80,7 @@
     @media (max-width: 768px) {
         .search-bar {
             gap: 0.75rem;
+            max-width: 400px;
         }
 
         input {
@@ -89,16 +91,19 @@
 
     @media (max-width: 480px) {
         .search-bar {
-            flex-direction: column;
+            flex-direction: row;
             gap: 0.75rem;
+            max-width: 350px;
         }
 
         input {
-            width: -webkit-fill-available;
+            flex: 1;
+            min-width: 0;
         }
 
         :global(.action-button) {
-            width: 100%;
+            flex: 1;
+            min-width: 0;
         }
     }
 </style>
