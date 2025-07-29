@@ -210,6 +210,18 @@
         }
     }
 
+    /* Desktop: Show arrows below page numbers */
+    @media (min-width: 769px) {
+        .pagination {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .page-numbers {
+            margin-bottom: 0.5rem;
+        }
+    }
+
     @media (max-width: 480px) {
         .pagination {
             gap: 0.25rem;

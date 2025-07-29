@@ -184,27 +184,29 @@
             );
 
             // Transform the data to match our interface
-            avaliacoes = filteredAvaliacoesData.map((avaliacao) => {
-                const media = avaliacao.notas
-                    ? MediaCalculator.calculateSimpleMedia(
-                          JSON.stringify(avaliacao.notas),
-                      )
-                    : undefined;
+            avaliacoes = filteredAvaliacoesData
+                .map((avaliacao) => {
+                    const media = avaliacao.notas
+                        ? MediaCalculator.calculateSimpleMedia(
+                              JSON.stringify(avaliacao.notas),
+                          )
+                        : undefined;
 
-                return {
-                    id_avaliacao: avaliacao.id_avaliacao,
-                    aluno: {
-                        id: avaliacao.aluno_avaliado?.id || 0,
-                        nome: avaliacao.aluno_avaliado?.nome_completo || "",
-                        avatar:
-                            avaliacao.aluno_avaliado?.link_avatar ||
-                            "/images/default_avatar.png",
-                    },
-                    nota: media,
-                    enviada: true,
-                    isCurrentUser: false,
-                };
-            });
+                    return {
+                        id_avaliacao: avaliacao.id_avaliacao,
+                        aluno: {
+                            id: avaliacao.aluno_avaliado?.id || 0,
+                            nome: avaliacao.aluno_avaliado?.nome_completo || "",
+                            avatar:
+                                avaliacao.aluno_avaliado?.link_avatar ||
+                                "/images/default_avatar.png",
+                        },
+                        nota: media,
+                        enviada: true,
+                        isCurrentUser: false,
+                    };
+                })
+                .filter((avaliacao) => avaliacao.aluno.id !== 0); // Filter out any entries with aluno id 0
 
             // Add students without evaluations (only for current user's evaluations)
             if (problema.turma?.alunos) {
@@ -217,7 +219,8 @@
                 problema.turma.alunos.forEach((aluno) => {
                     if (
                         !avaliacoesMap.has(aluno.id) &&
-                        aluno.id !== currentUserId
+                        aluno.id !== currentUserId &&
+                        aluno.id !== 0 // Explicitly exclude aluno with id 0
                     ) {
                         avaliacoes.push({
                             id_avaliacao: 0,
@@ -234,6 +237,13 @@
                     }
                 });
             }
+
+            // Sort all evaluations alphabetically by student name
+            avaliacoes.sort((a, b) =>
+                a.aluno.nome.localeCompare(b.aluno.nome, "pt-BR", {
+                    sensitivity: "base",
+                }),
+            );
         } catch (e: any) {
             console.error("Error in fetchAvaliacoes:", e);
             error = e.message || "Erro ao carregar avaliações";

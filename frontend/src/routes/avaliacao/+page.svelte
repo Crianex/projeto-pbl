@@ -54,6 +54,7 @@
     let showLoadingDialog = false;
     let loadingMessage = "";
     let currentValues: { [tag: string]: { [criterio: string]: number } } = {};
+    let isSubmitting = false;
 
     // Helper to check if a tag is currently active (for alunos only)
     function isTagActive(tag: string): boolean {
@@ -214,7 +215,9 @@
         currentValues = { ...currentValues };
     }
 
-    async function zerarTodasAvaliacoesDoAluno(tagEspecifica: string | null = null) {
+    async function zerarTodasAvaliacoesDoAluno(
+        tagEspecifica: string | null = null,
+    ) {
         try {
             if (!id_problema || !id_aluno_avaliado) {
                 throw new Error("Parâmetros obrigatórios não fornecidos.");
@@ -230,12 +233,16 @@
             // 2. Filtrar avaliações onde o aluno aparece APENAS como avaliado (não como avaliador)
             loadingMessage = "Identificando avaliações para remover...";
             const avaliacoesParaDeletar = allAvaliacoes.filter((av) => {
-                const alunoEhAvaliado = av.aluno_avaliado?.id === parseInt(id_aluno_avaliado!);
+                const alunoEhAvaliado =
+                    av.aluno_avaliado?.id === parseInt(id_aluno_avaliado!);
                 // Não deletar avaliações onde ele é o avaliador (para não afetar notas de colegas)
                 return alunoEhAvaliado;
             });
 
-            console.log("Avaliações para deletar (apenas onde é avaliado):", avaliacoesParaDeletar);
+            console.log(
+                "Avaliações para deletar (apenas onde é avaliado):",
+                avaliacoesParaDeletar,
+            );
 
             // 3. Deletar apenas as avaliações onde o aluno foi avaliado
             loadingMessage = `Removendo ${avaliacoesParaDeletar.length} avaliação(ões) recebidas...`;
@@ -248,14 +255,17 @@
 
             // 4. Criar novas avaliações zeradas para a tag específica ou todas
             loadingMessage = "Preparando novas avaliações...";
-            const notasZeradas: { [tag: string]: { [criterio: string]: number } } = {};
-            
+            const notasZeradas: {
+                [tag: string]: { [criterio: string]: number };
+            } = {};
+
             Object.entries(criterios).forEach(([tag, criteriosList]) => {
                 // Se foi especificada uma tag, só zerar essa tag, senão zerar tudo
                 if (!tagEspecifica || tag === tagEspecifica) {
                     notasZeradas[tag] = {};
                     criteriosList.forEach((criterio) => {
-                        const criterioKey = criterio.nome_criterio.toLowerCase();
+                        const criterioKey =
+                            criterio.nome_criterio.toLowerCase();
                         notasZeradas[tag][criterioKey] = 0;
                     });
                 } else if (currentValues[tag]) {
@@ -275,7 +285,8 @@
                 };
                 await AvaliacoesService.create(payload);
             } else {
-                const media = MediaCalculator.calculateCurrentMedia(notasZeradas);
+                const media =
+                    MediaCalculator.calculateCurrentMedia(notasZeradas);
                 const notasWithMedia = {
                     ...notasZeradas,
                     media,
@@ -305,12 +316,13 @@
         try {
             showLoadingDialog = true;
             loadingMessage = "Registrando falta na Análise do Problema...";
-            
+
             await zerarTodasAvaliacoesDoAluno("Análise do Problema");
-            
+
             showLoadingDialog = false;
             toastType = "success";
-            toastMessage = "Falta registrada na Análise do Problema! Avaliações recebidas pelo aluno foram zeradas.";
+            toastMessage =
+                "Falta registrada na Análise do Problema! Avaliações recebidas pelo aluno foram zeradas.";
             showToast = true;
         } catch (e: any) {
             showLoadingDialog = false;
@@ -324,12 +336,13 @@
         try {
             showLoadingDialog = true;
             loadingMessage = "Registrando falta na Resolução do Problema...";
-            
+
             await zerarTodasAvaliacoesDoAluno("Resolução do Problema");
-            
+
             showLoadingDialog = false;
             toastType = "success";
-            toastMessage = "Falta registrada na Resolução do Problema! Avaliações recebidas pelo aluno foram zeradas.";
+            toastMessage =
+                "Falta registrada na Resolução do Problema! Avaliações recebidas pelo aluno foram zeradas.";
             showToast = true;
         } catch (e: any) {
             showLoadingDialog = false;
@@ -339,10 +352,10 @@
         }
     }
 
-
-
     async function handleSubmit() {
         try {
+            isSubmitting = true;
+
             if (!id_problema || !id_aluno_avaliado) {
                 error = "Parâmetros obrigatórios não fornecidos.";
                 return;
@@ -428,6 +441,8 @@
             error = e.message || "Erro ao salvar avaliação";
             toastType = "error";
             showToast = true;
+        } finally {
+            isSubmitting = false;
         }
     }
 
@@ -479,7 +494,8 @@
                                     class="falta-section-btn"
                                     on:click={() => handleFaltaAbertura()}
                                     title="Registrar falta na Análise do Problema - zera avaliações recebidas pelo aluno"
-                                    disabled={!isTagActive(tag) || showLoadingDialog}
+                                    disabled={!isTagActive(tag) ||
+                                        showLoadingDialog}
                                 >
                                     Falta
                                 </button>
@@ -489,7 +505,8 @@
                                     class="falta-section-btn"
                                     on:click={() => handleFaltaFechamento()}
                                     title="Registrar falta na Resolução do Problema - zera avaliações recebidas pelo aluno"
-                                    disabled={!isTagActive(tag) || showLoadingDialog}
+                                    disabled={!isTagActive(tag) ||
+                                        showLoadingDialog}
                                 >
                                     Falta
                                 </button>
@@ -550,11 +567,18 @@
                 </div>
             {/each}
         </div>
-        <div class="submit-btn-container">
-            <Button type="submit" variant="primary" disabled={showLoadingDialog}>
-                Salvar Avaliação
-            </Button>
-        </div>
+        {#if !loading && problema && avaliacaoData.aluno.nome}
+            <div class="submit-btn-container">
+                <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={showLoadingDialog || isSubmitting}
+                    loading={isSubmitting}
+                >
+                    Salvar Avaliação
+                </Button>
+            </div>
+        {/if}
     </form>
 </div>
 
@@ -583,10 +607,7 @@
 {/if}
 
 {#if showLoadingDialog}
-    <Dialog
-        open={showLoadingDialog}
-        closeOnClickOutside={false}
-    >
+    <Dialog open={showLoadingDialog} closeOnClickOutside={false}>
         <h3 slot="header">Processando Falta</h3>
         <div class="loading-dialog-content">
             <div class="loading-container">
