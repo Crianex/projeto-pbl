@@ -483,6 +483,14 @@
         return Math.abs(grade - avg) > 2;
     }
 
+    // Função para detectar auto-avaliação
+    function isSelfEvaluation(
+        evaluatorId: number,
+        evaluatedId: number,
+    ): boolean {
+        return evaluatorId === evaluatedId;
+    }
+
     // Force reactive updates when matrix or alunos change
     $: if (evaluationMatrix && alunos) {
         console.log("Reactive update triggered - matrix and alunos changed");
@@ -1193,12 +1201,24 @@
                                                 evaluationMatrix[
                                                     evaluator.id
                                                 ]?.[evaluated.id]}
-                                            {#if evaluator.id === evaluated.id}
+                                            {@const isSelfEval =
+                                                isSelfEvaluation(
+                                                    evaluator.id,
+                                                    evaluated.id,
+                                                )}
+                                            {#if isSelfEval}
                                                 <td
                                                     class="grade-cell self-evaluation"
                                                     style="min-width: {zoomStyles.cellWidth}; width: {zoomStyles.cellWidth}; padding: {zoomStyles.padding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
                                                 >
-                                                    <span>X</span>
+                                                    {#if grade && grade > 0}
+                                                        <span
+                                                            class="self-eval-grade"
+                                                            >{grade}</span
+                                                        >
+                                                    {:else}
+                                                        <span>N</span>
+                                                    {/if}
                                                 </td>
                                             {:else if grade === undefined || grade === null}
                                                 <td
@@ -1295,16 +1315,12 @@
                             na matriz
                         </li>
                         <li>
-                            <strong>Média:</strong> Nota média recebida pelo aluno
+                            <strong>Média:</strong> Nota média recebida, pelo aluno,
                             de seus colegas
                         </li>
                         <li>
                             <strong>Colunas numeradas (1, 2, 3...):</strong> Notas
                             dadas para cada aluno (identificado pelo número)
-                        </li>
-                        <li>
-                            <strong>X:</strong> Auto-avaliação (aluno não avalia
-                            a si mesmo)
                         </li>
                         <li>
                             <strong>N:</strong> Avaliação não enviada para o colega
@@ -1320,6 +1336,12 @@
                                 style="background:#fff9c4;padding:2px 8px;border-radius:4px;"
                                 >&nbsp;</span
                             > Nota fora do padrão dos colegas
+                        </li>
+                        <li>
+                            <span
+                                style="background:#e3fbec;padding:2px 8px;border-radius:4px;color:#168f41;font-weight:600;"
+                                >&nbsp;</span
+                            > Auto-avaliação realizada
                         </li>
                     </ul>
                 </div>
@@ -1605,9 +1627,15 @@
     }
 
     .grade-cell.self-evaluation {
-        background: #f3f4fa !important;
-        color: #b0b0b0;
+        background: var(--color-nature-background-light, #e3fbec) !important;
+        color: var(--color-nature-main, #168f41);
         font-weight: 600;
+        border: 1px solid var(--color-nature-border, rgba(22, 143, 65, 0.2));
+    }
+
+    .self-eval-grade {
+        color: var(--color-nature-main, #168f41);
+        font-weight: 700;
     }
 
     .grade-cell.zero-grade {

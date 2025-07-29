@@ -239,7 +239,7 @@
                 {#each displayColumns as col}
                     {#if col.key !== "select" && col.key !== "actions"}
                         <div class="card-field">
-                            <div class="field-label">{col.label}</div>
+                            <!--  <div class="field-label">{col.label}</div> -->
                             <div class="field-value">
                                 {#if col.key === "user"}
                                     <div class="user-cell">

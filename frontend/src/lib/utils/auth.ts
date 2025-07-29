@@ -84,6 +84,7 @@ export async function createOrGetUser(session: any): Promise<BaseUser | null> {
                 throw error;
             }
         }
+        
 
         // If no user found, create new aluno by default
         logger.info('Creating new aluno account', { email: supabaseUser.email });

@@ -80,7 +80,9 @@
         return {
             id: avaliacao.id_avaliacao,
             user: {
-                name: avaliacao.aluno.nome,
+                name: avaliacao.isCurrentUser
+                    ? `${avaliacao.aluno.nome} (Auto Avaliação)`
+                    : avaliacao.aluno.nome,
                 role: "", // No role for students in this context
                 avatar: avaliacao.aluno.avatar,
             },
@@ -192,6 +194,10 @@
                           )
                         : undefined;
 
+                    const isSelfEvaluation =
+                        avaliacao.aluno_avaliador?.id ===
+                        avaliacao.aluno_avaliado?.id;
+
                     return {
                         id_avaliacao: avaliacao.id_avaliacao,
                         aluno: {
@@ -203,7 +209,7 @@
                         },
                         nota: media,
                         enviada: true,
-                        isCurrentUser: false,
+                        isCurrentUser: isSelfEvaluation,
                     };
                 })
                 .filter((avaliacao) => avaliacao.aluno.id !== 0); // Filter out any entries with aluno id 0
@@ -214,8 +220,33 @@
                     avaliacoes.map((av) => [av.aluno.id, av]),
                 );
 
-                // Only add students that the current user hasn't evaluated yet
-                // Exclude the current user since self-evaluation is not allowed
+                // Check if current user already has a self-evaluation
+                const existingSelfEvaluation = avaliacoes.find(
+                    (av) => av.isCurrentUser,
+                );
+
+                // Add current user for self-evaluation at the top (only if not already present)
+                if (!existingSelfEvaluation) {
+                    const currentUserAluno = problema.turma.alunos.find(
+                        (aluno) => aluno.id === currentUserId,
+                    );
+                    if (currentUserAluno) {
+                        avaliacoes.unshift({
+                            id_avaliacao: 0,
+                            aluno: {
+                                id: currentUserAluno.id,
+                                nome: currentUserAluno.nome_completo || "",
+                                avatar:
+                                    currentUserAluno.link_avatar ||
+                                    "/images/default_avatar.png",
+                            },
+                            enviada: false,
+                            isCurrentUser: true,
+                        });
+                    }
+                }
+
+                // Add other students that the current user hasn't evaluated yet
                 problema.turma.alunos.forEach((aluno) => {
                     if (
                         !avaliacoesMap.has(aluno.id) &&
@@ -238,12 +269,17 @@
                 });
             }
 
-            // Sort all evaluations alphabetically by student name
-            avaliacoes.sort((a, b) =>
-                a.aluno.nome.localeCompare(b.aluno.nome, "pt-BR", {
+            // Sort evaluations: current user first, then others alphabetically
+            avaliacoes.sort((a, b) => {
+                // Current user always comes first
+                if (a.isCurrentUser) return -1;
+                if (b.isCurrentUser) return 1;
+
+                // Others are sorted alphabetically
+                return a.aluno.nome.localeCompare(b.aluno.nome, "pt-BR", {
                     sensitivity: "base",
-                }),
-            );
+                });
+            });
         } catch (e: any) {
             console.error("Error in fetchAvaliacoes:", e);
             error = e.message || "Erro ao carregar avaliações";

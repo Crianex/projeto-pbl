@@ -513,9 +513,9 @@
                         <h2>{tag}</h2>
                         {#if isProfessorEvaluation}
                             {#if tag === "Análise do Problema"}
-                                <button
+                                <Button
                                     type="button"
-                                    class="falta-section-btn"
+                                    variant="danger"
                                     on:click={() =>
                                         showConfirmFaltaAberturaDialog()}
                                     title="Registrar falta na Análise do Problema - zera avaliações recebidas pelo aluno"
@@ -523,11 +523,11 @@
                                         showLoadingDialog}
                                 >
                                     Falta
-                                </button>
+                                </Button>
                             {:else if tag === "Resolução do Problema"}
-                                <button
+                                <Button
                                     type="button"
-                                    class="falta-section-btn"
+                                    variant="danger"
                                     on:click={() =>
                                         showConfirmFaltaFechamentoDialog()}
                                     title="Registrar falta na Resolução do Problema - zera avaliações recebidas pelo aluno"
@@ -535,7 +535,7 @@
                                         showLoadingDialog}
                                 >
                                     Falta
-                                </button>
+                                </Button>
                             {/if}
                         {/if}
                     </div>
