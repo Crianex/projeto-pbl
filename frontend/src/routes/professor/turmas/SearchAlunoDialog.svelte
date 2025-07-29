@@ -19,6 +19,7 @@
     let loadingMore = false;
     let initialLoad = false;
     let selected = new Set<string>();
+    let loadingAll = false;
 
     import { createEventDispatcher } from "svelte";
     import type { AlunoModel } from "$lib/interfaces/interfaces";
@@ -70,6 +71,33 @@
         }
     }
 
+    async function loadAllAlunos() {
+        if (loadingAll) return;
+        loadingAll = true;
+        error = null;
+        try {
+            // Load all alunos without pagination limits
+            const allAlunos = await AlunosService.searchPaginated({
+                query: searchQuery.trim() || " ",
+                limit: 1000, // Large limit to get all
+                offset: 0,
+                exclude_turma_id,
+                exclude_aluno_ids: exclude_aluno_ids.map(String),
+                order: "nome_completo.asc",
+            });
+            results = allAlunos;
+            offset = allAlunos.length;
+            hasMore = false;
+        } catch (err) {
+            error =
+                err instanceof Error
+                    ? err.message
+                    : "Erro ao carregar todos os alunos";
+        } finally {
+            loadingAll = false;
+        }
+    }
+
     // Debounced search
     const searchAlunos = debounce((query: string) => {
         searchQuery = query;
@@ -98,6 +126,13 @@
         });
         // Force reactivity
         selected = new Set(selected);
+    }
+
+    async function handleSelectAll() {
+        if (results.length === 0) {
+            await loadAllAlunos();
+        }
+        selectAll();
     }
 
     function handleAddSelected() {
@@ -155,11 +190,12 @@
                 <Button
                     type="button"
                     variant="secondary"
-                    on:click={selectAll}
-                    disabled={results.length === 0 ||
+                    on:click={handleSelectAll}
+                    disabled={loadingAll ||
+                        (results.length === 0 && !loadingAll) ||
                         results.every((a) => selected.has(a.id.toString()))}
                 >
-                    Selecionar Todos
+                    {loadingAll ? "Carregando..." : "Selecionar Todos"}
                 </Button>
             </div>
         {/if}
