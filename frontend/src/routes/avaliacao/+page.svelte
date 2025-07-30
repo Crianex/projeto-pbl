@@ -273,6 +273,29 @@
         return DateUtils.isNowWithinTagDateRange(problema, tag);
     }
 
+    // Helper to check if inputs should be disabled for a specific tag
+    function isInputDisabled(tag: string): boolean {
+        // For professors, inputs are never disabled due to faltas
+        if (isProfessorEvaluation) return false;
+
+        // For students, inputs are disabled if:
+        // 1. The tag is not active (date has passed)
+        // 2. The student has missed this specific tag
+        if (!isTagActive(tag)) return true;
+        if (hasFalta(tag)) return true;
+
+        return false;
+    }
+
+    // Helper to check if all tags are disabled for the student
+    function areAllTagsDisabled(): boolean {
+        if (isProfessorEvaluation) return false;
+        if (!problema || !criterios) return false;
+
+        // Check if all tags are either inactive or have faltas
+        return Object.keys(criterios).every((tag) => isInputDisabled(tag));
+    }
+
     // Parse query parameters
     $: {
         id_problema = $page.url.searchParams.get("id_problema") || "";
@@ -684,9 +707,9 @@
             <div class="evaluation-grid">
                 {#each Object.entries(criterios) as [tag, criteriosList]}
                     <div
-                        class="evaluation-section {isTagActive(tag)
-                            ? ''
-                            : 'inactive-section'}"
+                        class="evaluation-section {isInputDisabled(tag)
+                            ? 'inactive-section'
+                            : ''}"
                     >
                         <div class="section-header">
                             <h2>{tag}</h2>
@@ -746,10 +769,7 @@
                                                         e,
                                                     )}
                                                 class="slider"
-                                                disabled={!isTagActive(tag) ||
-                                                    (!isProfessorEvaluation &&
-                                                        problema &&
-                                                        hasAnyFalta())}
+                                                disabled={isInputDisabled(tag)}
                                             />
                                             <div class="value-display">
                                                 {(
@@ -764,10 +784,7 @@
                                             class="criteria-btn"
                                             on:click={() =>
                                                 showCriterios(tag, criterio)}
-                                            disabled={!isTagActive(tag) ||
-                                                (!isProfessorEvaluation &&
-                                                    problema &&
-                                                    hasAnyFalta())}
+                                            disabled={isInputDisabled(tag)}
                                         >
                                             Critérios
                                         </button>
@@ -786,7 +803,7 @@
                         disabled={isSubmitting ||
                             (!isProfessorEvaluation &&
                                 problema &&
-                                hasAnyFalta())}
+                                areAllTagsDisabled())}
                         loading={isSubmitting}
                     >
                         Salvar Avaliação
