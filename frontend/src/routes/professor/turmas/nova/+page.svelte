@@ -12,6 +12,7 @@
     import Input from "$lib/components/Input.svelte";
     import TrashIcon from "$lib/components/TrashIcon.svelte";
     import { currentUser } from "$lib/utils/auth";
+    import { toastStore } from "$lib/utils/toast";
 
     let turma = {
         nome_turma: "",
@@ -64,7 +65,7 @@
             await TurmasService.create(payload);
 
             // Show success message and redirect
-            alert("Turma criada com sucesso!");
+            toastStore.success("Turma criada com sucesso!");
             goto("/professor/turmas");
         } catch (err: any) {
             error = err.message || "Erro ao criar turma";

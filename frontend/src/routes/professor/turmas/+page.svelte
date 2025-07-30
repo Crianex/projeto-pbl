@@ -91,6 +91,16 @@
         fetchTurmas();
     });
 
+    // Function to refresh data - can be called when returning from editing
+    function refreshData() {
+        fetchTurmas(true);
+    }
+
+    // Listen for focus events to refresh when returning to the page
+    if (typeof window !== "undefined") {
+        window.addEventListener("focus", refreshData);
+    }
+
     // Filter and sort turmas
     $: filteredAndSortedTurmas = (() => {
         let filtered = searchQuery

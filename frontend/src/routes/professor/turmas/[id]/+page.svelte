@@ -12,6 +12,7 @@
     import PageHeader from "$lib/components/PageHeader.svelte";
     import Input from "$lib/components/Input.svelte";
     import TrashIcon from "$lib/components/TrashIcon.svelte";
+    import { toastStore } from "$lib/utils/toast";
 
     const turmaId = $page.params.id;
 
@@ -99,7 +100,7 @@
             hasUnsavedChanges = false;
 
             // Show success message
-            alert("Turma atualizada com sucesso!");
+            toastStore.success("Turma atualizada com sucesso!");
             goto("/professor/turmas");
         } catch (err: any) {
             error = err.message || "Erro ao salvar turma";
