@@ -53,11 +53,22 @@
     let isSubmitting = false;
 
     let faltaLoading = false;
-    let dummyTrigger = 0; // Dummy variable to force reactivity
 
     // Helper function to check if a student has a falta for a specific tag
     function hasFalta(tag: string): boolean {
-        if (!problema || !id_aluno_avaliado) return false;
+        console.log(`hasFalta called for tag: ${tag}`, {
+            problema: !!problema,
+            id_aluno_avaliado,
+            faltas_por_tag: problema?.faltas_por_tag,
+        });
+
+        if (!problema || !id_aluno_avaliado) {
+            console.log(`hasFalta returning false - missing data:`, {
+                problema: !!problema,
+                id_aluno_avaliado,
+            });
+            return false;
+        }
 
         // Clean up any empty keys in faltas_por_tag
         if (
@@ -71,31 +82,113 @@
         }
 
         const hasFaltaResult =
-            problema.faltas_por_tag?.[tag]?.[parseInt(id_aluno_avaliado)] ||
+            problema.faltas_por_tag?.[tag]?.[parseInt(id_aluno_avaliado!)] ||
             false;
         console.log(
-            `hasFalta(${tag}):`,
+            `hasFalta(${tag}) result:`,
             hasFaltaResult,
+            `faltas_por_tag[${tag}]:`,
             problema.faltas_por_tag?.[tag],
-            dummyTrigger,
+            `student ID:`,
+            parseInt(id_aluno_avaliado!),
         );
         return hasFaltaResult;
     }
 
+    // Helper function to check if student has any faltas
+    function hasAnyFalta(): boolean {
+        console.log(`hasAnyFalta called`, {
+            problema: !!problema,
+            id_aluno_avaliado,
+            faltas_por_tag: problema?.faltas_por_tag,
+        });
+
+        if (!problema || !id_aluno_avaliado) {
+            console.log(`hasAnyFalta returning false - missing data:`, {
+                problema: !!problema,
+                id_aluno_avaliado,
+            });
+            return false;
+        }
+
+        // Check if student has falta in any tag
+        const result = Object.keys(problema.faltas_por_tag || {}).some(
+            (tag) =>
+                problema.faltas_por_tag[tag]?.[parseInt(id_aluno_avaliado!)] ===
+                true,
+        );
+
+        console.log(`hasAnyFalta result:`, result, {
+            allTags: Object.keys(problema.faltas_por_tag || {}),
+            studentId: parseInt(id_aluno_avaliado!),
+            faltasData: problema.faltas_por_tag,
+        });
+
+        return result;
+    }
+
+    // Helper function to get all tags where student has falta
+    function getFaltaTags(): string[] {
+        console.log(`getFaltaTags called`, {
+            problema: !!problema,
+            id_aluno_avaliado,
+            faltas_por_tag: problema?.faltas_por_tag,
+        });
+
+        if (!problema || !id_aluno_avaliado) {
+            console.log(`getFaltaTags returning empty array - missing data:`, {
+                problema: !!problema,
+                id_aluno_avaliado,
+            });
+            return [];
+        }
+
+        const result = Object.keys(problema.faltas_por_tag || {}).filter(
+            (tag) =>
+                problema.faltas_por_tag[tag]?.[parseInt(id_aluno_avaliado!)] ===
+                true,
+        );
+
+        console.log(`getFaltaTags result:`, result, {
+            allTags: Object.keys(problema.faltas_por_tag || {}),
+            studentId: parseInt(id_aluno_avaliado!),
+            faltasData: problema.faltas_por_tag,
+        });
+
+        return result;
+    }
+
     // Reactive statement to track falta status for UI updates
     $: faltaStatus =
-        problema && dummyTrigger
+        problema && problema.faltas_por_tag
             ? {
                   "Análise do Problema": hasFalta("Análise do Problema"),
                   "Resolução do Problema": hasFalta("Resolução do Problema"),
               }
             : {};
 
+    // Log when faltaStatus changes
+    $: console.log(`faltaStatus updated:`, faltaStatus, {
+        problema: !!problema,
+        faltas_por_tag: problema?.faltas_por_tag,
+        hasAnyFaltaResult: hasAnyFalta(),
+        getFaltaTagsResult: getFaltaTags(),
+    });
+
     // Helper function to toggle falta status
     async function toggleFalta(tag: string) {
+        console.log("toggleFalta called for tag:", tag, {
+            problema: !!problema,
+            id_aluno_avaliado,
+            faltaLoading,
+        });
+
         try {
             faltaLoading = true;
-            if (!problema || !id_aluno_avaliado) return;
+            if (!problema || !id_aluno_avaliado) {
+                console.log("toggleFalta early return - missing data");
+                return;
+            }
 
             // Validate tag is not empty
             if (!tag || tag.trim() === "") {
@@ -146,10 +239,17 @@
                 faltas_por_tag: updatedFaltasPorTag,
             };
 
-            // Force reactivity using dummy variable
-            dummyTrigger++;
+            // Force reactivity by creating a new object reference
+            problema = { ...problema };
 
             console.log("Updated problema state:", problema.faltas_por_tag);
+            console.log(
+                "New falta status for tag:",
+                tag,
+                "should be:",
+                newFaltaStatus,
+            );
+            console.log("hasFalta result after update:", hasFalta(tag));
 
             toastStore.success(
                 newFaltaStatus
@@ -193,7 +293,7 @@
     }
 
     // Reactive statement to trigger UI updates when problema changes
-    $: if (problema && dummyTrigger) {
+    $: if (problema) {
         console.log(
             "Problema updated, faltas_por_tag:",
             problema.faltas_por_tag,
@@ -241,10 +341,20 @@
 
             // Clean up corrupted faltas_por_tag data if needed
             async function cleanupFaltasPorTag() {
+                console.log("cleanupFaltasPorTag called", {
+                    problema: !!problema,
+                    faltas_por_tag: problema?.faltas_por_tag,
+                });
+
                 if (problema?.faltas_por_tag) {
                     const hasEmptyKey = Object.keys(
                         problema.faltas_por_tag,
                     ).includes("");
+                    console.log("Checking for empty keys:", {
+                        hasEmptyKey,
+                        allKeys: Object.keys(problema.faltas_por_tag),
+                    });
+
                     if (hasEmptyKey) {
                         console.warn(
                             "Cleaning up corrupted faltas_por_tag data",
@@ -274,11 +384,18 @@
                             faltas_por_tag: cleanedFaltasPorTag,
                         };
 
+                        // Force reactivity by creating a new object reference
+                        problema = { ...problema };
+
                         console.log(
                             "Cleaned faltas_por_tag:",
                             cleanedFaltasPorTag,
                         );
+                    } else {
+                        console.log("No cleanup needed - no empty keys found");
                     }
+                } else {
+                    console.log("No faltas_por_tag to clean up");
                 }
             }
 
@@ -303,8 +420,20 @@
             problema = Parsers.parseProblema(problemaResponse);
             criterios = problema.criterios;
 
+            console.log("Problema loaded:", {
+                id_problema: problema.id_problema,
+                nome_problema: problema.nome_problema,
+                faltas_por_tag: problema.faltas_por_tag,
+                raw_faltas_por_tag: problemaResponse.faltas_por_tag,
+            });
+
             // Clean up corrupted faltas_por_tag data if needed
             await cleanupFaltasPorTag();
+
+            console.log(
+                "After cleanup - problema faltas_por_tag:",
+                problema.faltas_por_tag,
+            );
 
             // Get the student details (who is being evaluated)
             const aluno = await api.get(
@@ -490,132 +619,182 @@
     <div class="back-section">
         <BackButton text="Voltar" on:click={() => history.back()} />
     </div>
-    <div class="header">
-        <h1>
-            Avaliação Individual {isProfessorEvaluation ? "(Professor)" : ""}
-        </h1>
-    </div>
-    <div class="student-info">
-        <div class="avatar">
-            <img
-                src={avaliacaoData.aluno.avatar || "/images/default_avatar.png"}
-                alt={avaliacaoData.aluno.nome || "Avatar do aluno"}
-                on:error={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    if (target) {
-                        target.src = "/images/default_avatar.png";
-                    }
-                }}
-            />
+
+    {#if loading}
+        <div class="loading-container">
+            <LoadingSpinner size="lg" />
+            <p class="loading-text">Carregando dados da avaliação...</p>
         </div>
-        <p>
-            Como foi o desempenho de <span class="highlight"
-                >{avaliacaoData.aluno.nome}</span
-            > nesse problema?
-        </p>
-    </div>
-    <form on:submit|preventDefault={handleSubmit}>
-        <div class="evaluation-grid">
-            {#each Object.entries(criterios) as [tag, criteriosList]}
-                <div
-                    class="evaluation-section {isTagActive(tag)
-                        ? ''
-                        : 'inactive-section'}"
-                >
-                    <div class="section-header">
-                        <h2>{tag}</h2>
-                        {#if isProfessorEvaluation}
-                            {#if tag === "Análise do Problema" || tag === "Resolução do Problema"}
-                                <Button
-                                    type="button"
-                                    variant={faltaStatus[tag]
-                                        ? "warning"
-                                        : "danger"}
-                                    on:click={() => toggleFalta(tag)}
-                                    title="{faltaStatus[tag]
-                                        ? 'Remover'
-                                        : 'Registrar'} falta na {tag}"
-                                    disabled={!isTagActive(tag) || faltaLoading}
-                                    loading={faltaLoading}
-                                >
-                                    {faltaStatus[tag] ? "Desfazer" : "Faltou"}
-                                </Button>
-                            {/if}
-                        {/if}
-                    </div>
-                    <div class="criteria-group">
-                        {#each criteriosList as criterio}
-                            {@const criterioKey =
-                                criterio.nome_criterio.toLowerCase()}
-                            <label>
-                                <span class="criteria-header">
-                                    <span>{criterio.nome_criterio}</span>
-                                    <span class="range"
-                                        >0,0 a {criterio.nota_maxima}</span
-                                    >
-                                </span>
-                                <div class="input-wrapper">
-                                    <div class="slider-container">
-                                        <input
-                                            type="range"
-                                            step="0.1"
-                                            min="0"
-                                            max={criterio.nota_maxima}
-                                            value={currentValues[tag]?.[
-                                                criterioKey
-                                            ] || 0}
-                                            on:input={(e) =>
-                                                handleValueChange(
-                                                    tag,
-                                                    criterioKey,
-                                                    e,
-                                                )}
-                                            on:change={(e) =>
-                                                handleValueChange(
-                                                    tag,
-                                                    criterioKey,
-                                                    e,
-                                                )}
-                                            class="slider"
-                                            disabled={!isTagActive(tag)}
-                                        />
-                                        <div class="value-display">
-                                            {(
-                                                currentValues[tag]?.[
-                                                    criterioKey
-                                                ] || 0
-                                            ).toFixed(1)}
-                                        </div>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        class="criteria-btn"
-                                        on:click={() =>
-                                            showCriterios(tag, criterio)}
-                                        disabled={!isTagActive(tag)}
-                                    >
-                                        Critérios
-                                    </button>
-                                </div>
-                            </label>
-                        {/each}
-                    </div>
+    {:else if error}
+        <div class="error-container">
+            <div class="error-icon">❌</div>
+            <div class="error-content">
+                <h3>Erro ao carregar dados</h3>
+                <p>{error}</p>
+            </div>
+        </div>
+    {:else}
+        <div class="header">
+            <h1>
+                Avaliação Individual {isProfessorEvaluation
+                    ? "(Professor)"
+                    : ""}
+            </h1>
+        </div>
+        <div class="student-info">
+            <div class="avatar">
+                <img
+                    src={avaliacaoData.aluno.avatar ||
+                        "/images/default_avatar.png"}
+                    alt={avaliacaoData.aluno.nome || "Avatar do aluno"}
+                    on:error={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        if (target) {
+                            target.src = "/images/default_avatar.png";
+                        }
+                    }}
+                />
+            </div>
+            <p>
+                Como foi o desempenho de <span class="highlight"
+                    >{avaliacaoData.aluno.nome}</span
+                > nesse problema?
+            </p>
+        </div>
+
+        {#if !isProfessorEvaluation && problema && hasAnyFalta()}
+            <div class="falta-warning">
+                <div class="warning-icon">⚠️</div>
+                <div class="warning-content">
+                    <h3>Atenção!</h3>
+                    <p>
+                        {avaliacaoData.aluno.nome} possui faltas registradas nas
+                        seguintes seções:
+                        <strong>{getFaltaTags().join(", ")}</strong>
+                    </p>
+                    <p class="warning-note">
+                        Como este aluno possui faltas, a avaliação está
+                        desabilitada. Apenas professores podem avaliar alunos
+                        com faltas registradas.
+                    </p>
                 </div>
-            {/each}
-        </div>
-        {#if !loading && problema && avaliacaoData.aluno.nome}
-            <div class="submit-btn-container">
-                <Button
-                    type="submit"
-                    variant="primary"
-                    disabled={isSubmitting}
-                    loading={isSubmitting}
-                >
-                    Salvar Avaliação
-                </Button>
             </div>
         {/if}
-    </form>
+        <form on:submit|preventDefault={handleSubmit}>
+            <div class="evaluation-grid">
+                {#each Object.entries(criterios) as [tag, criteriosList]}
+                    <div
+                        class="evaluation-section {isTagActive(tag)
+                            ? ''
+                            : 'inactive-section'}"
+                    >
+                        <div class="section-header">
+                            <h2>{tag}</h2>
+                            {#if isProfessorEvaluation}
+                                {#if tag === "Análise do Problema" || tag === "Resolução do Problema"}
+                                    <Button
+                                        type="button"
+                                        variant={faltaStatus[tag]
+                                            ? "warning"
+                                            : "danger"}
+                                        on:click={() => toggleFalta(tag)}
+                                        title="{faltaStatus[tag]
+                                            ? 'Remover'
+                                            : 'Registrar'} falta na {tag}"
+                                        disabled={!isTagActive(tag) ||
+                                            faltaLoading}
+                                        loading={faltaLoading}
+                                    >
+                                        {faltaStatus[tag]
+                                            ? "Desfazer"
+                                            : "Faltou"}
+                                    </Button>
+                                {/if}
+                            {/if}
+                        </div>
+                        <div class="criteria-group">
+                            {#each criteriosList as criterio}
+                                {@const criterioKey =
+                                    criterio.nome_criterio.toLowerCase()}
+                                <label>
+                                    <span class="criteria-header">
+                                        <span>{criterio.nome_criterio}</span>
+                                        <span class="range"
+                                            >0,0 a {criterio.nota_maxima}</span
+                                        >
+                                    </span>
+                                    <div class="input-wrapper">
+                                        <div class="slider-container">
+                                            <input
+                                                type="range"
+                                                step="0.1"
+                                                min="0"
+                                                max={criterio.nota_maxima}
+                                                value={currentValues[tag]?.[
+                                                    criterioKey
+                                                ] || 0}
+                                                on:input={(e) =>
+                                                    handleValueChange(
+                                                        tag,
+                                                        criterioKey,
+                                                        e,
+                                                    )}
+                                                on:change={(e) =>
+                                                    handleValueChange(
+                                                        tag,
+                                                        criterioKey,
+                                                        e,
+                                                    )}
+                                                class="slider"
+                                                disabled={!isTagActive(tag) ||
+                                                    (!isProfessorEvaluation &&
+                                                        problema &&
+                                                        hasAnyFalta())}
+                                            />
+                                            <div class="value-display">
+                                                {(
+                                                    currentValues[tag]?.[
+                                                        criterioKey
+                                                    ] || 0
+                                                ).toFixed(1)}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            class="criteria-btn"
+                                            on:click={() =>
+                                                showCriterios(tag, criterio)}
+                                            disabled={!isTagActive(tag) ||
+                                                (!isProfessorEvaluation &&
+                                                    problema &&
+                                                    hasAnyFalta())}
+                                        >
+                                            Critérios
+                                        </button>
+                                    </div>
+                                </label>
+                            {/each}
+                        </div>
+                    </div>
+                {/each}
+            </div>
+            {#if !loading && problema && avaliacaoData.aluno.nome}
+                <div class="submit-btn-container">
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        disabled={isSubmitting ||
+                            (!isProfessorEvaluation &&
+                                problema &&
+                                hasAnyFalta())}
+                        loading={isSubmitting}
+                    >
+                        Salvar Avaliação
+                    </Button>
+                </div>
+            {/if}
+        </form>
+    {/if}
 </div>
 
 {#if criterioAtual && showDialog}
@@ -913,12 +1092,6 @@
             align-items: flex-start;
             gap: 0.75rem;
         }
-
-        .falta-section-btn {
-            padding: 0.4rem 0.8rem;
-            font-size: 0.8rem;
-            align-self: flex-end;
-        }
     }
 
     .dialog-content {
@@ -964,33 +1137,123 @@
         margin: 0;
     }
 
-    .falta-section-btn {
-        padding: 0.5rem 1rem;
-        border: none;
-        border-radius: 8px;
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        color: white;
+    .falta-warning {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border: 2px solid #ffc107;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        box-shadow: 0 4px 12px rgba(255, 193, 7, 0.15);
+    }
+
+    .warning-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+        margin-top: 0.25rem;
+    }
+
+    .warning-content {
+        flex: 1;
+    }
+
+    .warning-content h3 {
+        color: #856404;
+        font-size: 1.125rem;
         font-weight: 600;
-        font-size: 0.9rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 3px 10px rgba(220, 53, 69, 0.3);
-        position: relative;
-        overflow: hidden;
+        margin: 0 0 0.5rem 0;
     }
 
-    .falta-section-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    .warning-content p {
+        color: #856404;
+        margin: 0 0 0.5rem 0;
+        line-height: 1.5;
     }
 
-    .falta-section-btn:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+    .warning-content p:last-child {
+        margin-bottom: 0;
     }
 
-    .falta-section-btn:active:not(:disabled) {
-        transform: translateY(-1px);
+    .warning-note {
+        font-size: 0.875rem;
+        font-style: italic;
+        opacity: 0.8;
+    }
+
+    @media (max-width: 768px) {
+        .falta-warning {
+            flex-direction: column;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .warning-icon {
+            align-self: center;
+        }
+    }
+
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+        gap: 1rem;
+    }
+
+    .loading-text {
+        color: #495057;
+        font-size: 1.125rem;
+        font-weight: 500;
+        margin: 0;
+    }
+
+    .error-container {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        border: 2px solid #dc3545;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.15);
+    }
+
+    .error-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+        margin-top: 0.25rem;
+    }
+
+    .error-content {
+        flex: 1;
+    }
+
+    .error-content h3 {
+        color: #721c24;
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .error-content p {
+        color: #721c24;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    @media (max-width: 768px) {
+        .error-container {
+            flex-direction: column;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .error-icon {
+            align-self: center;
+        }
     }
 </style>
