@@ -31,9 +31,41 @@
     } = {};
     let alunos: AlunoModel[] = [];
     let zoomLevel = 1; // Default zoom level (100%)
+    let scaleFormat = "0-3"; // Default scale format ("0-3" or "0-10")
 
     // Debug zoom level changes
     $: console.log("Zoom level changed to:", zoomLevel);
+
+    // Function to convert grades between scales
+    function convertGrade(grade: number, fromScale: string = "0-3", toScale: string = "0-10"): number {
+        if (grade === 0 || !grade) return grade;
+        
+        if (fromScale === "0-3" && toScale === "0-10") {
+            // Convert from 0-3 to 0-10 scale
+            return Number((grade * (10/3)).toFixed(2));
+        } else if (fromScale === "0-10" && toScale === "0-3") {
+            // Convert from 0-10 to 0-3 scale  
+            return Number((grade * (3/10)).toFixed(2));
+        }
+        
+        return grade;
+    }
+
+    // Function to format grade based on current scale
+    function formatGrade(grade: number): number {
+        if (!grade || grade === 0) return grade;
+        
+        if (scaleFormat === "0-10") {
+            return convertGrade(grade, "0-3", "0-10");
+        }
+        
+        return grade;
+    }
+
+    // Function to toggle scale format
+    function toggleScaleFormat() {
+        scaleFormat = scaleFormat === "0-3" ? "0-10" : "0-3";
+    }
 
     async function fetchTurmas() {
         try {
@@ -361,15 +393,19 @@
                     case "=":
                     case "+":
                         event.preventDefault();
-                        zoomIn();
+                        if (zoomLevel < 2) {
+                            zoomLevel = Math.min(2, zoomLevel + 0.1);
+                        }
                         break;
                     case "-":
                         event.preventDefault();
-                        zoomOut();
+                        if (zoomLevel > 0.5) {
+                            zoomLevel = Math.max(0.5, zoomLevel - 0.1);
+                        }
                         break;
                     case "0":
                         event.preventDefault();
-                        resetZoom();
+                        zoomLevel = 1;
                         break;
                 }
             }
@@ -393,7 +429,7 @@
             }
         });
 
-        return receivedGrades.length > 0
+        const average = receivedGrades.length > 0
             ? Number(
                   (
                       receivedGrades.reduce((a, b) => a + b, 0) /
@@ -401,6 +437,8 @@
                   ).toFixed(2),
               )
             : 0;
+            
+        return formatGrade(average);
     }
 
     function getMatrixStatistics(matrix = evaluationMatrix, students = alunos) {
@@ -460,9 +498,9 @@
 
         const result = {
             totalAlunos: students?.length || 0,
-            maiorNota: Number(maiorNota.toFixed(2)),
-            mediaGeral,
-            menorNota: Number(menorNota.toFixed(2)),
+            maiorNota: formatGrade(Number(maiorNota.toFixed(2))),
+            mediaGeral: formatGrade(mediaGeral),
+            menorNota: formatGrade(Number(menorNota.toFixed(2))),
         };
 
         console.log("Statistics result:", result);
@@ -536,30 +574,10 @@
         if (!avaliacao) return null;
         const avg = MediaCalculator.calculateSimpleMedia(avaliacao.notas);
         console.log("Avaliação do professor:", avaliacao);
-        return avg;
+        return formatGrade(avg);
     }
 
-    // Zoom control functions
-    function zoomIn() {
-        if (zoomLevel < 2) {
-            // Max zoom 200%
-            zoomLevel = Math.min(2, zoomLevel + 0.1);
-            console.log("Zoom in clicked, new zoomLevel:", zoomLevel);
-        }
-    }
 
-    function zoomOut() {
-        if (zoomLevel > 0.5) {
-            // Min zoom 50%
-            zoomLevel = Math.max(0.5, zoomLevel - 0.1);
-            console.log("Zoom out clicked, new zoomLevel:", zoomLevel);
-        }
-    }
-
-    function resetZoom() {
-        zoomLevel = 1;
-        console.log("Reset zoom clicked, new zoomLevel:", zoomLevel);
-    }
 
     // Calculate dynamic styles based on zoom level
     function getZoomStyles() {
@@ -609,7 +627,7 @@
                 } else {
                     const grade =
                         evaluationMatrix[evaluator.id]?.[evaluated.id];
-                    row.push(grade && grade > 0 ? grade : "-");
+                    row.push(grade && grade > 0 ? formatGrade(grade) : "-");
                 }
             });
             csv += row.join(",") + "\n";
@@ -625,10 +643,8 @@
                 if (professor.id === evaluated.id) {
                     row.push("X");
                 } else {
-                    const grade = getProfessorGradeFor(
-                        evaluated.id,
-                    )?.toString()!;
-                    row.push(grade);
+                    const grade = getProfessorGradeFor(evaluated.id);
+                    row.push(grade !== null ? grade.toString() : "-");
                 }
             });
             csv += row.join(",") + "\n";
@@ -805,7 +821,7 @@
                         evaluationMatrix[evaluator.id]?.[evaluated.id];
                     text =
                         grade && grade > 0
-                            ? grade.toString()
+                            ? formatGrade(grade).toString()
                             : grade === 0
                               ? "0"
                               : "-";
@@ -904,7 +920,7 @@
                     text = "X";
                 } else {
                     const grade = getProfessorGradeFor(evaluated.id);
-                    text = grade !== null ? `${grade}` : "-";
+                    text = grade !== null ? grade.toString() : "-";
                 }
                 page.drawText(text, {
                     x: x + 22, // Reduced from 30 to 22
@@ -987,7 +1003,7 @@
                     details += `<br><strong>${tag}:</strong><br>`;
                     Object.entries(criterios).forEach(([criterio, nota]) => {
                         if (typeof nota === "number") {
-                            details += `  • ${criterio}: ${nota.toFixed(1)}<br>`;
+                            details += `  • ${criterio}: ${formatGrade(nota).toFixed(1)}<br>`;
                         }
                     });
                 }
@@ -997,7 +1013,7 @@
             const average = MediaCalculator.calculateSimpleMedia(
                 evaluation.notas,
             );
-            details += `<br><strong>Média final: ${average.toFixed(2)}</strong>`;
+            details += `<br><strong>Média final: ${formatGrade(average).toFixed(2)}</strong>`;
         } catch (error) {
             details += "❌ <strong>Erro ao processar avaliação</strong>";
         }
@@ -1204,33 +1220,6 @@
                         Exportar PDF
                     </Button>
                 </div>
-
-                <div class="zoom-controls">
-                    <Button
-                        variant="secondary"
-                        on:click={zoomOut}
-                        disabled={zoomLevel <= 0.5}
-                    >
-                        <span style="font-size: 1.2rem;">−</span>
-                    </Button>
-                    <span class="zoom-level"
-                        >{Math.round(zoomLevel * 100)}%</span
-                    >
-                    <Button
-                        variant="secondary"
-                        on:click={zoomIn}
-                        disabled={zoomLevel >= 2}
-                    >
-                        <span style="font-size: 1.2rem;">+</span>
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        on:click={resetZoom}
-                        disabled={zoomLevel === 1}
-                    >
-                        Reset
-                    </Button>
-                </div>
             </div>
             <div class="matrix-section">
                 <h2>Matriz de Avaliações - {selectedProblema.nome_problema}</h2>
@@ -1238,6 +1227,43 @@
                     Linhas: Quem avaliou | Colunas: Quem foi avaliado (por
                     número)
                 </p>
+
+                <!-- Matrix Controls -->
+                <div class="matrix-controls">
+                    <!-- Scale Format Switch -->
+                    <div class="scale-switch-container">
+                        <span class="scale-label">Escala de Notas:</span>
+                        <div class="scale-switch-wrapper">
+                            <span class="scale-text {scaleFormat === '0-3' ? 'active' : ''}">0-3</span>
+                            <button 
+                                class="scale-switch {scaleFormat === '0-10' ? 'active' : ''}"
+                                on:click={toggleScaleFormat}
+                                aria-label="Alternar escala de notas"
+                            >
+                                <span class="scale-switch-slider"></span>
+                            </button>
+                            <span class="scale-text {scaleFormat === '0-10' ? 'active' : ''}">0-10</span>
+                        </div>
+                    </div>
+
+                    <!-- Zoom Controls -->
+                    <div class="zoom-controls">
+                        <label for="zoom-slider" class="zoom-label">Zoom:</label>
+                        <div class="zoom-slider-wrapper">
+                            <input
+                                type="range"
+                                id="zoom-slider"
+                                min="0.5"
+                                max="2"
+                                step="0.1"
+                                bind:value={zoomLevel}
+                                class="zoom-slider"
+                                title="Ajustar zoom da matriz"
+                            />
+                            <span class="zoom-value">{Math.round(zoomLevel * 100)}%</span>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Statistics Header -->
                 <div class="statistics-header">
@@ -1346,7 +1372,7 @@
                                                     {#if grade && grade > 0}
                                                         <span
                                                             class="self-eval-grade"
-                                                            >{grade}</span
+                                                            >{formatGrade(grade)}</span
                                                         >
                                                     {:else}
                                                         <span>N</span>
@@ -1377,7 +1403,7 @@
                                                             evaluator.id,
                                                             evaluated.id,
                                                         ),
-                                                    }}>{grade}</td
+                                                    }}>{formatGrade(grade)}</td
                                                 >
                                             {:else if grade === 0}
                                                 <td
@@ -1870,7 +1896,7 @@
 
     .controls-section {
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
         align-items: center;
         margin-bottom: 1.5rem;
         gap: 1rem;
@@ -1882,23 +1908,209 @@
         gap: 1rem;
     }
 
-    .zoom-controls {
+    .matrix-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1.5rem;
+        margin: 1rem 0;
+        padding: 1rem;
+        background: #f8fafc;
+        border: 1px solid #e3e6ed;
+        border-radius: 8px;
+        flex-wrap: wrap;
+    }
+
+    .scale-switch-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .scale-label {
+        font-weight: 600;
+        color: #22223b;
+        font-size: 0.95rem;
+        white-space: nowrap;
+    }
+
+    .scale-switch-wrapper {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        background: #f8fafc;
-        padding: 0.5rem;
-        border-radius: 6px;
-        border: 1px solid #e3e6ed;
     }
 
-    .zoom-level {
-        font-weight: 600;
-        color: #6c63ff;
-        min-width: 3rem;
-        text-align: center;
+    .scale-text {
         font-size: 0.9rem;
+        font-weight: 600;
+        color: #6c757d;
+        transition: color 0.3s ease;
+        user-select: none;
     }
+
+    .scale-text.active {
+        color: #6c63ff;
+    }
+
+    .scale-switch {
+        position: relative;
+        width: 50px;
+        height: 24px;
+        background: #e3e6ed;
+        border: 2px solid #e3e6ed;
+        border-radius: 15px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        outline: none;
+        overflow: hidden;
+    }
+
+    .scale-switch:hover {
+        background: #d1d5db;
+        border-color: #d1d5db;
+        transform: scale(1.02);
+    }
+
+    .scale-switch:focus {
+        box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+    }
+
+    .scale-switch.active {
+        background: linear-gradient(135deg, #6c63ff 0%, #5a52d5 100%);
+        border-color: #6c63ff;
+        box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+    }
+
+    .scale-switch.active:hover {
+        background: linear-gradient(135deg, #5a52d5 0%, #4c44c7 100%);
+        transform: scale(1.02);
+        box-shadow: 0 6px 16px rgba(108, 99, 255, 0.4);
+    }
+
+    .scale-switch-slider {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        background: #fff;
+        border-radius: 50%;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .scale-switch.active .scale-switch-slider {
+        transform: translateX(26px);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .scale-switch:hover .scale-switch-slider {
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .zoom-controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+        max-width: 300px;
+    }
+
+    .zoom-label {
+        font-weight: 600;
+        color: #22223b;
+        font-size: 0.95rem;
+        white-space: nowrap;
+    }
+
+    .zoom-slider-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(8px);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow:
+            inset 0 2px 4px rgba(0, 0, 0, 0.05),
+            0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .zoom-slider {
+        flex: 1;
+        -webkit-appearance: none;
+        appearance: none;
+        height: 6px;
+        background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
+        border-radius: 3px;
+        outline: none;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+        /* Improve touch handling on mobile */
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .zoom-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid #667eea;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+        /* Improve touch target size */
+        min-height: 20px;
+        min-width: 20px;
+    }
+
+    .zoom-slider::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid #667eea;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+        /* Improve touch target size */
+        min-height: 20px;
+        min-width: 20px;
+    }
+
+    .zoom-slider:hover {
+        opacity: 1;
+    }
+
+    .zoom-slider::-webkit-slider-thumb:hover {
+        transform: scale(1.1);
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .zoom-slider::-moz-range-thumb:hover {
+        transform: scale(1.1);
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .zoom-value {
+        min-width: 2rem;
+        text-align: center;
+        font-weight: 500;
+        color: #495057;
+        font-size: 1rem;
+        padding: 0.25rem 0.5rem;
+        background: white;
+        border-radius: 4px;
+        border: 1px solid rgba(206, 212, 218, 0.4);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+
 
     @media (max-width: 768px) {
         .relatorios-container {
@@ -1917,8 +2129,28 @@
             justify-content: center;
         }
 
-        .zoom-controls {
+        .matrix-controls {
+            flex-direction: column;
+            gap: 1rem;
+            padding: 0.75rem;
+        }
+
+        .scale-switch-container {
             justify-content: center;
+        }
+
+        .scale-label {
+            font-size: 0.9rem;
+        }
+
+        .zoom-controls {
+            max-width: none;
+            width: 100%;
+        }
+
+        .zoom-slider-wrapper {
+            gap: 0.5rem;
+            padding: 0.2rem;
         }
         .header {
             margin-top: 0;
