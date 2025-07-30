@@ -1,4 +1,4 @@
-import { type AlunoModel, type ProfessorModel, type ProblemaModel, type TurmaModel, parseToProfessorModel, parseToAlunoModel, type CriteriosGroup, type Criterio, type AvaliacaoModel, type DefinicaoArquivoDeAvaliacao, type DataEHoraDefinition } from '$lib/interfaces/interfaces';
+import { type AlunoModel, type ProfessorModel, type ProblemaModel, type TurmaModel, parseToProfessorModel, parseToAlunoModel, type CriteriosGroup, type Criterio, type AvaliacaoModel, type DefinicaoArquivoDeAvaliacao, type DataEHoraDefinition, type UploadedFile } from '$lib/interfaces/interfaces';
 
 /**
  * Parses raw Supabase data into strongly typed interfaces
@@ -16,6 +16,8 @@ export const Parsers = {
     parseCriterios,
     parseAvaliacao,
     parseAvaliacoes,
+    parseUploadedFile,
+    parseUploadedFiles,
 }
 
 function parseAluno(data: any): AlunoModel {
@@ -51,6 +53,8 @@ function parseProblema(data: any): ProblemaModel {
         faltas_por_tag[key] = faltas_por_tag_json[key];
     });
 
+    
+
     return {
         id_problema: data.id_problema,
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
@@ -61,7 +65,7 @@ function parseProblema(data: any): ProblemaModel {
         criterios: data.criterios ? parseCriterios(data.criterios) : {},
         definicao_arquivos_de_avaliacao: definicao_arquivos_de_avaliacao,
         data_e_hora_criterios_e_arquivos: data_e_hora_criterios_e_arquivos,
-        faltas_por_tag: faltas_por_tag
+        faltas_por_tag: faltas_por_tag,
     };
 }
 
@@ -69,7 +73,8 @@ function parseDefinicaoArquivoDeAvaliacao(data: any): DefinicaoArquivoDeAvaliaca
     return {
         nome_tipo: data.nome_tipo || null,
         descricao_tipo: data.descricao_tipo || null,
-        tipos_de_arquivos_aceitos: data.tipos_de_arquivos_aceitos || []
+        tipos_de_arquivos_aceitos: data.tipos_de_arquivos_aceitos || [],
+        nota_maxima: data.nota_maxima || 10,
     }
 }
 
@@ -122,6 +127,10 @@ function parseCriterios(criteriosString: string): CriteriosGroup {
 }
 
 function parseAvaliacao(data: any): AvaliacaoModel {
+
+
+
+
     return {
         id_avaliacao: data.id_avaliacao,
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
@@ -130,9 +139,26 @@ function parseAvaliacao(data: any): AvaliacaoModel {
         aluno_avaliado: data.avaliado ? parseAluno(data.avaliado) : null,
         notas: data.notas ? JSON.parse(data.notas) : {},
         id_professor: data.id_professor || null,
+        notas_por_arquivo: data.notas_por_arquivo ? JSON.parse(data.notas_por_arquivo) : {},
     };
 }
 
 function parseAvaliacoes(data: any[]): AvaliacaoModel[] {
     return data.map(item => parseAvaliacao(item));
+}
+
+function parseUploadedFile(data: any): UploadedFile {
+    return {
+        id: data.id,
+        nome_arquivo: data.nome_arquivo || "",
+        link_arquivo: data.link_arquivo || "",
+        id_aluno: data.id_aluno || null,
+        id_problema: data.id_problema || null,
+        nome_tipo: data.nome_tipo || null,
+        created_at: data.created_at || null,
+    };
+}
+
+function parseUploadedFiles(data: any[]): UploadedFile[] {
+    return data.map(item => parseUploadedFile(item));
 }

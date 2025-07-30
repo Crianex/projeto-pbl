@@ -29,7 +29,8 @@ async function getAvaliacoes(id_problema: number): Promise<AvaliacaoModel[]> {
             id_problema: avaliacao.id_problema,
             aluno_avaliador: alunosPorID.get(avaliacao.id_aluno_avaliador!)!,
             aluno_avaliado: alunosPorID.get(avaliacao.id_aluno_avaliado!)!,
-            notas: JSON.parse(avaliacao.notas) as AvaliacaoNota
+            notas: JSON.parse(avaliacao.notas) as AvaliacaoNota,
+            notas_por_arquivo: JSON.parse(avaliacao.notas_por_arquivo) as { [tag: string]: number }
         }
     });
 

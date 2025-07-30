@@ -156,7 +156,7 @@ export const ProblemaController: EndpointController = {
                 logger.error('No id_problema provided');
                 return res.status(400).json({ error: 'No id_problema provided' });
             }
-            const { nome_problema, id_turma, criterios, media_geral, definicao_arquivos_de_avaliacao, data_e_hora_criterios_e_arquivos, faltas_por_tag } = req.body;
+            const { nome_problema, id_turma, criterios, media_geral, definicao_arquivos_de_avaliacao, data_e_hora_criterios_e_arquivos, faltas_por_tag, notas_por_arquivo } = req.body;
             logger.info(`Updating problema ${id_problema} with new data: ${JSON.stringify(req.body)}`);
 
             const { data, error } = await supabase
@@ -168,7 +168,8 @@ export const ProblemaController: EndpointController = {
                     media_geral,
                     definicao_arquivos_de_avaliacao,
                     data_e_hora_criterios_e_arquivos,
-                    faltas_por_tag
+                    faltas_por_tag,
+                    notas_por_arquivo
                 })
                 .eq('id_problema', id_problema)
                 .select(`
@@ -176,6 +177,8 @@ export const ProblemaController: EndpointController = {
                     turma:turmas(*)
                 `)
                 .single();
+
+
 
             if (error) {
                 logger.error(`Error updating problema ${id_problema}: ${error.message}, Request body: ${JSON.stringify(req.body)}`);
@@ -186,6 +189,7 @@ export const ProblemaController: EndpointController = {
                 logger.warn(`Attempted to update non-existent problema ${id_problema}`);
                 return res.status(404).json({ error: 'Problema not found' });
             }
+
 
             logger.info(`Successfully updated problema ${id_problema}`);
             return res.json(data);

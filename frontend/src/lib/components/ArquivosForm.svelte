@@ -53,6 +53,7 @@
                 nome_tipo: defaultName,
                 descricao_tipo: "",
                 tipos_de_arquivos_aceitos: [],
+                nota_maxima: 10,
             },
         ];
         oldNomeTipos.push(defaultName);
@@ -225,6 +226,19 @@
                     rows={2}
                     required
                 />
+                <div class="arquivo-max-value">
+                    <label>Nota máxima para este tipo de arquivo:</label>
+                    <Input
+                        type="number"
+                        placeholder="10"
+                        bind:value={definicao.nota_maxima}
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        size="sm"
+                        required
+                    />
+                </div>
                 <div class="arquivo-datetime">
                     <label>Data e hora de abertura:</label>
                     <Input
@@ -335,6 +349,17 @@
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
+    }
+
+    .arquivo-max-value {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .arquivo-max-value label {
+        font-weight: 500;
+        color: #495057;
     }
 
     .tipos-arquivos {

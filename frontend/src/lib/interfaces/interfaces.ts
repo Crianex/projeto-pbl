@@ -21,7 +21,8 @@ export interface AvaliacaoDB {
     id_aluno_avaliador: number | null;
     id_aluno_avaliado: number | null;
     notas: string;
-    id_professor: number | null; 
+    id_professor: number | null;
+    notas_por_arquivo: string;
 }
 
 export interface ProblemaDB {
@@ -58,6 +59,7 @@ export interface DefinicaoArquivoDeAvaliacao {
     nome_tipo: string | undefined;
     descricao_tipo: string | undefined;
     tipos_de_arquivos_aceitos: string[];
+    nota_maxima?: number;
 }
 
 // Used for per-tag open/close date and time
@@ -83,7 +85,8 @@ export interface ProblemaModel {
         [tag: string]: {
             [id_aluno: number]: boolean;
         }
-    }
+    },
+
 }
 
 export interface TurmaModel {
@@ -137,8 +140,21 @@ export interface AvaliacaoModel {
     aluno_avaliado: AlunoModel | null;
     notas: AvaliacaoNota;
     id_professor?: number | null; // NEW: track professor evaluations
+    notas_por_arquivo: {
+        [tag: string]: number;
+    }
 }
 
+// Interface for uploaded files that professors can evaluate
+export interface UploadedFile {
+    id?: number;
+    nome_arquivo: string;
+    link_arquivo: string;
+    id_aluno?: number;
+    id_problema?: number;
+    nome_tipo?: string;
+    created_at?: string;
+}
 
 
 // Parser functions to convert API responses to our models

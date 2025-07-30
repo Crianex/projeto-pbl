@@ -1,5 +1,6 @@
 <script lang="ts">
     import { page } from "$app/stores";
+    import { fade } from "svelte/transition";
     import { api } from "$lib/utils/api";
     import { onMount } from "svelte";
     import Dialog from "$lib/components/Dialog.svelte";
@@ -10,6 +11,7 @@
         CriteriosGroup,
         ProblemaModel,
         AvaliacaoNota,
+        UploadedFile,
     } from "$lib/interfaces/interfaces";
     import { Parsers } from "$lib/interfaces/parsers";
     import { logger } from "$lib/utils/logger";
@@ -53,6 +55,12 @@
     let isSubmitting = false;
 
     let faltaLoading = false;
+
+    // File evaluation state for professors
+    let uploadedFilesByType: Map<string, UploadedFile[]> = new Map();
+    let loadingFiles = false;
+    let filesError: string | null = null;
+    let fileGrades: { [fileId: string]: number } = {};
 
     // Helper function to check if a student has a falta for a specific tag
     function hasFalta(tag: string): boolean {
@@ -296,6 +304,55 @@
         return Object.keys(criterios).every((tag) => isInputDisabled(tag));
     }
 
+    // Load student files for professor evaluation
+    async function loadStudentFiles() {
+        if (!isProfessorEvaluation || !id_aluno_avaliado || !id_problema) {
+            return;
+        }
+
+        try {
+            loadingFiles = true;
+            filesError = null;
+
+            const files: UploadedFile[] = await api.get(
+                `/problemas/get-arquivos?id_aluno=${id_aluno_avaliado}&id_problema=${id_problema}`,
+            );
+
+            // Parse the files using the parser
+            const parsedFiles = Parsers.parseUploadedFiles(files);
+
+            // Group files by nome_tipo
+            uploadedFilesByType.clear();
+            parsedFiles.forEach((file) => {
+                const nomeType = file.nome_tipo || "default";
+                const currentFiles = uploadedFilesByType.get(nomeType) || [];
+                uploadedFilesByType.set(nomeType, [...currentFiles, file]);
+            });
+            uploadedFilesByType = uploadedFilesByType; // Trigger reactivity
+
+            logger.info(
+                `Loaded ${parsedFiles.length} files for student ${id_aluno_avaliado}`,
+            );
+        } catch (e: any) {
+            logger.error("Error loading student files:", e);
+            filesError = e.message || "Erro ao carregar arquivos do aluno";
+        } finally {
+            loadingFiles = false;
+        }
+    }
+
+    // Handle file grade changes
+    function handleFileGradeChange(nomeTipo: string, event: Event) {
+        const input = event.target as HTMLInputElement;
+        const value = parseFloat(input.value);
+        if (!isNaN(value)) {
+            fileGrades = {
+                ...fileGrades,
+                [nomeTipo]: value,
+            };
+        }
+    }
+
     // Parse query parameters
     $: {
         id_problema = $page.url.searchParams.get("id_problema") || "";
@@ -463,6 +520,11 @@
                 `/alunos/get?id_aluno=${id_aluno_avaliado}`,
             );
 
+            // Load student files for professor evaluation
+            if (isProfessorEvaluation) {
+                await loadStudentFiles();
+            }
+
             // Initialize the current values
             currentValues = initializeNotas();
             avaliacaoData = {
@@ -605,6 +667,7 @@
                     id_professor: parseInt(id_professor!),
                     id_aluno_avaliado: parseInt(id_aluno_avaliado),
                     notas: JSON.stringify(notas),
+                    notas_por_arquivo: JSON.stringify(fileGrades),
                 };
                 await AvaliacoesService.create(payload);
             } else {
@@ -795,22 +858,170 @@
                     </div>
                 {/each}
             </div>
-            {#if !loading && problema && avaliacaoData.aluno.nome}
-                <div class="submit-btn-container">
-                    <Button
-                        type="submit"
-                        variant="primary"
-                        disabled={isSubmitting ||
-                            (!isProfessorEvaluation &&
-                                problema &&
-                                areAllTagsDisabled())}
-                        loading={isSubmitting}
-                    >
-                        Salvar Avaliação
-                    </Button>
-                </div>
-            {/if}
         </form>
+
+        <!-- File Evaluation Section for Professors -->
+        {#if isProfessorEvaluation && problema?.definicao_arquivos_de_avaliacao && problema.definicao_arquivos_de_avaliacao.length > 0}
+            <div
+                class="file-evaluation-section"
+                in:fade={{ duration: 400, delay: 450 }}
+            >
+                <h2>Avaliação de Arquivos Enviados</h2>
+                <p class="file-evaluation-description">
+                    Avalie os arquivos enviados pelo aluno para este problema:
+                </p>
+
+                {#if loadingFiles}
+                    <div class="files-loading">
+                        <LoadingSpinner size="sm" />
+                        <p>Carregando arquivos do aluno...</p>
+                    </div>
+                {:else if filesError}
+                    <div class="files-error">
+                        <p>Erro ao carregar arquivos: {filesError}</p>
+                    </div>
+                {:else}
+                    <div class="files-evaluation">
+                        {#each problema.definicao_arquivos_de_avaliacao as definicao, index}
+                            {@const filesForType =
+                                uploadedFilesByType.get(
+                                    definicao.nome_tipo || "",
+                                ) || []}
+                            {@const nomeTipo = definicao.nome_tipo || ""}
+                            <div
+                                class="file-type-section"
+                                in:fade={{
+                                    duration: 300,
+                                    delay: 500 + index * 100,
+                                }}
+                            >
+                                <h3>
+                                    {definicao.nome_tipo ||
+                                        `Tipo de Arquivo ${index + 1}`}
+                                </h3>
+                                <p class="file-type-description">
+                                    {definicao.descricao_tipo ||
+                                        "Arquivos enviados pelo aluno"}
+                                </p>
+
+                                {#if filesForType.length > 0}
+                                    <div class="files-list">
+                                        {#each filesForType as file}
+                                            <div class="file-item">
+                                                <div class="file-info">
+                                                    <span class="file-name"
+                                                        >{file.nome_arquivo}</span
+                                                    >
+                                                    {#if file.created_at}
+                                                        <span class="file-date">
+                                                            {new Date(
+                                                                file.created_at,
+                                                            ).toLocaleDateString(
+                                                                "pt-BR",
+                                                                {
+                                                                    day: "2-digit",
+                                                                    month: "2-digit",
+                                                                    year: "numeric",
+                                                                    hour: "2-digit",
+                                                                    minute: "2-digit",
+                                                                },
+                                                            )}
+                                                        </span>
+                                                    {/if}
+                                                </div>
+                                                <div class="file-actions">
+                                                    <a
+                                                        href={file.link_arquivo}
+                                                        target="_blank"
+                                                        class="download-link"
+                                                        title="Baixar arquivo"
+                                                    >
+                                                        Baixar
+                                                    </a>
+                                                    <div
+                                                        class="file-grade-section"
+                                                    >
+                                                        <label
+                                                            class="file-grade-label"
+                                                        >
+                                                            <span>Nota:</span>
+                                                            <div
+                                                                class="file-slider-container"
+                                                            >
+                                                                <input
+                                                                    type="range"
+                                                                    step="0.1"
+                                                                    min="0"
+                                                                    max={definicao.nota_maxima ||
+                                                                        10}
+                                                                    value={fileGrades[
+                                                                        nomeTipo
+                                                                    ] || 0}
+                                                                    on:input={(
+                                                                        e,
+                                                                    ) =>
+                                                                        handleFileGradeChange(
+                                                                            nomeTipo,
+                                                                            e,
+                                                                        )}
+                                                                    on:change={(
+                                                                        e,
+                                                                    ) =>
+                                                                        handleFileGradeChange(
+                                                                            nomeTipo,
+                                                                            e,
+                                                                        )}
+                                                                    class="file-slider"
+                                                                />
+                                                                <div
+                                                                    class="file-value-display"
+                                                                >
+                                                                    {(
+                                                                        fileGrades[
+                                                                            nomeTipo
+                                                                        ] || 0
+                                                                    ).toFixed(
+                                                                        1,
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {/each}
+                                    </div>
+                                {:else}
+                                    <div class="no-files">
+                                        <p>
+                                            Nenhum arquivo enviado para este
+                                            tipo.
+                                        </p>
+                                    </div>
+                                {/if}
+                            </div>
+                        {/each}
+                    </div>
+                {/if}
+            </div>
+        {/if}
+
+        <!-- Submit Button - moved outside form for professors -->
+        {#if !loading && problema && avaliacaoData.aluno.nome}
+            <div class="submit-btn-container">
+                <Button
+                    variant="primary"
+                    disabled={isSubmitting ||
+                        (!isProfessorEvaluation &&
+                            problema &&
+                            areAllTagsDisabled())}
+                    loading={isSubmitting}
+                    on:click={handleSubmit}
+                >
+                    Salvar Avaliação
+                </Button>
+            </div>
+        {/if}
     {/if}
 </div>
 
@@ -1271,6 +1482,321 @@
 
         .error-icon {
             align-self: center;
+        }
+    }
+
+    .file-evaluation-section {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow:
+            0 4px 20px rgba(0, 0, 0, 0.08),
+            0 2px 10px rgba(0, 0, 0, 0.04);
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .file-evaluation-section h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 1rem 0;
+    }
+
+    .file-evaluation-description {
+        font-size: 1rem;
+        color: #495057;
+        margin: 0 0 1.5rem 0;
+    }
+
+    .files-loading,
+    .files-error {
+        text-align: center;
+        padding: 1rem;
+        color: #495057;
+        font-size: 0.9rem;
+    }
+
+    .files-evaluation {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .file-type-section {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(8px);
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow:
+            0 2px 8px rgba(0, 0, 0, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .file-type-section h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .file-type-description {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin: 0 0 1rem 0;
+    }
+
+    .files-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .file-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(5px);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .file-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex: 1;
+    }
+
+    .file-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .file-name {
+        font-weight: 500;
+        color: #343a40;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 200px;
+    }
+
+    .file-date {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-left: 0.5rem;
+    }
+
+    .download-link {
+        padding: 0.5rem 1rem;
+        background: #667eea;
+        color: white;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background-color 0.2s ease;
+        border: 1px solid #667eea;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .download-link:hover {
+        background: #5a67d8;
+        border-color: #5a67d8;
+    }
+
+    .file-grade-section {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-left: 1rem;
+    }
+
+    .file-grade-label {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.875rem;
+        color: #495057;
+        font-weight: 500;
+    }
+
+    .file-slider-container {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(8px);
+        padding: 0.25rem 0.75rem;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow:
+            inset 0 2px 4px rgba(0, 0, 0, 0.05),
+            0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .file-slider {
+        flex: 1;
+        -webkit-appearance: none;
+        appearance: none;
+        height: 6px;
+        background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
+        border-radius: 3px;
+        outline: none;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+        /* Improve touch handling on mobile */
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .file-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid #667eea;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+        /* Improve touch target size */
+        min-height: 20px;
+        min-width: 20px;
+    }
+
+    .file-slider::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid #667eea;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+        /* Improve touch target size */
+        min-height: 20px;
+        min-width: 20px;
+    }
+
+    .file-slider:hover {
+        opacity: 1;
+    }
+
+    .file-slider::-webkit-slider-thumb:hover {
+        transform: scale(1.1);
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .file-slider::-moz-range-thumb:hover {
+        transform: scale(1.1);
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .file-value-display {
+        min-width: 2rem;
+        text-align: center;
+        font-weight: 500;
+        color: #495057;
+        font-size: 1rem;
+        padding: 0.25rem 0.5rem;
+        background: white;
+        border-radius: 4px;
+        border: 1px solid rgba(206, 212, 218, 0.4);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .no-files {
+        text-align: center;
+        padding: 1rem;
+        color: #495057;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+        .file-evaluation-section {
+            padding: 1rem;
+        }
+
+        .file-evaluation-section h2 {
+            font-size: 1.125rem;
+        }
+
+        .file-evaluation-description {
+            font-size: 0.9rem;
+        }
+
+        .file-type-section {
+            padding: 0.75rem;
+        }
+
+        .file-type-section h3 {
+            font-size: 1rem;
+        }
+
+        .file-type-description {
+            font-size: 0.8rem;
+        }
+
+        .file-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+            padding: 0.75rem 0.75rem;
+        }
+
+        .file-info {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.25rem;
+            width: 100%;
+        }
+
+        .file-name {
+            max-width: 100%;
+        }
+
+        .file-actions {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .download-link {
+            width: 100%;
+            text-align: center;
+        }
+
+        .file-grade-section {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        .file-slider-container {
+            flex: 1;
+            padding: 0.2rem;
+            gap: 0.5rem;
+        }
+
+        .file-slider {
+            height: 4px;
+        }
+
+        .file-grade-label {
+            font-size: 0.8rem;
         }
     }
 </style>

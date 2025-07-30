@@ -93,7 +93,7 @@ export const AvaliacaoController: EndpointController = {
         }),
 
         'create': new Pair(RequestType.POST, async (req: Request, res: Response) => {
-            const { id_problema, id_aluno_avaliador, id_aluno_avaliado, notas, id_professor } = req.body;
+            const { id_problema, id_aluno_avaliador, id_aluno_avaliado, notas, id_professor, notas_por_arquivo } = req.body;
 
             // Must provide either id_aluno_avaliador or id_professor, but not both
             if (!id_problema || !id_aluno_avaliado || !notas) {
@@ -107,6 +107,7 @@ export const AvaliacaoController: EndpointController = {
                 id_problema,
                 id_aluno_avaliado,
                 notas: notas || '{}',
+                notas_por_arquivo: notas_por_arquivo || '{}',
             };
             if (id_aluno_avaliador) insertObj.id_aluno_avaliador = id_aluno_avaliador;
             if (id_professor) insertObj.id_professor = id_professor;
@@ -154,7 +155,7 @@ export const AvaliacaoController: EndpointController = {
                 return res.status(400).json({ error: 'id_avaliacao is required' });
             }
 
-            const { notas, id_aluno_avaliador, id_professor } = req.body;
+            const { notas, id_aluno_avaliador, id_professor, notas_por_arquivo } = req.body;
 
             // Must provide either id_aluno_avaliador or id_professor, but not both
             if ((id_aluno_avaliador && id_professor) || (!id_aluno_avaliador && !id_professor)) {
@@ -164,7 +165,7 @@ export const AvaliacaoController: EndpointController = {
             const updateObj: any = { notas };
             if (id_aluno_avaliador) updateObj.id_aluno_avaliador = id_aluno_avaliador;
             if (id_professor) updateObj.id_professor = id_professor;
-
+            if (notas_por_arquivo) updateObj.notas_por_arquivo = notas_por_arquivo;
             const { data, error } = await supabase
                 .from('avaliacoes')
                 .update(updateObj)
