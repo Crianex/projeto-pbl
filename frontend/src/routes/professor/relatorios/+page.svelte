@@ -1110,7 +1110,6 @@
                     on:change={handleTurmaSelect}
                     class="filter-select"
                 >
-                    <option value="">Selecione uma turma</option>
                     {#each turmas as turma}
                         <option value={turma.id_turma}>
                             {turma.nome_turma} ({turma.alunos?.length || 0} alunos)
@@ -1128,7 +1127,6 @@
                     class="filter-select"
                     disabled={!selectedTurma || problemas.length === 0}
                 >
-                    <option value="">Selecione um problema</option>
                     {#each problemas as problema}
                         <option value={problema.id_problema}>
                             {problema.nome_problema} (Média: {problema.media_geral !==
