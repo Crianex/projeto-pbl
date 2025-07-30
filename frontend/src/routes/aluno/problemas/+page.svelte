@@ -89,16 +89,37 @@
             loading = true;
             error = null;
 
-            if (!($currentUser as AlunoModel).id_turma) {
+            const currentUserData = get(currentUser) as AlunoModel;
+
+            // First, try to refresh user data in case they were added to a turma
+            if (currentUserData?.id) {
+                try {
+                    const updatedUserData = await api.get(
+                        `/alunos/get?id_aluno=${currentUserData.id}`,
+                    );
+                    const parsedUser = Parsers.parseAluno(updatedUserData);
+                    currentUser.set(parsedUser);
+                    console.log("User data refreshed:", parsedUser);
+                } catch (e) {
+                    console.log("Could not refresh user data:", e);
+                    // Continue with existing user data
+                }
+            }
+
+            // Get the updated user data after refresh
+            const updatedUserData = get(currentUser) as AlunoModel;
+
+            if (!updatedUserData.id_turma) {
                 loading = false;
+                console.log("No id_turma after refresh");
                 return;
             }
 
             problems = await api.get(
                 "/problemas/list-by-turma?id_turma=" +
-                    ($currentUser as AlunoModel).id_turma +
+                    updatedUserData.id_turma +
                     "&id_aluno=" +
-                    ($currentUser as AlunoModel).id,
+                    updatedUserData.id,
             );
 
             problems = Parsers.parseProblemas(problems);
@@ -129,7 +150,14 @@
         }
     }
 
-    $: user = get(currentUser) as AlunoModel;
+    $: user = $currentUser as AlunoModel;
+
+    // Reactive statement to track user changes for debugging
+    $: console.log("User data updated:", {
+        id: user?.id,
+        id_turma: user?.id_turma,
+        nome: user?.nome_completo,
+    });
 
     onMount(fetchProblems);
 </script>

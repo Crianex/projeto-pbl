@@ -89,16 +89,37 @@
 
     onMount(() => {
         fetchTurmas();
+
+        // Function to refresh data - can be called when returning from editing
+        function refreshData() {
+            fetchTurmas(true);
+        }
+
+        // Listen for focus events to refresh when returning to the page
+        if (typeof window !== "undefined") {
+            window.addEventListener("focus", refreshData);
+        }
+
+        // Also listen for page visibility changes
+        if (typeof document !== "undefined") {
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === "visible") {
+                    // Add a small delay to ensure navigation is complete
+                    setTimeout(() => {
+                        fetchTurmas(true);
+                    }, 100);
+                }
+            });
+        }
     });
 
-    // Function to refresh data - can be called when returning from editing
-    function refreshData() {
-        fetchTurmas(true);
-    }
-
-    // Listen for focus events to refresh when returning to the page
-    if (typeof window !== "undefined") {
-        window.addEventListener("focus", refreshData);
+    // Reactive statement to refresh data when URL changes (e.g., when returning from editing)
+    $: if ($page.url.pathname === "/professor/turmas") {
+        // This will trigger when we navigate back to this page
+        // Use a small delay to ensure the navigation is complete
+        setTimeout(() => {
+            fetchTurmas(true);
+        }, 200);
     }
 
     // Filter and sort turmas

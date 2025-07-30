@@ -20,6 +20,7 @@
     let initialLoad = false;
     let selected = new Set<string>();
     let loadingAll = false;
+    let searching = false;
 
     import { createEventDispatcher } from "svelte";
     import type { AlunoModel } from "$lib/interfaces/interfaces";
@@ -34,12 +35,17 @@
         resetAndLoad();
     }
 
-    function resetAndLoad() {
+    // Reactive search - trigger search when searchQuery changes
+    $: if (open && initialLoad && searchQuery !== undefined) {
+        searchAlunos();
+    }
+
+    async function resetAndLoad() {
         results = [];
         offset = 0;
         hasMore = true;
         error = null;
-        loadMore();
+        await loadMore();
     }
 
     async function loadMore() {
@@ -99,15 +105,11 @@
     }
 
     // Debounced search
-    const searchAlunos = debounce((query: string) => {
-        searchQuery = query;
-        resetAndLoad();
+    const searchAlunos = debounce(async () => {
+        searching = true;
+        await resetAndLoad();
+        searching = false;
     }, 300);
-
-    function handleSearch(event: Event) {
-        const input = event.target as HTMLInputElement;
-        searchAlunos(input.value);
-    }
 
     function toggleSelect(aluno: AlunoModel) {
         if (selected.has(aluno.id.toString())) {
@@ -178,75 +180,76 @@
             <Input
                 type="text"
                 bind:value={searchQuery}
-                on:input={handleSearch}
                 placeholder="Buscar aluno por nome..."
             />
         </div>
 
-        {#if results.length > 0}
-            <div
-                style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;"
+        <div
+            style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;"
+        >
+            <Button
+                type="button"
+                variant="secondary"
+                on:click={handleSelectAll}
+                disabled={loadingAll ||
+                    results.length === 0 ||
+                    results.every((a) => selected.has(a.id.toString()))}
             >
-                <Button
-                    type="button"
-                    variant="secondary"
-                    on:click={handleSelectAll}
-                    disabled={loadingAll ||
-                        (results.length === 0 && !loadingAll) ||
-                        results.every((a) => selected.has(a.id.toString()))}
-                >
-                    {loadingAll ? "Carregando..." : "Selecionar Todos"}
-                </Button>
-            </div>
-        {/if}
+                {loadingAll ? "Carregando..." : "Selecionar Todos"}
+            </Button>
+        </div>
 
-        {#if loading && results.length === 0}
-            <div class="status-message">Carregando alunos...</div>
-        {:else if error}
-            <div class="status-message error">{error}</div>
-        {:else if results.length === 0}
-            <div class="status-message">Nenhum aluno encontrado</div>
-        {:else}
-            <div class="results-list" on:scroll={handleScroll}>
-                {#each results as aluno (aluno.id)}
-                    <button
-                        class="result-item {selected.has(aluno.id.toString())
-                            ? 'selected'
-                            : ''}"
-                        type="button"
-                        on:click={() => toggleSelect(aluno)}
-                    >
-                        <input
-                            type="checkbox"
-                            class="select-checkbox"
-                            checked={selected.has(aluno.id.toString())}
-                            readonly
-                            tabindex="-1"
-                        />
-                        <div class="aluno-info">
-                            <Avatar
-                                src={aluno.link_avatar ||
-                                    "/images/default_avatar.png"}
-                                alt={`Avatar de ${aluno.nome_completo}`}
-                                size="sm"
+        <div class="results-container">
+            {#if searching}
+                <div class="search-loading">
+                    <div class="loading-spinner"></div>
+                    <span>Buscando alunos...</span>
+                </div>
+            {:else if loading && results.length === 0}
+                <div class="status-message">Carregando alunos...</div>
+            {:else if error}
+                <div class="status-message error">{error}</div>
+            {:else if results.length === 0 && !searching}
+                <div class="status-message">Nenhum aluno encontrado</div>
+            {:else}
+                <div class="results-list" on:scroll={handleScroll}>
+                    {#each results as aluno (aluno.id)}
+                        <button
+                            class="result-item {selected.has(
+                                aluno.id.toString(),
+                            )
+                                ? 'selected'
+                                : ''}"
+                            type="button"
+                            on:click={() => toggleSelect(aluno)}
+                        >
+                            <input
+                                type="checkbox"
+                                class="select-checkbox"
+                                checked={selected.has(aluno.id.toString())}
+                                readonly
+                                tabindex="-1"
                             />
-                            <div class="aluno-details">
-                                <strong>{aluno.nome_completo}</strong>
-                                <span>{aluno.email}</span>
+                            <div class="aluno-info">
+                                <Avatar
+                                    src={aluno.link_avatar ||
+                                        "/images/default_avatar.png"}
+                                    alt={`Avatar de ${aluno.nome_completo}`}
+                                    size="sm"
+                                />
+                                <div class="aluno-details">
+                                    <strong>{aluno.nome_completo}</strong>
+                                    <span>{aluno.email}</span>
+                                </div>
                             </div>
-                        </div>
-                    </button>
-                {/each}
-                {#if loadingMore}
-                    <div class="status-message">Carregando mais...</div>
-                {/if}
-                {#if !hasMore && results.length > 0}
-                    <div class="status-message">
-                        Todos os alunos carregados.
-                    </div>
-                {/if}
-            </div>
-        {/if}
+                        </button>
+                    {/each}
+                    {#if loadingMore}
+                        <div class="status-message">Carregando mais...</div>
+                    {/if}
+                </div>
+            {/if}
+        </div>
 
         <div class="actions">
             <Button variant="secondary" type="button" on:click={handleClose}>
@@ -265,9 +268,6 @@
 </Dialog>
 
 <style>
-    .dialog-content {
-    }
-
     h2 {
         margin: 0 0 1.5rem;
         font-size: 1.5rem;
@@ -282,6 +282,15 @@
         text-align: center;
         padding: 1rem;
         color: #6c757d;
+        flex: 1;
+        min-height: 200px;
+        max-height: 300px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        margin: 1rem 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .status-message.error {
@@ -349,5 +358,57 @@
         gap: 1rem;
         justify-content: flex-end;
         margin-top: 1rem;
+    }
+
+    .results-container {
+        height: 20rem;
+        width: 30rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .search-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        color: #6c757d;
+        flex: 1;
+        min-height: 200px;
+        max-height: 300px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        margin: 1rem 0;
+    }
+
+    .loading-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid #e9ecef;
+        border-top: 2px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Fix dialog sizing */
+    :global(.dialog-content) {
+        min-height: 400px;
+        max-height: 600px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .results-list {
+        flex: 1;
+        min-height: 200px;
     }
 </style>

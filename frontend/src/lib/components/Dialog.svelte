@@ -27,11 +27,7 @@
 			on:click={handleClose}
 			transition:fade={{ duration: 200 }}
 		>
-			<div
-				class="dialog"
-				on:click={handleDialogClick}
-				transition:scale={{ duration: 200, start: 0.95 }}
-			>
+			<div class="dialog" on:click={handleDialogClick}>
 				<div class="dialog-header">
 					<slot name="header" />
 				</div>
@@ -75,8 +71,6 @@
 		max-height: 90vh;
 		overflow-x: hidden;
 		overflow-y: auto;
-		animation: dialog-appear 0.3s ease-out;
-		transition: all 0.3s ease;
 	}
 
 	.dialog-header {
@@ -86,17 +80,6 @@
 
 	.dialog-content {
 		padding: 1rem 2.5rem;
-	}
-
-	@keyframes dialog-appear {
-		from {
-			opacity: 0;
-			transform: scale(0.95);
-		}
-		to {
-			opacity: 1;
-			transform: scale(1);
-		}
 	}
 
 	/* Scrollbar styling */

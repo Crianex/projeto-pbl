@@ -36,9 +36,9 @@
     <button
         {type}
         class="button {variant} {size} {$$props.class || ''}"
-        {disabled}
         class:loading
         on:click
+        disabled={disabled || loading}
         {...filteredProps}
     >
         {#if loading}
