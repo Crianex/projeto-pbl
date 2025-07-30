@@ -14,6 +14,8 @@
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
     import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
     import type { PDFFont } from "pdf-lib";
+    import Tooltip from "$lib/components/Tooltip.svelte";
+    import { tooltip } from "$lib/utils/tooltip";
 
     let turmas: TurmaModel[] = [];
     let selectedTurma: TurmaModel | null = null;
@@ -949,6 +951,132 @@
         if (currentLine) lines.push(currentLine);
         return lines;
     }
+
+    // Helper to get detailed evaluation information for tooltips
+    function getEvaluationDetails(
+        evaluatorId: number,
+        evaluatedId: number,
+    ): string {
+        if (!selectedProblema || !avaliacoes) return "";
+
+        const evaluator = alunos.find((a) => a.id === evaluatorId);
+        const evaluated = alunos.find((a) => a.id === evaluatedId);
+
+        if (!evaluator || !evaluated) return "";
+
+        let details = `<strong>${evaluator.nome_completo}</strong> avaliou <strong>${evaluated.nome_completo}</strong><br><br>`;
+
+        // Get the specific evaluation
+        const evaluation = avaliacoes.find(
+            (av) =>
+                av.id_aluno_avaliador === evaluatorId &&
+                av.id_aluno_avaliado === evaluatedId,
+        );
+
+        if (!evaluation) {
+            details += "❌ <strong>Avaliação não enviada</strong>";
+            return details;
+        }
+
+        try {
+            const notas = JSON.parse(evaluation.notas);
+            details += "📊 <strong>Detalhes da avaliação:</strong><br>";
+
+            Object.entries(notas).forEach(([tag, criterios]) => {
+                if (typeof criterios === "object" && criterios !== null) {
+                    details += `<br><strong>${tag}:</strong><br>`;
+                    Object.entries(criterios).forEach(([criterio, nota]) => {
+                        if (typeof nota === "number") {
+                            details += `  • ${criterio}: ${nota.toFixed(1)}<br>`;
+                        }
+                    });
+                }
+            });
+
+            // Add average
+            const average = MediaCalculator.calculateSimpleMedia(
+                evaluation.notas,
+            );
+            details += `<br><strong>Média final: ${average.toFixed(2)}</strong>`;
+        } catch (error) {
+            details += "❌ <strong>Erro ao processar avaliação</strong>";
+        }
+
+        return details;
+    }
+
+    // Helper to get falta information for tooltips
+    function getFaltaInfo(studentId: number): string {
+        if (!selectedProblema || !selectedProblema.faltas_por_tag) return "";
+
+        try {
+            const faltasPorTag = JSON.parse(selectedProblema.faltas_por_tag);
+            const student = alunos.find((a) => a.id === studentId);
+
+            if (!student) return "";
+
+            const missedTags = Object.entries(faltasPorTag)
+                .filter(([tag, students]) => {
+                    if (typeof students === "object" && students !== null) {
+                        return (students as any)[studentId] === true;
+                    }
+                    return false;
+                })
+                .map(([tag]) => tag);
+
+            if (missedTags.length === 0) {
+                return "";
+            }
+
+            return `<br><br>⚠️ <strong>Faltas registradas:</strong><br>• ${missedTags.join("<br>• ")}`;
+        } catch (error) {
+            return "";
+        }
+    }
+
+    // Helper to get falta information for the evaluated student
+    function getEvaluatedFaltaInfo(evaluatedId: number): string {
+        if (!selectedProblema || !selectedProblema.faltas_por_tag) return "";
+
+        try {
+            const faltasPorTag = JSON.parse(selectedProblema.faltas_por_tag);
+            const evaluatedStudent = alunos.find((a) => a.id === evaluatedId);
+
+            if (!evaluatedStudent) return "";
+
+            const missedTags = Object.entries(faltasPorTag)
+                .filter(([tag, students]) => {
+                    if (typeof students === "object" && students !== null) {
+                        return (students as any)[evaluatedId] === true;
+                    }
+                    return false;
+                })
+                .map(([tag]) => tag);
+
+            if (missedTags.length === 0) {
+                return "";
+            }
+
+            return `<br><br>⚠️ <strong>AVISO: Aluno avaliado faltou em:</strong><br>• ${missedTags.join("<br>• ")}`;
+        } catch (error) {
+            return "";
+        }
+    }
+
+    // Helper to generate complete tooltip content
+    function getTooltipContent(
+        evaluatorId: number,
+        evaluatedId: number,
+    ): string {
+        const evaluationDetails = getEvaluationDetails(
+            evaluatorId,
+            evaluatedId,
+        );
+        const evaluatorFaltaInfo = getFaltaInfo(evaluatorId);
+        const evaluatedFaltaInfo = getEvaluatedFaltaInfo(evaluatedId);
+
+        return evaluationDetails + evaluatorFaltaInfo + evaluatedFaltaInfo;
+    }
 </script>
 
 <div class="relatorios-container">
@@ -1210,6 +1338,12 @@
                                                 <td
                                                     class="grade-cell self-evaluation"
                                                     style="min-width: {zoomStyles.cellWidth}; width: {zoomStyles.cellWidth}; padding: {zoomStyles.padding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                                    use:tooltip={{
+                                                        title: getTooltipContent(
+                                                            evaluator.id,
+                                                            evaluated.id,
+                                                        ),
+                                                    }}
                                                 >
                                                     {#if grade && grade > 0}
                                                         <span
@@ -1224,7 +1358,12 @@
                                                 <td
                                                     class="grade-cell"
                                                     style="min-width: {zoomStyles.cellWidth}; width: {zoomStyles.cellWidth}; padding: {zoomStyles.padding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
-                                                    >N</td
+                                                    use:tooltip={{
+                                                        title: getTooltipContent(
+                                                            evaluator.id,
+                                                            evaluated.id,
+                                                        ),
+                                                    }}>N</td
                                                 >
                                             {:else if grade > 0}
                                                 <td
@@ -1235,19 +1374,34 @@
                                                         ? ' outlier-grade'
                                                         : ''}"
                                                     style="min-width: {zoomStyles.cellWidth}; width: {zoomStyles.cellWidth}; padding: {zoomStyles.padding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
-                                                    >{grade}</td
+                                                    use:tooltip={{
+                                                        title: getTooltipContent(
+                                                            evaluator.id,
+                                                            evaluated.id,
+                                                        ),
+                                                    }}>{grade}</td
                                                 >
                                             {:else if grade === 0}
                                                 <td
                                                     class="grade-cell zero-grade"
                                                     style="min-width: {zoomStyles.cellWidth}; width: {zoomStyles.cellWidth}; padding: {zoomStyles.padding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
-                                                    >0</td
+                                                    use:tooltip={{
+                                                        title: getTooltipContent(
+                                                            evaluator.id,
+                                                            evaluated.id,
+                                                        ),
+                                                    }}>0</td
                                                 >
                                             {:else}
                                                 <td
                                                     class="grade-cell"
                                                     style="min-width: {zoomStyles.cellWidth}; width: {zoomStyles.cellWidth}; padding: {zoomStyles.padding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
-                                                    >N</td
+                                                    use:tooltip={{
+                                                        title: getTooltipContent(
+                                                            evaluator.id,
+                                                            evaluated.id,
+                                                        ),
+                                                    }}>N</td
                                                 >
                                             {/if}
                                         {/each}
@@ -1279,21 +1433,26 @@
                                     {#each alunos as evaluated}
                                         {#if professor && evaluated.id === professor.id}
                                             <td
-                                                class="grade-cell professor-grade self-evaluation"
+                                                class="grade-cell professor-grade self-evaluation tooltip-cell"
                                                 style="min-width: {zoomStyles.cellWidth}; width: {zoomStyles.cellWidth}; padding: {zoomStyles.padding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                                title="Auto-avaliação do professor"
                                             >
                                                 <span>X</span>
                                             </td>
                                         {:else if getProfessorGradeFor(evaluated.id) === null}
                                             <td
-                                                class="grade-cell professor-grade"
+                                                class="grade-cell professor-grade tooltip-cell"
                                                 style="min-width: {zoomStyles.cellWidth}; width: {zoomStyles.cellWidth}; padding: {zoomStyles.padding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                                title="Professor não avaliou este aluno"
                                                 >N</td
                                             >
                                         {:else}
                                             <td
-                                                class="grade-cell professor-grade"
+                                                class="grade-cell professor-grade tooltip-cell"
                                                 style="min-width: {zoomStyles.cellWidth}; width: {zoomStyles.cellWidth}; padding: {zoomStyles.padding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                                title="Avaliação do professor: {getProfessorGradeFor(
+                                                    evaluated.id,
+                                                )}"
                                             >
                                                 {getProfessorGradeFor(
                                                     evaluated.id,

@@ -98,13 +98,11 @@
 <style>
     .toast {
         position: fixed;
-        top: 0;
-        left: 50%;
-        transform: translateX(-50%);
+        top: 1rem;
+        right: 1rem;
         z-index: 10000;
         max-width: 400px;
         min-width: 320px;
-        margin: 1rem;
         border-radius: 16px;
         overflow: hidden;
         backdrop-filter: blur(20px);

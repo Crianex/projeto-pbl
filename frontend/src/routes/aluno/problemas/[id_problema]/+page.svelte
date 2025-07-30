@@ -105,7 +105,25 @@
     // Helper to get tag status array for display
     function getTagStatusArr() {
         if (!problema) return [];
-        return DateUtils.getDateStartStatusArrayFromProblemaModel(problema);
+
+        const tagStatusArr = [];
+        for (const [tag, dateRange] of Object.entries(
+            problema.data_e_hora_criterios_e_arquivos || {},
+        )) {
+            const isActive = DateUtils.isNowWithinTagDateRange(problema, tag);
+            const startDate = new Date(dateRange.data_e_hora_inicio);
+            const endDate = new Date(dateRange.data_e_hora_fim);
+
+            const periodText = `${startDate.toLocaleDateString("pt-BR")} ${startDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} - ${endDate.toLocaleDateString("pt-BR")} ${endDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+
+            tagStatusArr.push({
+                tag,
+                date: periodText,
+                isActive,
+            });
+        }
+
+        return tagStatusArr;
     }
 
     // Table configuration
@@ -446,11 +464,14 @@
                 <h3>Períodos de Avaliação:</h3>
                 <div class="tag-dates-list">
                     {#each getTagStatusArr() as { tag, date, isActive }}
-                        <span
+                        <div
                             class="tag-status {isActive
                                 ? 'tag-green'
-                                : 'tag-red'}">{tag}: {date}</span
+                                : 'tag-red'}"
                         >
+                            <strong>{tag}:</strong><br />
+                            {date}
+                        </div>
                     {/each}
                 </div>
             </div>

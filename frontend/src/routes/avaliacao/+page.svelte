@@ -696,9 +696,9 @@
                         <strong>{getFaltaTags().join(", ")}</strong>
                     </p>
                     <p class="warning-note">
-                        Como este aluno possui faltas, a avaliação está
-                        desabilitada. Apenas professores podem avaliar alunos
-                        com faltas registradas.
+                        As seções com faltas estão desabilitadas para avaliação.
+                        Apenas professores podem avaliar seções com faltas
+                        registradas.
                     </p>
                 </div>
             </div>

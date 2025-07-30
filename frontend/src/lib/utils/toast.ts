@@ -11,12 +11,29 @@ export interface ToastMessage {
 
 function createToastStore() {
     const { subscribe, set, update } = writable<ToastMessage | null>(null);
+    let timeoutId: NodeJS.Timeout | null = null;
 
     function show(toast: ToastMessage) {
+        // Clear any existing timeout
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+        }
+
         set(toast);
+
+        // Auto-hide after duration (unless persistent)
+        if (!toast.persistent && toast.duration && toast.duration > 0) {
+            timeoutId = setTimeout(() => {
+                hide();
+            }, toast.duration);
+        }
     }
 
     function hide() {
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+        }
         set(null);
     }
 
