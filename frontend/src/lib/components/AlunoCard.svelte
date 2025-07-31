@@ -323,10 +323,10 @@
             </div>
         </div>
 
-        <div class="media-section">
+        <!-- <div class="media-section">
             <span class="media-label">Média Geral:</span>
             <span class="media-value">{overallMedia}</span>
-        </div>
+        </div> -->
 
         <div class="evaluation-status">
             <span class="status-label">Avaliado:</span>
