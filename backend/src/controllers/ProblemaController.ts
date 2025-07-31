@@ -55,22 +55,48 @@ export const ProblemaController: EndpointController = {
                 logger.info(`Calculating student-specific averages for aluno ${id_aluno}`);
 
                 for (const problema of data) {
-                    // Get all evaluations for this problem where the specified student was evaluated
+                    // Get all evaluations for this problem (including professor evaluations)
                     const { data: avaliacoes, error: avaliacoesError } = await supabase
                         .from('avaliacoes')
-                        .select('notas')
-                        .eq('id_problema', problema.id_problema)
-                        .eq('id_aluno_avaliado', id_aluno);
+                        .select('*')
+                        .eq('id_problema', problema.id_problema);
 
                     if (!avaliacoesError && avaliacoes && avaliacoes.length > 0) {
-                        // Calculate average of all grades this student received for this problem
-                        const notas = avaliacoes.map(a => MediaCalculator.calculateSimpleMedia(a.notas));
-                        const studentAverage = notas.reduce((a, b) => a + b, 0) / notas.length;
+                        // Parse criterios and file definitions
+                        let criteriosGroup = {};
+                        let fileDefs = [];
+                        try {
+                            criteriosGroup = JSON.parse(problema.criterios);
+                        } catch { }
+                        try {
+                            fileDefs = JSON.parse(problema.definicao_arquivos_de_avaliacao);
+                        } catch { }
 
-                        // Replace the general average with the student's specific average
-                        problema.media_geral = Number(studentAverage.toFixed(2));
+                        // Parse avaliacoes to get proper structure
+                        const parsedAvaliacoes = avaliacoes.map((av) => {
+                            let notas = av.notas;
+                            let notas_por_arquivo = av.notas_por_arquivo;
+                            try {
+                                notas = typeof notas === 'string' ? JSON.parse(notas) : notas;
+                            } catch { }
+                            try {
+                                notas_por_arquivo = typeof notas_por_arquivo === 'string' ? JSON.parse(notas_por_arquivo) : notas_por_arquivo;
+                            } catch { }
+                            return { ...av, notas, notas_por_arquivo };
+                        });
 
-                        logger.info(`Student ${id_aluno} average for problema ${problema.id_problema}: ${problema.media_geral} (from ${avaliacoes.length} evaluations)`);
+                        // Use the MediaCalculator to get the final media for this specific student
+                        const result = MediaCalculator.calculateFinalMedia(
+                            parsedAvaliacoes,
+                            Number(id_aluno),
+                            criteriosGroup,
+                            fileDefs
+                        );
+
+                        // Set the total final media (which includes professor, auto, and peer evaluations)
+                        problema.media_geral = result.total;
+
+                        logger.info(`Student ${id_aluno} final media for problema ${problema.id_problema}: ${problema.media_geral} (professor: ${result.professor}, auto: ${result.auto}, peers: ${result.peers})`);
                     } else {
                         // No evaluations found for this student on this problem
                         problema.media_geral = null;
@@ -248,30 +274,62 @@ export const ProblemaController: EndpointController = {
             logger.info(`Successfully added avaliacao for problema ${id_problema}. Updating media_geral...`);
 
             // Update media_geral
-            const { data: avaliacoes, error: avaliacoesError } = await supabase
-                .from('avaliacoes')
-                .select('notas')
-                .eq('id_problema', id_problema);
-
-            if (avaliacoesError) {
-                logger.error(`Error fetching avaliacoes for media calculation: ${avaliacoesError.message}`);
-            }
-
-            if (!avaliacoesError && avaliacoes) {
-                const notas = avaliacoes.map(a => MediaCalculator.calculateSimpleMedia(a.notas));
-                const media = notas.length > 0 ? notas.reduce((a, b) => a + b, 0) / notas.length : 0;
-
-                logger.info(`Calculated new media_geral for problema ${id_problema}: ${media}`);
-
-                const { error: updateError } = await supabase
-                    .from('problemas')
-                    .update({ media_geral: media })
+            // 1. Fetch the full problem to get criterios and file definitions
+            const { data: problema, error: problemaError } = await supabase
+                .from('problemas')
+                .select('*')
+                .eq('id_problema', id_problema)
+                .single();
+            if (problemaError || !problema) {
+                logger.error(`Error fetching full problema for media calculation: ${problemaError?.message}`);
+            } else {
+                // 2. Fetch all avaliacoes for the problem (with all relevant fields)
+                const { data: avaliacoesFull, error: avaliacoesFullError } = await supabase
+                    .from('avaliacoes')
+                    .select('*')
                     .eq('id_problema', id_problema);
-
-                if (updateError) {
-                    logger.error(`Error updating media_geral: ${updateError.message}`);
+                if (avaliacoesFullError || !avaliacoesFull) {
+                    logger.error(`Error fetching full avaliacoes for media calculation: ${avaliacoesFullError?.message}`);
                 } else {
-                    logger.info(`Successfully updated media_geral for problema ${id_problema}`);
+                    // 3. Parse criterios and file definitions
+                    let criteriosGroup = {};
+                    let fileDefs = [];
+                    try {
+                        criteriosGroup = JSON.parse(problema.criterios);
+                    } catch { }
+                    try {
+                        fileDefs = JSON.parse(problema.definicao_arquivos_de_avaliacao);
+                    } catch { }
+                    // 4. Group avaliacoes by id_aluno_avaliado
+                    const byAluno: Record<string, any[]> = {};
+                    for (const av of avaliacoesFull) {
+                        const alunoId = av.id_aluno_avaliado;
+                        if (!byAluno[String(alunoId)]) byAluno[String(alunoId)] = [];
+                        // Parse notas and notas_por_arquivo for calculation
+                        let notas = av.notas;
+                        let notas_por_arquivo = av.notas_por_arquivo;
+                        try { notas = typeof notas === 'string' ? JSON.parse(notas) : notas; } catch { }
+                        try { notas_por_arquivo = typeof notas_por_arquivo === 'string' ? JSON.parse(notas_por_arquivo) : notas_por_arquivo; } catch { }
+                        byAluno[String(alunoId)].push({ ...av, notas, notas_por_arquivo });
+                    }
+                    // 5. For each student, calculate their final media
+                    const allMedias = Object.entries(byAluno).map(([alunoId, avaliacoes]) => {
+                        const avs = avaliacoes as any[];
+                        const result = MediaCalculator.calculateFinalMedia(avs, Number(alunoId), criteriosGroup, fileDefs);
+                        return result.total;
+                    });
+                    // 6. Set media_geral as the average of all students' final medias
+                    const media = allMedias.length > 0 ? allMedias.reduce((a, b) => a + b, 0) / allMedias.length : 0;
+                    logger.info(`Calculated new media_geral for problema ${id_problema} (NEW LOGIC): ${media}`);
+                    const { error: updateError } = await supabase
+                        .from('problemas')
+                        .update({ media_geral: media })
+                        .eq('id_problema', id_problema);
+                    if (updateError) {
+                        logger.error(`Error updating media_geral: ${updateError.message}`);
+                    } else {
+                        logger.info(`Successfully updated media_geral for problema ${id_problema}`);
+                    }
                 }
             }
 

@@ -36,10 +36,17 @@
                 throw new Error("User not authenticated or not a professor");
             }
 
-            const fetchedTurmas = await TurmasService.getAll(
-                user.id,
-                forceRefresh,
-            );
+            // Add a timeout to prevent infinite loading
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error("Request timeout")), 10000);
+            });
+
+            const fetchPromise = TurmasService.getAll(user.id, forceRefresh);
+            const fetchedTurmas = await Promise.race([
+                fetchPromise,
+                timeoutPromise,
+            ]);
+
             turmas = fetchedTurmas;
             logger.info(
                 `Fetched ${turmas.length} turmas for professor ${user.id}`,
@@ -47,6 +54,12 @@
         } catch (err: any) {
             error = err.message || "Failed to fetch turmas";
             logger.error("Error fetching turmas:", err);
+            // Ensure loading is set to false on error
+            loading = false;
+            // Clear cache on error to prevent stuck loading state
+            if (err.message === "Request timeout") {
+                TurmasService.invalidateCache();
+            }
         } finally {
             loading = false;
         }
@@ -89,37 +102,16 @@
 
     onMount(() => {
         fetchTurmas();
-
-        // Function to refresh data - can be called when returning from editing
-        function refreshData() {
-            fetchTurmas(true);
-        }
-
-        // Listen for focus events to refresh when returning to the page
-        if (typeof window !== "undefined") {
-            window.addEventListener("focus", refreshData);
-        }
-
-        // Also listen for page visibility changes
-        if (typeof document !== "undefined") {
-            document.addEventListener("visibilitychange", () => {
-                if (document.visibilityState === "visible") {
-                    // Add a small delay to ensure navigation is complete
-                    setTimeout(() => {
-                        fetchTurmas(true);
-                    }, 100);
-                }
-            });
-        }
     });
 
-    // Reactive statement to refresh data when URL changes (e.g., when returning from editing)
-    $: if ($page.url.pathname === "/professor/turmas") {
-        // This will trigger when we navigate back to this page
-        // Use a small delay to ensure the navigation is complete
-        setTimeout(() => {
-            fetchTurmas(true);
-        }, 200);
+    // Simple refresh when navigating back to this page
+    $: if (
+        $page.url.pathname === "/professor/turmas" &&
+        !loading &&
+        turmas.length === 0
+    ) {
+        // Only refresh if we're on the turmas page, not loading, and have no data
+        fetchTurmas(true);
     }
 
     // Filter and sort turmas

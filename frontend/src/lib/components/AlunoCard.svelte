@@ -1,9 +1,21 @@
 <script lang="ts">
     import Button from "./Button.svelte";
-    import type { AlunoModel } from "$lib/interfaces/interfaces";
+    import { tooltip } from "$lib/utils/tooltip";
+    import type {
+        AlunoModel,
+        AvaliacaoModel,
+    } from "$lib/interfaces/interfaces";
     import { goto } from "$app/navigation";
+    import { MediaCalculator } from "$lib/utils/utils";
 
-    export let aluno: AlunoModel & { medias: Record<string, number> | null };
+    export let aluno: AlunoModel & {
+        finalMedia: {
+            professor: number;
+            auto: number;
+            peers: number;
+            total: number;
+        } | null;
+    };
     export let criteriosList: {
         nome_criterio: string;
         descricao_criterio: string;
@@ -11,6 +23,8 @@
     export let hasEvaluation: boolean;
     export let overallMedia: string;
     export let professorEvaluation: number | null = null;
+    export let avaliacoesData: AvaliacaoModel[] = [];
+    export let problema: any | null = null;
     export let onVerDetalhes: (id: string) => void;
     export let onAvaliar: (id: number) => void;
 
@@ -18,6 +32,209 @@
         // This would need to be passed from parent or calculated here
         // For now, we'll use a simple threshold
         return value > 8 || value < 2;
+    }
+
+    // Helper to format grade based on scale (similar to relatórios page)
+    function formatGrade(grade: number): number {
+        if (!grade || grade === 0) return grade;
+        return Number(grade.toFixed(2));
+    }
+
+    // Helper to get detailed evaluation information for tooltips
+    function getEvaluationDetails(evaluationType: string): string {
+        if (!avaliacoesData || !problema) return "";
+
+        let details = `<strong>Detalhes da avaliação - ${evaluationType}</strong><br><br>`;
+
+        if (evaluationType === "Professor") {
+            const professorEval = avaliacoesData.find(
+                (av) => av.id_professor && av.aluno_avaliado?.id === aluno.id,
+            );
+
+            if (!professorEval) {
+                details +=
+                    "❌ <strong>Avaliação do professor não encontrada</strong>";
+                return details;
+            }
+
+            try {
+                const notas =
+                    typeof professorEval.notas === "string"
+                        ? JSON.parse(professorEval.notas)
+                        : professorEval.notas;
+
+                details += "📊 <strong>Avaliação do Professor:</strong><br>";
+
+                Object.entries(notas).forEach(([tag, criterios]) => {
+                    if (typeof criterios === "object" && criterios !== null) {
+                        details += `<br><strong>${tag}:</strong><br>`;
+                        Object.entries(criterios).forEach(
+                            ([criterio, nota]) => {
+                                if (typeof nota === "number") {
+                                    details += `  • ${criterio}: ${formatGrade(nota).toFixed(1)}<br>`;
+                                }
+                            },
+                        );
+                    }
+                });
+
+                // Add file grades if available
+                if (professorEval.notas_por_arquivo) {
+                    const fileGrades =
+                        typeof professorEval.notas_por_arquivo === "string"
+                            ? JSON.parse(professorEval.notas_por_arquivo)
+                            : professorEval.notas_por_arquivo;
+
+                    if (Object.keys(fileGrades).length > 0) {
+                        details += `<br><strong>Arquivos:</strong><br>`;
+                        Object.entries(fileGrades).forEach(
+                            ([fileType, grade]) => {
+                                if (typeof grade === "number") {
+                                    details += `  • ${fileType}: ${formatGrade(grade).toFixed(1)}<br>`;
+                                }
+                            },
+                        );
+                    }
+                }
+
+                details += `<br><strong>Total Professor: ${aluno.finalMedia?.professor.toFixed(2)}</strong>`;
+            } catch (error) {
+                details +=
+                    "❌ <strong>Erro ao processar avaliação do professor</strong>";
+            }
+        } else if (evaluationType === "Auto-avaliação") {
+            const autoEval = avaliacoesData.find(
+                (av) =>
+                    av.aluno_avaliador?.id === aluno.id &&
+                    av.aluno_avaliado?.id === aluno.id &&
+                    !av.id_professor,
+            );
+
+            if (!autoEval) {
+                details += "❌ <strong>Auto-avaliação não encontrada</strong>";
+                return details;
+            }
+
+            try {
+                const notas =
+                    typeof autoEval.notas === "string"
+                        ? JSON.parse(autoEval.notas)
+                        : autoEval.notas;
+
+                details += "📊 <strong>Auto-avaliação:</strong><br>";
+
+                Object.entries(notas).forEach(([tag, criterios]) => {
+                    if (typeof criterios === "object" && criterios !== null) {
+                        details += `<br><strong>${tag}:</strong><br>`;
+                        Object.entries(criterios).forEach(
+                            ([criterio, nota]) => {
+                                if (typeof nota === "number") {
+                                    details += `  • ${criterio}: ${formatGrade(nota).toFixed(1)}<br>`;
+                                }
+                            },
+                        );
+                    }
+                });
+
+                details += `<br><strong>Total Auto-avaliação: ${aluno.finalMedia?.auto.toFixed(2)}</strong>`;
+            } catch (error) {
+                details +=
+                    "❌ <strong>Erro ao processar auto-avaliação</strong>";
+            }
+        } else if (evaluationType === "Avaliação dos Pares") {
+            const peerEvals = avaliacoesData.filter(
+                (av) =>
+                    av.aluno_avaliado?.id === aluno.id &&
+                    av.aluno_avaliador?.id !== aluno.id &&
+                    !av.id_professor,
+            );
+
+            if (peerEvals.length === 0) {
+                details +=
+                    "❌ <strong>Nenhuma avaliação dos pares encontrada</strong>";
+                return details;
+            }
+
+            details += `📊 <strong>Avaliações dos Pares (${peerEvals.length} avaliações):</strong><br>`;
+
+            peerEvals.forEach((evaluation, index) => {
+                const evaluator = evaluation.aluno_avaliador;
+                details += `<br><strong>${evaluator?.nome_completo || "Aluno"}:</strong><br>`;
+
+                try {
+                    const notas =
+                        typeof evaluation.notas === "string"
+                            ? JSON.parse(evaluation.notas)
+                            : evaluation.notas;
+
+                    Object.entries(notas).forEach(([tag, criterios]) => {
+                        if (
+                            typeof criterios === "object" &&
+                            criterios !== null
+                        ) {
+                            details += `  <strong>${tag}:</strong><br>`;
+                            Object.entries(criterios).forEach(
+                                ([criterio, nota]) => {
+                                    if (typeof nota === "number") {
+                                        details += `    • ${criterio}: ${formatGrade(nota).toFixed(1)}<br>`;
+                                    }
+                                },
+                            );
+                        }
+                    });
+                } catch (error) {
+                    details += `  ❌ Erro ao processar avaliação<br>`;
+                }
+            });
+
+            details += `<br><strong>Média dos Pares: ${aluno.finalMedia?.peers.toFixed(2)}</strong>`;
+        }
+
+        return details;
+    }
+
+    // Helper to get falta information for tooltips
+    function getFaltaInfo(): string {
+        if (!problema || !problema.faltas_por_tag) return "";
+
+        try {
+            const faltasPorTag =
+                typeof problema.faltas_por_tag === "string"
+                    ? JSON.parse(problema.faltas_por_tag)
+                    : problema.faltas_por_tag;
+
+            const missedTags = Object.entries(faltasPorTag)
+                .filter(([tag, students]) => {
+                    if (typeof students === "object" && students !== null) {
+                        return (students as any)[aluno.id] === true;
+                    }
+                    return false;
+                })
+                .map(([tag]) => tag);
+
+            if (missedTags.length === 0) {
+                return "";
+            }
+
+            return `<br><br>⚠️ <strong>Faltas registradas:</strong><br>• ${missedTags.join("<br>• ")}`;
+        } catch (error) {
+            return "";
+        }
+    }
+
+    // Helper to generate complete tooltip content
+    function getTooltipContent(evaluationType: string): string {
+        const evaluationDetails = getEvaluationDetails(evaluationType);
+        const faltaInfo = getFaltaInfo();
+
+        return evaluationDetails + faltaInfo;
+    }
+
+    // Helper to generate total tooltip content
+    function getTotalTooltipContent(): string {
+        if (!aluno.finalMedia) return "Nenhuma avaliação disponível";
+
+        return `Soma total: Professor + Auto-avaliação + Avaliação dos Pares<br><br>📊 <strong>Resumo:</strong><br>• Professor: ${aluno.finalMedia.professor.toFixed(2)}<br>• Auto-avaliação: ${aluno.finalMedia.auto.toFixed(2)}<br>• Pares: ${aluno.finalMedia.peers.toFixed(2)}<br>• <strong>Total: ${aluno.finalMedia.total.toFixed(2)}</strong>`;
     }
 </script>
 
@@ -43,35 +260,66 @@
         </div>
 
         <div class="criterios-section">
-            <h4 class="criterios-title">Critérios:</h4>
+            <h4 class="criterios-title">Avaliações:</h4>
             <div class="criterios-grid">
-                {#each criteriosList as criterio}
-                    {@const key = criterio.nome_criterio.toLowerCase()}
-                    {@const value =
-                        aluno.medias && key in aluno.medias
-                            ? aluno.medias[key]
-                            : null}
+                {#if aluno.finalMedia}
                     <div class="criterio-item">
-                        <span
-                            class="criterio-label"
-                            title={criterio.descricao_criterio}
-                        >
-                            {criterio.nome_criterio}:
-                        </span>
-                        <span
-                            class="criterio-value {value !== null &&
-                            value !== undefined
-                                ? isOutlier(key, value)
-                                    ? 'outlier'
-                                    : ''
-                                : 'not-evaluated'}"
-                        >
-                            {value !== null && value !== undefined
-                                ? value.toFixed(2)
-                                : "Não avaliado"}
+                        <span class="criterio-label">Professor:</span>
+                        <span class="criterio-value">
+                            {aluno.finalMedia.professor.toFixed(2)}
+                            <span
+                                class="question-mark"
+                                use:tooltip={{
+                                    title: getTooltipContent("Professor"),
+                                }}>?</span
+                            >
                         </span>
                     </div>
-                {/each}
+                    <div class="criterio-item">
+                        <span class="criterio-label">Auto-avaliação:</span>
+                        <span class="criterio-value">
+                            {aluno.finalMedia.auto.toFixed(2)}
+                            <span
+                                class="question-mark"
+                                use:tooltip={{
+                                    title: getTooltipContent("Auto-avaliação"),
+                                }}>?</span
+                            >
+                        </span>
+                    </div>
+                    <div class="criterio-item">
+                        <span class="criterio-label">Avaliação dos Pares:</span>
+                        <span class="criterio-value">
+                            {aluno.finalMedia.peers.toFixed(2)}
+                            <span
+                                class="question-mark"
+                                use:tooltip={{
+                                    title: getTooltipContent(
+                                        "Avaliação dos Pares",
+                                    ),
+                                }}>?</span
+                            >
+                        </span>
+                    </div>
+                    <div class="criterio-item total">
+                        <span class="criterio-label">Total:</span>
+                        <span class="criterio-value total-value">
+                            {aluno.finalMedia.total.toFixed(2)}
+                            <span
+                                class="question-mark"
+                                use:tooltip={{
+                                    title: getTotalTooltipContent(),
+                                }}>?</span
+                            >
+                        </span>
+                    </div>
+                {:else}
+                    <div class="criterio-item">
+                        <span class="criterio-value not-evaluated">
+                            Não avaliado
+                        </span>
+                    </div>
+                {/if}
             </div>
         </div>
 
@@ -79,15 +327,6 @@
             <span class="media-label">Média Geral:</span>
             <span class="media-value">{overallMedia}</span>
         </div>
-
-        {#if professorEvaluation !== null}
-            <div class="professor-evaluation-section">
-                <span class="professor-label">Sua Avaliação:</span>
-                <span class="professor-value"
-                    >{professorEvaluation.toFixed(2)}</span
-                >
-            </div>
-        {/if}
 
         <div class="evaluation-status">
             <span class="status-label">Avaliado:</span>
@@ -210,6 +449,9 @@
     .criterio-value {
         font-weight: 600;
         color: var(--color-info-main);
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
 
     .criterio-value.outlier {
@@ -219,6 +461,39 @@
     .criterio-value.not-evaluated {
         color: var(--color-text-muted);
         font-style: italic;
+    }
+
+    .criterio-item.total {
+        border-top: 2px solid #e5e7eb;
+        padding-top: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .criterio-value.total-value {
+        font-weight: bold;
+        color: #059669;
+        font-size: 1.1em;
+    }
+
+    .question-mark {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        background: #6b7280;
+        color: white;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 16px;
+        font-size: 12px;
+        font-weight: bold;
+        margin-left: 4px;
+        cursor: help;
+    }
+
+    .criterio-label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
 
     .media-section {
@@ -237,27 +512,6 @@
     }
 
     .media-value {
-        font-weight: 700;
-        color: var(--color-info-main);
-        font-size: 1rem;
-    }
-
-    .professor-evaluation-section {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem;
-        background: var(--color-bg-light);
-        border-radius: 6px;
-    }
-
-    .professor-label {
-        font-weight: 600;
-        color: var(--color-text-primary);
-        font-size: 0.9rem;
-    }
-
-    .professor-value {
         font-weight: 700;
         color: var(--color-info-main);
         font-size: 1rem;

@@ -18,6 +18,7 @@
     import { api } from "$lib/utils/api";
     import BackButton from "$lib/components/BackButton.svelte";
     import { DateUtils } from "$lib/utils/utils";
+    import { tooltip } from "$lib/utils/tooltip";
 
     interface Avaliacao {
         id_avaliacao: number;
@@ -29,6 +30,7 @@
         nota?: number;
         enviada: boolean;
         isCurrentUser?: boolean;
+        notasDetalhadas?: string; // Store the original notas string for tooltips
     }
 
     interface UploadedFile {
@@ -75,6 +77,32 @@
         currentPage * itemsPerPage,
     );
 
+    // Helper function to create tooltip text from notas
+    function createTooltipText(notasString: string): string {
+        if (!notasString) return "Nenhuma avaliação disponível";
+
+        try {
+            const notasObj = JSON.parse(notasString);
+            let tooltipText = "Detalhes da Avaliação:\n\n";
+
+            Object.entries(notasObj).forEach(([tag, criterios]) => {
+                if (typeof criterios === "object" && criterios !== null) {
+                    tooltipText += `${tag}:\n`;
+                    Object.entries(criterios).forEach(([criterio, nota]) => {
+                        if (typeof nota === "number") {
+                            tooltipText += `  • ${criterio}: ${nota.toFixed(2)}\n`;
+                        }
+                    });
+                    tooltipText += "\n";
+                }
+            });
+
+            return tooltipText.trim();
+        } catch {
+            return "Erro ao carregar detalhes da avaliação";
+        }
+    }
+
     // Transform data for Table component
     $: tableRows = paginatedAvaliacoes.map((avaliacao) => {
         return {
@@ -88,6 +116,7 @@
             },
             enviada: avaliacao.enviada,
             nota: avaliacao.nota,
+            notasDetalhadas: avaliacao.notasDetalhadas,
             isCurrentUser: avaliacao.isCurrentUser,
             alunoId: avaliacao.aluno.id,
             // For actions column - handled by render function
@@ -147,6 +176,13 @@
                             props: {
                                 text: row.nota?.toFixed(2) || "0.00",
                                 class: "grade",
+                                use: tooltip,
+                                tooltipParams: {
+                                    title: createTooltipText(
+                                        row.notasDetalhadas || "",
+                                    ),
+                                    position: "top",
+                                },
                             },
                         },
                     ];
@@ -206,8 +242,8 @@
             // Transform the data to match our interface
             avaliacoes = filteredAvaliacoesData
                 .map((avaliacao) => {
-                    const media = avaliacao.notas
-                        ? MediaCalculator.calculateSimpleMedia(
+                    const sum = avaliacao.notas
+                        ? MediaCalculator.calculateRawSum(
                               JSON.stringify(avaliacao.notas),
                           )
                         : undefined;
@@ -225,7 +261,8 @@
                                 avaliacao.aluno_avaliado?.link_avatar ||
                                 "/images/default_avatar.png",
                         },
-                        nota: media,
+                        nota: sum,
+                        notasDetalhadas: JSON.stringify(avaliacao.notas),
                         enviada: true,
                         isCurrentUser: isSelfEvaluation,
                     };

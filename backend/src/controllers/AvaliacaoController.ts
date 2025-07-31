@@ -49,16 +49,8 @@ export const AvaliacaoController: EndpointController = {
                 return res.status(500).json({ error: error.message });
             }
 
-            // If only one result, return as object (like 'get'), else as array
-            if (Array.isArray(data)) {
-                if (data.length === 1) {
-                    return res.json(data[0]);
-                } else {
-                    return res.json(data);
-                }
-            } else {
-                return res.json(data);
-            }
+            // Always return as array for consistency
+            return res.json(data || []);
         }),
 
         'get': new Pair(RequestType.GET, async (req: Request, res: Response) => {
@@ -135,7 +127,7 @@ export const AvaliacaoController: EndpointController = {
                 .eq('id_problema', id_problema);
 
             if (!avaliacoesError && avaliacoes) {
-                const notas = avaliacoes.map(a => MediaCalculator.calculateSimpleMedia(a.notas));
+                const notas = avaliacoes.map(a => MediaCalculator.calculateRawSum(a.notas));
                 const media = notas.length > 0 ? notas.reduce((a, b) => a + b, 0) / notas.length : 0;
 
                 await supabase
@@ -194,7 +186,7 @@ export const AvaliacaoController: EndpointController = {
                 .eq('id_problema', data.id_problema);
 
             if (!avaliacoesError && avaliacoes) {
-                const notas = avaliacoes.map(a => MediaCalculator.calculateSimpleMedia(a.notas));
+                const notas = avaliacoes.map(a => MediaCalculator.calculateRawSum(a.notas));
                 const media = notas.length > 0 ? notas.reduce((a, b) => a + b, 0) / notas.length : 0;
 
                 await supabase
@@ -239,7 +231,7 @@ export const AvaliacaoController: EndpointController = {
                     .eq('id_problema', avaliacao.id_problema);
 
                 if (!avaliacoesError && avaliacoes && avaliacoes.length > 0) {
-                    const notas = avaliacoes.map(a => MediaCalculator.calculateSimpleMedia(a.notas));
+                    const notas = avaliacoes.map(a => MediaCalculator.calculateRawSum(a.notas));
                     const media = notas.length > 0 ? notas.reduce((a, b) => a + b, 0) / notas.length : 0;
 
                     await supabase

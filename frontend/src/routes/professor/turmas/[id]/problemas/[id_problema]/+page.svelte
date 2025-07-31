@@ -38,8 +38,16 @@
 
     // Responsive items per page
     $: itemsPerPage = windowWidth <= 768 ? 5 : 10;
-    let alunos: Array<AlunoModel & { medias: Record<string, number> | null }> =
-        [];
+    let alunos: Array<
+        AlunoModel & {
+            finalMedia: {
+                professor: number;
+                auto: number;
+                peers: number;
+                total: number;
+            } | null;
+        }
+    > = [];
     let criteriosList: { nome_criterio: string; descricao_criterio: string }[] =
         [];
     let avaliacoesData: AvaliacaoModel[] = [];
@@ -116,11 +124,11 @@
                             avaliacao.aluno_avaliador &&
                             avaliacao.aluno_avaliado
                         ) {
-                            const average =
-                                MediaCalculator.calculateSimpleMediaFromAvaliacao(
+                            const sum =
+                                MediaCalculator.calculateRawSumFromAvaliacao(
                                     avaliacao,
                                 );
-                            console.log(`average: ${average}`);
+                            console.log(`sum: ${sum}`);
                             if (
                                 evaluationMatrix[
                                     avaliacao.aluno_avaliador.id
@@ -131,7 +139,7 @@
                             ) {
                                 evaluationMatrix[avaliacao.aluno_avaliador.id][
                                     avaliacao.aluno_avaliado.id
-                                ] = average;
+                                ] = sum;
                             }
                         }
                     });
@@ -163,34 +171,45 @@
     });
 
     // Process alunos - show all alunos even if there are no evaluations yet
-    $: if (turma?.alunos && criteriosList.length > 0) {
+    $: if (
+        turma?.alunos &&
+        problema &&
+        problema.criterios &&
+        problema.definicao_arquivos_de_avaliacao
+    ) {
         console.log(
-            "🔍 DEBUG - Processing alunos with criteriosList:",
-            criteriosList,
+            "🔍 DEBUG - Processing alunos with criterios and file definitions:",
+            problema.criterios,
+            problema.definicao_arquivos_de_avaliacao,
         );
         alunos = turma.alunos.map((aluno) => {
-            const medias =
-                avaliacoesData.length > 0
-                    ? MediaCalculator.calcularMediaPorCriterio(
-                          avaliacoesData,
-                          aluno.id,
-                          criteriosList,
-                      )
-                    : null; // Show alunos without evaluations
-            console.log("DEBUG medias for aluno", aluno.nome_completo, medias);
+            let finalMedia = null;
+            if (avaliacoesData.length > 0) {
+                finalMedia = MediaCalculator.calculateFinalMedia(
+                    avaliacoesData,
+                    aluno.id,
+                    problema!.criterios,
+                    problema!.definicao_arquivos_de_avaliacao,
+                );
+            }
+            console.log(
+                "DEBUG final media for aluno",
+                aluno.nome_completo,
+                finalMedia,
+            );
             return {
                 ...aluno,
-                medias,
+                finalMedia,
             };
         });
         logger.info(
-            `Successfully processed ${alunos.length} alunos with ${criteriosList.length} criterios`,
+            `Successfully processed ${alunos.length} alunos with final media calculation`,
         );
-    } else if (turma?.alunos && criteriosList.length === 0) {
+    } else if (turma?.alunos) {
         // Show alunos even when criterios haven't loaded yet
         alunos = turma.alunos.map((aluno) => ({
             ...aluno,
-            medias: null,
+            finalMedia: null,
         }));
     }
 
@@ -239,12 +258,7 @@
             }
         });
         return receivedGrades.length > 0
-            ? Number(
-                  (
-                      receivedGrades.reduce((a, b) => a + b, 0) /
-                      receivedGrades.length
-                  ).toFixed(2),
-              )
+            ? Number(receivedGrades.reduce((a, b) => a + b, 0).toFixed(2))
             : 0;
     }
 
@@ -437,13 +451,12 @@
                                 av.id_professor === $currentUser?.id,
                         )}
                         {@const hasEvaluation = !!professorEvaluation}
-                        {@const avg = getReceivedAverage(aluno.id)}
-                        {@const overallMedia =
-                            avg !== null && avg !== undefined
-                                ? avg.toFixed(2)
-                                : "Não avaliado"}
+                        {@const finalMedia = aluno.finalMedia}
+                        {@const overallMedia = finalMedia
+                            ? `${finalMedia.total.toFixed(2)} (Prof: ${finalMedia.professor.toFixed(2)}, Auto: ${finalMedia.auto.toFixed(2)}, Pares: ${finalMedia.peers.toFixed(2)})`
+                            : "Não avaliado"}
                         {@const professorEvaluationValue = professorEvaluation
-                            ? MediaCalculator.calculateSimpleMediaFromAvaliacao(
+                            ? MediaCalculator.calculateRawSumFromAvaliacao(
                                   professorEvaluation,
                               )
                             : null}
@@ -454,6 +467,8 @@
                             {hasEvaluation}
                             {overallMedia}
                             professorEvaluation={professorEvaluationValue}
+                            {avaliacoesData}
+                            {problema}
                             onVerDetalhes={verDetalhes}
                             onAvaliar={avaliarAluno}
                         />

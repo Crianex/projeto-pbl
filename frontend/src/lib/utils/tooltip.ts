@@ -1,4 +1,5 @@
 import type { Action } from 'svelte/action';
+import { Utils } from './utils';
 
 interface TooltipParams {
     title: string;
@@ -6,9 +7,15 @@ interface TooltipParams {
     offset?: number;
 }
 
+interface DialogElement extends HTMLElement {
+    _content?: HTMLElement;
+    _dialogContent?: HTMLElement;
+}
+
 export const tooltip: Action<HTMLElement, TooltipParams> = (node, params) => {
     let visible = false;
     let tooltipElement: HTMLElement | null = null;
+    let dialogElement: DialogElement | null = null;
 
     function createTooltip() {
         tooltipElement = document.createElement('div');
@@ -33,20 +40,88 @@ export const tooltip: Action<HTMLElement, TooltipParams> = (node, params) => {
         document.body.appendChild(tooltipElement);
     }
 
-    function showTooltip(event: MouseEvent) {
-        if (!tooltipElement || !params?.title) return;
+    function createDialog() {
+        const newDialogElement = document.createElement('div') as DialogElement;
+        newDialogElement.className = 'tooltip-dialog';
+        newDialogElement.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10001;
+        `;
 
-        tooltipElement.innerHTML = params.title;
-        tooltipElement.style.left = `${event.clientX}px`;
-        tooltipElement.style.top = `${event.clientY}px`;
-        tooltipElement.style.display = 'block';
-        visible = true;
+        const dialogContent = document.createElement('div');
+        dialogContent.style.cssText = `
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        `;
+
+        const header = document.createElement('h3');
+        header.textContent = 'Informações';
+        header.style.cssText = `
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            color: #333;
+        `;
+
+        const content = document.createElement('div');
+        content.style.cssText = `
+            line-height: 1.5;
+            color: #333;
+        `;
+
+        dialogContent.appendChild(header);
+        dialogContent.appendChild(content);
+        newDialogElement.appendChild(dialogContent);
+        document.body.appendChild(newDialogElement);
+
+        // Store references for updates
+        newDialogElement._content = content;
+        newDialogElement._dialogContent = dialogContent;
+
+        dialogElement = newDialogElement;
+    }
+
+    function showTooltip(event: MouseEvent) {
+        if (!params?.title) return;
+
+        if (Utils.isMobile()) {
+            // On mobile, show dialog
+            if (dialogElement && dialogElement._content) {
+                dialogElement._content.innerHTML = params.title;
+                dialogElement.style.display = 'flex';
+                visible = true;
+            }
+        } else {
+            // On desktop, show tooltip
+            if (tooltipElement) {
+                tooltipElement.innerHTML = params.title;
+                tooltipElement.style.left = `${event.clientX}px`;
+                tooltipElement.style.top = `${event.clientY}px`;
+                tooltipElement.style.display = 'block';
+                visible = true;
+            }
+        }
     }
 
     function hideTooltip() {
-        if (!tooltipElement) return;
-
-        tooltipElement.style.display = 'none';
+        if (tooltipElement) {
+            tooltipElement.style.display = 'none';
+        }
+        if (dialogElement) {
+            dialogElement.style.display = 'none';
+        }
         visible = false;
     }
 
@@ -58,20 +133,58 @@ export const tooltip: Action<HTMLElement, TooltipParams> = (node, params) => {
         hideTooltip();
     }
 
-    // Create tooltip element
+    function handleClick(event: MouseEvent) {
+        if (Utils.isMobile()) {
+            event.preventDefault();
+            event.stopPropagation();
+            showTooltip(event);
+        }
+    }
+
+    function handleDialogClick(event: MouseEvent) {
+        if (event.target === dialogElement) {
+            hideTooltip();
+        }
+    }
+
+    // Create elements
     createTooltip();
+    createDialog();
 
     // Add event listeners
-    node.addEventListener('mouseenter', handleMouseEnter);
-    node.addEventListener('mouseleave', handleMouseLeave);
+    if (Utils.isMobile()) {
+        // On mobile, only listen for clicks
+        node.addEventListener('click', handleClick);
+    } else {
+        // On desktop, listen for hover events
+        node.addEventListener('mouseenter', handleMouseEnter);
+        node.addEventListener('mouseleave', handleMouseLeave);
+    }
+
+    // Add dialog event listener if dialog was created
+    if (dialogElement) {
+        (dialogElement as HTMLElement).addEventListener('click', handleDialogClick);
+    }
 
     return {
         update(newParams: TooltipParams) {
             params = newParams;
         },
         destroy() {
-            node.removeEventListener('mouseenter', handleMouseEnter);
-            node.removeEventListener('mouseleave', handleMouseLeave);
+            if (Utils.isMobile()) {
+                // On mobile, only remove click listener
+                node.removeEventListener('click', handleClick);
+            } else {
+                // On desktop, remove hover listeners
+                node.removeEventListener('mouseenter', handleMouseEnter);
+                node.removeEventListener('mouseleave', handleMouseLeave);
+            }
+
+            if (dialogElement) {
+                (dialogElement as HTMLElement).removeEventListener('click', handleDialogClick);
+                document.body.removeChild(dialogElement);
+            }
+
             if (tooltipElement) {
                 document.body.removeChild(tooltipElement);
             }

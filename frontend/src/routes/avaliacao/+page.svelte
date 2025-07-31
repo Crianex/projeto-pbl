@@ -806,7 +806,9 @@
                                     <span class="criteria-header">
                                         <span>{criterio.nome_criterio}</span>
                                         <span class="range"
-                                            >0,0 a {criterio.nota_maxima}</span
+                                            >0,0 a {isProfessorEvaluation
+                                                ? criterio.nota_maxima_professor
+                                                : criterio.nota_maxima_aluno}</span
                                         >
                                     </span>
                                     <div class="input-wrapper">
@@ -815,7 +817,9 @@
                                                 type="range"
                                                 step="0.1"
                                                 min="0"
-                                                max={criterio.nota_maxima}
+                                                max={isProfessorEvaluation
+                                                    ? criterio.nota_maxima_professor
+                                                    : criterio.nota_maxima_aluno}
                                                 value={currentValues[tag]?.[
                                                     criterioKey
                                                 ] || 0}

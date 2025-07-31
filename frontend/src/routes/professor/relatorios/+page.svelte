@@ -1,27 +1,33 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { currentUser, isProfessor } from "$lib/utils/auth";
-    import { api } from "$lib/utils/api";
     import { TurmasService } from "$lib/services/turmas_service";
-    import { MediaCalculator } from "$lib/utils/utils";
+    import { ProblemasService } from "$lib/services/problemas_service";
+    import { AvaliacoesService } from "$lib/services/avaliacoes_service";
+    import { MediaCalculator, PDFExportUtils } from "$lib/utils/utils";
     import type {
         TurmaModel,
         AlunoModel,
-        AvaliacaoDB,
-        ProblemaDB,
+        AvaliacaoModel,
+        ProblemaModel,
     } from "$lib/interfaces/interfaces";
     import Button from "$lib/components/Button.svelte";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
-    import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
-    import type { PDFFont } from "pdf-lib";
+
     import Tooltip from "$lib/components/Tooltip.svelte";
     import { tooltip } from "$lib/utils/tooltip";
+    import MatrixLegend from "$lib/components/MatrixLegend.svelte";
+    import ExportControls from "$lib/components/ExportControls.svelte";
+    import EmptyStates from "$lib/components/EmptyStates.svelte";
+    import StatisticsHeader from "$lib/components/StatisticsHeader.svelte";
+    import RelatoriosFilters from "$lib/components/RelatoriosFilters.svelte";
+    import MatrixControls from "$lib/components/MatrixControls.svelte";
 
     let turmas: TurmaModel[] = [];
     let selectedTurma: TurmaModel | null = null;
-    let selectedProblema: ProblemaDB | null = null;
-    let problemas: ProblemaDB[] = [];
-    let avaliacoes: AvaliacaoDB[] = [];
+    let selectedProblema: ProblemaModel | null = null;
+    let problemas: ProblemaModel[] = [];
+    let avaliacoes: AvaliacaoModel[] = [];
     let loading = true;
     let error: string | null = null;
 
@@ -34,37 +40,129 @@
     let scaleFormat = "0-3"; // Default scale format ("0-3" or "0-10")
 
     // Debug zoom level changes
-    $: console.log("Zoom level changed to:", zoomLevel);
+    // $: console.log("Zoom level changed to:", zoomLevel);
 
     // Function to convert grades between scales
-    function convertGrade(grade: number, fromScale: string = "0-3", toScale: string = "0-10"): number {
+    function convertGrade(
+        grade: number,
+        fromScale: string = "0-3",
+        toScale: string = "0-10",
+    ): number {
         if (grade === 0 || !grade) return grade;
-        
+
         if (fromScale === "0-3" && toScale === "0-10") {
             // Convert from 0-3 to 0-10 scale
-            return Number((grade * (10/3)).toFixed(2));
+            return Number((grade * (10 / 3)).toFixed(2));
         } else if (fromScale === "0-10" && toScale === "0-3") {
-            // Convert from 0-10 to 0-3 scale  
-            return Number((grade * (3/10)).toFixed(2));
+            // Convert from 0-10 to 0-3 scale
+            return Number((grade * (3 / 10)).toFixed(2));
         }
-        
+
         return grade;
     }
 
     // Function to format grade based on current scale
     function formatGrade(grade: number): number {
         if (!grade || grade === 0) return grade;
-        
+
         if (scaleFormat === "0-10") {
             return convertGrade(grade, "0-3", "0-10");
         }
-        
+
         return grade;
     }
 
-    // Function to toggle scale format
-    function toggleScaleFormat() {
-        scaleFormat = scaleFormat === "0-3" ? "0-10" : "0-3";
+    // New function to calculate final media for a student using the new logic
+    function getFinalMediaForStudent(studentId: number): {
+        professor: number;
+        auto: number;
+        peers: number;
+        total: number;
+    } {
+        if (!selectedProblema || !avaliacoes || !alunos) {
+            console.log("getFinalMediaForStudent: Missing data", {
+                selectedProblema: !!selectedProblema,
+                avaliacoes: avaliacoes?.length,
+                alunos: alunos?.length,
+                studentId,
+            });
+            return { professor: 0, auto: 0, peers: 0, total: 0 };
+        }
+
+        try {
+            // Parse criterios and file definitions from the problem
+            let criteriosGroup = {};
+            let fileDefs = [];
+            try {
+                criteriosGroup =
+                    typeof selectedProblema.criterios === "string"
+                        ? JSON.parse(selectedProblema.criterios)
+                        : selectedProblema.criterios;
+            } catch {}
+            try {
+                fileDefs =
+                    typeof selectedProblema.definicao_arquivos_de_avaliacao ===
+                    "string"
+                        ? JSON.parse(
+                              selectedProblema.definicao_arquivos_de_avaliacao,
+                          )
+                        : selectedProblema.definicao_arquivos_de_avaliacao;
+            } catch {}
+
+            // Parse avaliacoes to get proper structure
+            const parsedAvaliacoes = avaliacoes.map((av) => {
+                let notas = av.notas;
+                let notas_por_arquivo = av.notas_por_arquivo;
+                try {
+                    notas =
+                        typeof notas === "string" ? JSON.parse(notas) : notas;
+                } catch {}
+                try {
+                    notas_por_arquivo =
+                        typeof notas_por_arquivo === "string"
+                            ? JSON.parse(notas_por_arquivo)
+                            : notas_por_arquivo;
+                } catch {}
+                return { ...av, notas, notas_por_arquivo };
+            });
+
+            console.log("getFinalMediaForStudent: Calling MediaCalculator", {
+                studentId,
+                parsedAvaliacoesCount: parsedAvaliacoes.length,
+                criteriosGroup,
+                fileDefs,
+            });
+
+            // Use the new MediaCalculator function
+            const result = MediaCalculator.calculateFinalMedia(
+                parsedAvaliacoes,
+                studentId,
+                criteriosGroup,
+                fileDefs,
+            );
+
+            console.log(
+                "getFinalMediaForStudent: Result for studentId",
+                studentId,
+            );
+            console.log("Raw result:", result);
+            console.log("Formatted result:", {
+                professor: formatGrade(result.professor),
+                auto: formatGrade(result.auto),
+                peers: formatGrade(result.peers),
+                total: formatGrade(result.total),
+            });
+
+            return {
+                professor: formatGrade(result.professor),
+                auto: formatGrade(result.auto),
+                peers: formatGrade(result.peers),
+                total: formatGrade(result.total),
+            };
+        } catch (error) {
+            console.error("Error calculating final media for student:", error);
+            return { professor: 0, auto: 0, peers: 0, total: 0 };
+        }
     }
 
     async function fetchTurmas() {
@@ -137,20 +235,21 @@
 
         for (const turma of turmas) {
             try {
-                const problemasData = await api.get(
-                    `/problemas/list-by-turma?id_turma=${turma.id_turma}`,
+                const problemasData = await ProblemasService.getByTurma(
+                    turma.id_turma.toString(),
                 );
 
                 // Select the first turma regardless of whether it has problems or avaliações
                 selectedTurma = turma;
-                problemas = problemasData.sort((a: ProblemaDB, b: ProblemaDB) =>
-                    (a.nome_problema || "").localeCompare(
-                        b.nome_problema || "",
-                        "pt-BR",
-                        {
-                            sensitivity: "base",
-                        },
-                    ),
+                problemas = problemasData.sort(
+                    (a: ProblemaModel, b: ProblemaModel) =>
+                        (a.nome_problema || "").localeCompare(
+                            b.nome_problema || "",
+                            "pt-BR",
+                            {
+                                sensitivity: "base",
+                            },
+                        ),
                 );
 
                 // Auto-select first problem if available
@@ -183,14 +282,15 @@
         try {
             loading = true;
             error = null;
-            console.log("fetchProblemas - calling API for turmaId:", turmaId);
-            const data = await api.get(
-                `/problemas/list-by-turma?id_turma=${turmaId}`,
+            console.log(
+                "fetchProblemas - calling service for turmaId:",
+                turmaId,
             );
-            console.log("fetchProblemas - API response:", data);
+            const data = await ProblemasService.getByTurma(turmaId.toString());
+            console.log("fetchProblemas - service response:", data);
             console.log("fetchProblemas - data type:", typeof data);
             console.log("fetchProblemas - isArray:", Array.isArray(data));
-            problemas = data.sort((a: ProblemaDB, b: ProblemaDB) =>
+            problemas = data.sort((a: ProblemaModel, b: ProblemaModel) =>
                 (a.nome_problema || "").localeCompare(
                     b.nome_problema || "",
                     "pt-BR",
@@ -229,10 +329,10 @@
         try {
             loading = true;
             console.log(`Fetching avaliacoes for problema: ${problemaId}`);
-            const data = await api.get(
-                `/avaliacoes/list?id_problema=${problemaId}`,
+            const data = await AvaliacoesService.getByProblema(
+                problemaId.toString(),
             );
-            console.log("fetchAvaliacoes - API response:", data);
+            console.log("fetchAvaliacoes - service response:", data);
             console.log("fetchAvaliacoes - data type:", typeof data);
             console.log("fetchAvaliacoes - isArray:", Array.isArray(data));
 
@@ -306,22 +406,21 @@
 
         // Fill matrix with evaluation data
         avaliacoes.forEach((avaliacao, index) => {
-            if (avaliacao.id_aluno_avaliador && avaliacao.id_aluno_avaliado) {
-                const average = MediaCalculator.calculateSimpleMedia(
-                    avaliacao.notas,
-                );
+            if (avaliacao.aluno_avaliador?.id && avaliacao.aluno_avaliado?.id) {
+                const sum =
+                    MediaCalculator.calculateRawSumFromAvaliacao(avaliacao);
                 /* console.log(
-                    `Evaluation ${index}: ${avaliacao.id_aluno_avaliador} -> ${avaliacao.id_aluno_avaliado} = ${average}`,
+                    `Evaluation ${index}: ${avaliacao.aluno_avaliador.id} -> ${avaliacao.aluno_avaliado.id} = ${sum}`,
                 ); */
 
                 // Check if evaluator exists in matrix
-                if (evaluationMatrix[avaliacao.id_aluno_avaliador]) {
-                    evaluationMatrix[avaliacao.id_aluno_avaliador][
-                        avaliacao.id_aluno_avaliado
-                    ] = average;
+                if (evaluationMatrix[avaliacao.aluno_avaliador.id]) {
+                    evaluationMatrix[avaliacao.aluno_avaliador.id][
+                        avaliacao.aluno_avaliado.id
+                    ] = sum;
                 } else {
                     console.warn(
-                        `Evaluator ID not found in matrix: evaluator=${avaliacao.id_aluno_avaliador}`,
+                        `Evaluator ID not found in matrix: evaluator=${avaliacao.aluno_avaliador.id}`,
                     );
                 }
             }
@@ -330,9 +429,8 @@
         console.log("Final evaluation matrix:", evaluationMatrix);
     }
 
-    async function handleTurmaSelect(event: Event) {
-        const target = event.target as HTMLSelectElement;
-        const turmaId = parseInt(target.value);
+    async function handleTurmaSelect(event: CustomEvent) {
+        const turmaId = event.detail;
 
         if (turmaId) {
             selectedTurma = turmas.find((t) => t.id_turma === turmaId) || null;
@@ -351,9 +449,8 @@
         }
     }
 
-    async function handleProblemaSelect(event: Event) {
-        const target = event.target as HTMLSelectElement;
-        const problemaId = parseInt(target.value);
+    async function handleProblemaSelect(event: CustomEvent) {
+        const problemaId = event.detail;
 
         if (problemaId) {
             selectedProblema =
@@ -393,14 +490,14 @@
                     case "=":
                     case "+":
                         event.preventDefault();
-                        if (zoomLevel < 2) {
-                            zoomLevel = Math.min(2, zoomLevel + 0.1);
+                        if (zoomLevel < 1.5) {
+                            zoomLevel = Math.min(1.5, zoomLevel + 0.05);
                         }
                         break;
                     case "-":
                         event.preventDefault();
                         if (zoomLevel > 0.5) {
-                            zoomLevel = Math.max(0.5, zoomLevel - 0.1);
+                            zoomLevel = Math.max(0.5, zoomLevel - 0.05);
                         }
                         break;
                     case "0":
@@ -429,15 +526,16 @@
             }
         });
 
-        const average = receivedGrades.length > 0
-            ? Number(
-                  (
-                      receivedGrades.reduce((a, b) => a + b, 0) /
-                      receivedGrades.length
-                  ).toFixed(2),
-              )
-            : 0;
-            
+        const average =
+            receivedGrades.length > 0
+                ? Number(
+                      (
+                          receivedGrades.reduce((a, b) => a + b, 0) /
+                          receivedGrades.length
+                      ).toFixed(2),
+                  )
+                : 0;
+
         return formatGrade(average);
     }
 
@@ -532,16 +630,24 @@
     }
 
     // Force reactive updates when matrix or alunos change
-    $: if (evaluationMatrix && alunos) {
-        console.log("Reactive update triggered - matrix and alunos changed");
-        console.log("Current matrix:", evaluationMatrix);
-        console.log("Current alunos:", alunos);
-        console.log("Current alunos type:", typeof alunos);
-        console.log("Current alunos isArray:", Array.isArray(alunos));
-    }
+    // $: if (evaluationMatrix && alunos) {
+    //     console.log("Reactive update triggered - matrix and alunos changed");
+    //     console.log("Current matrix:", evaluationMatrix);
+    //     console.log("Current alunos:", alunos);
+    //     console.log("Current alunos type:", typeof alunos);
+    //     console.log("Current alunos isArray:", Array.isArray(alunos));
+    // }
 
-    // Make statistics reactive to evaluationMatrix and alunos changes
-    $: statistics = getMatrixStatistics(evaluationMatrix, alunos);
+    // Make statistics reactive to evaluationMatrix and alunos changes, but not zoom changes
+    $: statistics =
+        selectedProblema && alunos.length > 0
+            ? getMatrixStatistics(evaluationMatrix, alunos)
+            : {
+                  totalAlunos: 0,
+                  maiorNota: 0,
+                  mediaGeral: 0,
+                  menorNota: 0,
+              };
 
     // Make zoom styles reactive to zoomLevel changes
     $: zoomStyles = {
@@ -557,7 +663,7 @@
         numberLeft: `${Math.round(120 * zoomLevel)}px`,
         averageLeft: `${Math.round(120 * zoomLevel) + Math.round(50 * zoomLevel)}px`,
     };
-    $: console.log("Zoom styles updated:", zoomStyles);
+    // $: console.log("Zoom styles updated:", zoomStyles);
 
     // 1. Add a derived variable for professor evaluations and a helper to get professor's grade for each student
 
@@ -569,42 +675,12 @@
     function getProfessorGradeFor(studentId: number): number | null {
         console.log("Professor avaliações:", professorAvaliacao);
         const avaliacao = professorAvaliacao.find(
-            (a) => a.id_aluno_avaliado === studentId,
+            (a) => a.aluno_avaliado?.id === studentId,
         );
         if (!avaliacao) return null;
-        const avg = MediaCalculator.calculateSimpleMedia(avaliacao.notas);
+        const sum = MediaCalculator.calculateRawSumFromAvaliacao(avaliacao);
         console.log("Avaliação do professor:", avaliacao);
-        return formatGrade(avg);
-    }
-
-
-
-    // Calculate dynamic styles based on zoom level
-    function getZoomStyles() {
-        const baseFontSize = 0.95;
-        const baseCellHeight = 50;
-        const baseCellWidth = 60;
-        const baseNameWidth = 120;
-        const baseNumberWidth = 50;
-        const baseAverageWidth = 70;
-
-        const nameWidth = Math.round(baseNameWidth * zoomLevel);
-        const numberWidth = Math.round(baseNumberWidth * zoomLevel);
-        const averageWidth = Math.round(baseAverageWidth * zoomLevel);
-
-        return {
-            fontSize: `${(baseFontSize * zoomLevel).toFixed(2)}rem`,
-            cellHeight: `${Math.round(baseCellHeight * zoomLevel)}px`,
-            cellWidth: `${Math.round(baseCellWidth * zoomLevel)}px`,
-            nameWidth: `${nameWidth}px`,
-            numberWidth: `${numberWidth}px`,
-            averageWidth: `${averageWidth}px`,
-            padding: `${Math.round(0.75 * zoomLevel)}rem ${Math.round(0.5 * zoomLevel)}rem`,
-            headerPadding: `${Math.round(0.75 * zoomLevel)}rem ${Math.round(0.5 * zoomLevel)}rem`,
-            namePadding: `${Math.round(0.75 * zoomLevel)}rem ${Math.round(0.75 * zoomLevel)}rem`,
-            numberLeft: `${nameWidth}px`,
-            averageLeft: `${nameWidth + numberWidth}px`,
-        };
+        return formatGrade(sum);
     }
 
     // CSV Export
@@ -663,309 +739,15 @@
 
     // PDF Export using pdf-lib
     async function exportMatrixAsPDF() {
-        if (!alunos.length || !Object.keys(evaluationMatrix).length) return;
-        const pdfDoc = await PDFDocument.create();
-        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-        // Define all variables first
-        const leftMargin = 30; // Reduced from 40 to 30
-        const cellHeight = 25; // Reduced from 32 to 25
-        const nameFontSize = 11; // Reduced from 13 to 11
-        const namePadding = 15; // Reduced from 20 to 15
-        const otherColWidth = 55; // Reduced from 70 to 55
-
-        // Dynamically calculate the max width needed for the name column
-        const maxNameWidth = Math.max(
-            ...alunos.map((a) =>
-                font.widthOfTextAtSize(
-                    a.nome_completo?.split(" ").slice(0, 2).join(" ") || "N/A",
-                    nameFontSize,
-                ),
-            ),
+        await PDFExportUtils.exportMatrixAsPDF(
+            alunos,
+            evaluationMatrix,
+            selectedProblema,
+            professor,
+            getReceivedAverage,
+            getProfessorGradeFor,
+            formatGrade,
         );
-        const nameColWidth = Math.ceil(maxNameWidth) + namePadding;
-
-        // Calculate page size based on table width
-        const tableWidth =
-            leftMargin + nameColWidth + otherColWidth * (alunos.length + 2); // +2 for number and average columns
-        const pageWidth = Math.max(800, tableWidth + 40); // Add some margin
-        const pageHeight = Math.max(
-            600,
-            100 + (alunos.length + 3) * cellHeight,
-        ); // +3 for header, students, and professor row
-
-        const page = pdfDoc.addPage([pageWidth, pageHeight]);
-        let y = page.getHeight() - 40; // Reduced from 50 to 40
-        const headerBg = rgb(0.88, 0.91, 1);
-        const borderColor = rgb(0.8, 0.8, 0.8);
-        // Title
-        page.drawText(
-            `Matriz de Avaliações - ${selectedProblema?.nome_problema || "Problema"}`,
-            { x: leftMargin, y, size: 18, font, color: rgb(0, 0, 0) }, // Reduced from 22 to 18
-        );
-        y -= 30; // Reduced from 40 to 30
-        // Table header
-        let x = leftMargin;
-        const headers = [
-            "Aluno",
-            "Número",
-            "Média",
-            ...alunos.map((_, idx) => (idx + 1).toString()),
-        ];
-        headers.forEach((header, i) => {
-            const colWidth = i === 0 ? nameColWidth : otherColWidth;
-            page.drawRectangle({
-                x,
-                y,
-                width: colWidth,
-                height: cellHeight,
-                color: headerBg,
-                borderColor,
-                borderWidth: 1,
-            });
-            page.drawText(header, {
-                x: x + 8, // Reduced from 10 to 8
-                y: y + 10, // Reduced from 12 to 10
-                size: 12, // Reduced from 15 to 12
-                font,
-                color: rgb(0, 0, 0),
-            });
-            x += colWidth;
-        });
-        y -= cellHeight;
-        // Table body
-        alunos.forEach((evaluator, evaluatorIdx) => {
-            x = leftMargin;
-            // Aluno name
-            const name =
-                evaluator.nome_completo?.split(" ").slice(0, 2).join(" ") ||
-                "N/A";
-            const nameLines = wrapText(
-                name,
-                nameColWidth - 8, // Reduced from 10 to 8
-                font,
-                nameFontSize,
-            );
-            const rowHeight = Math.max(
-                cellHeight,
-                nameLines.length * (nameFontSize + 1) + 6, // Reduced spacing
-            );
-            page.drawRectangle({
-                x,
-                y,
-                width: nameColWidth,
-                height: rowHeight,
-                borderColor,
-                borderWidth: 1,
-            });
-            nameLines.forEach((line, i) => {
-                page.drawText(line, {
-                    x: x + 8, // Reduced from 10 to 8
-                    y: y + rowHeight - 12 - i * (nameFontSize + 1), // Reduced spacing
-                    size: nameFontSize,
-                    font,
-                    color: rgb(0, 0, 0),
-                });
-            });
-            x += nameColWidth;
-            // Número
-            page.drawRectangle({
-                x,
-                y,
-                width: otherColWidth,
-                height: rowHeight,
-                borderColor,
-                borderWidth: 1,
-            });
-            page.drawText((evaluatorIdx + 1).toString(), {
-                x: x + 20, // Reduced from 24 to 20
-                y: y + rowHeight / 2 - 5, // Reduced from 6 to 5
-                size: 11, // Reduced from 13 to 11
-                font,
-                color: rgb(0, 0, 0),
-            });
-            x += otherColWidth;
-            // Média
-            const avg = getReceivedAverage(evaluator.id) || "-";
-            page.drawRectangle({
-                x,
-                y,
-                width: otherColWidth,
-                height: rowHeight,
-                borderColor,
-                borderWidth: 1,
-            });
-            page.drawText(avg.toString(), {
-                x: x + 20, // Reduced from 24 to 20
-                y: y + rowHeight / 2 - 5, // Reduced from 6 to 5
-                size: 11, // Reduced from 13 to 11
-                font,
-                color: rgb(0, 0, 0),
-            });
-            x += otherColWidth;
-            // Grades
-            alunos.forEach((evaluated) => {
-                page.drawRectangle({
-                    x,
-                    y,
-                    width: otherColWidth,
-                    height: rowHeight,
-                    borderColor,
-                    borderWidth: 1,
-                });
-                let text = "-";
-                if (evaluator.id === evaluated.id) {
-                    text = "X";
-                } else {
-                    const grade =
-                        evaluationMatrix[evaluator.id]?.[evaluated.id];
-                    text =
-                        grade && grade > 0
-                            ? formatGrade(grade).toString()
-                            : grade === 0
-                              ? "0"
-                              : "-";
-                }
-                page.drawText(text, {
-                    x: x + 22, // Reduced from 30 to 22
-                    y: y + rowHeight / 2 - 5, // Reduced from 6 to 5
-                    size: 11, // Reduced from 13 to 11
-                    font,
-                    color: rgb(0, 0, 0),
-                });
-                x += otherColWidth;
-            });
-            y -= rowHeight;
-        });
-        // Professor row
-        if (professor) {
-            x = leftMargin;
-            const name =
-                professor.nome_completo?.split(" ").slice(0, 2).join(" ") ||
-                "Professor";
-            const nameLines = wrapText(
-                name,
-                nameColWidth - 8, // Reduced from 10 to 8
-                font,
-                nameFontSize,
-            );
-            const rowHeight = Math.max(
-                cellHeight,
-                nameLines.length * (nameFontSize + 1) + 6, // Reduced spacing
-            );
-            page.drawRectangle({
-                x,
-                y,
-                width: nameColWidth,
-                height: rowHeight,
-                borderColor,
-                borderWidth: 1,
-            });
-            nameLines.forEach((line, i) => {
-                page.drawText(line, {
-                    x: x + 8, // Reduced from 10 to 8
-                    y: y + rowHeight - 12 - i * (nameFontSize + 1), // Reduced spacing
-                    size: nameFontSize,
-                    font,
-                    color: rgb(0, 0, 0),
-                });
-            });
-            x += nameColWidth;
-            // Número
-            page.drawRectangle({
-                x,
-                y,
-                width: otherColWidth,
-                height: rowHeight,
-                borderColor,
-                borderWidth: 1,
-            });
-            page.drawText("Prof.", {
-                x: x + 8, // Reduced from 10 to 8
-                y: y + rowHeight / 2 - 5, // Reduced from 6 to 5
-                size: 11, // Reduced from 13 to 11
-                font,
-                color: rgb(0, 0, 0),
-            });
-            x += otherColWidth;
-            // Média
-            page.drawRectangle({
-                x,
-                y,
-                width: otherColWidth,
-                height: rowHeight,
-                borderColor,
-                borderWidth: 1,
-            });
-            page.drawText("-", {
-                x: x + 20, // Reduced from 24 to 20
-                y: y + rowHeight / 2 - 5, // Reduced from 6 to 5
-                size: 11, // Reduced from 13 to 11
-                font,
-                color: rgb(0, 0, 0),
-            });
-            x += otherColWidth;
-            // Grades
-            alunos.forEach((evaluated) => {
-                page.drawRectangle({
-                    x,
-                    y,
-                    width: otherColWidth,
-                    height: rowHeight,
-                    borderColor,
-                    borderWidth: 1,
-                });
-                let text: string;
-                if (professor.id === evaluated.id) {
-                    text = "X";
-                } else {
-                    const grade = getProfessorGradeFor(evaluated.id);
-                    text = grade !== null ? grade.toString() : "-";
-                }
-                page.drawText(text, {
-                    x: x + 22, // Reduced from 30 to 22
-                    y: y + rowHeight / 2 - 5, // Reduced from 6 to 5
-                    size: 11, // Reduced from 13 to 11
-                    font,
-                    color: rgb(0, 0, 0),
-                });
-                x += otherColWidth;
-            });
-            y -= rowHeight;
-        }
-        // Download
-        const pdfBytes = await pdfDoc.save();
-        const blob = new Blob([pdfBytes], { type: "application/pdf" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `relatorio_${selectedProblema?.nome_problema || "matriz"}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-
-    // Helper to wrap text for the name column
-    function wrapText(
-        text: string,
-        maxWidth: number,
-        font: PDFFont,
-        fontSize: number,
-    ): string[] {
-        const words = text.split(" ");
-        let lines = [];
-        let currentLine = "";
-        for (let word of words) {
-            const testLine = currentLine ? currentLine + " " + word : word;
-            const testWidth = font.widthOfTextAtSize(testLine, fontSize);
-            if (testWidth + 4 > maxWidth && currentLine) {
-                lines.push(currentLine);
-                currentLine = word;
-            } else {
-                currentLine = testLine;
-            }
-        }
-        if (currentLine) lines.push(currentLine);
-        return lines;
     }
 
     // Helper to get detailed evaluation information for tooltips
@@ -985,8 +767,8 @@
         // Get the specific evaluation
         const evaluation = avaliacoes.find(
             (av) =>
-                av.id_aluno_avaliador === evaluatorId &&
-                av.id_aluno_avaliado === evaluatedId,
+                av.aluno_avaliador?.id === evaluatorId &&
+                av.aluno_avaliado?.id === evaluatedId,
         );
 
         if (!evaluation) {
@@ -995,7 +777,7 @@
         }
 
         try {
-            const notas = JSON.parse(evaluation.notas);
+            const notas = evaluation.notas;
             details += "📊 <strong>Detalhes da avaliação:</strong><br>";
 
             Object.entries(notas).forEach(([tag, criterios]) => {
@@ -1009,11 +791,10 @@
                 }
             });
 
-            // Add average
-            const average = MediaCalculator.calculateSimpleMedia(
-                evaluation.notas,
-            );
-            details += `<br><strong>Média final: ${formatGrade(average).toFixed(2)}</strong>`;
+            // Add sum
+            const sum =
+                MediaCalculator.calculateRawSumFromAvaliacao(evaluation);
+            details += `<br><strong>Soma final: ${formatGrade(sum).toFixed(2)}</strong>`;
         } catch (error) {
             details += "❌ <strong>Erro ao processar avaliação</strong>";
         }
@@ -1026,7 +807,7 @@
         if (!selectedProblema || !selectedProblema.faltas_por_tag) return "";
 
         try {
-            const faltasPorTag = JSON.parse(selectedProblema.faltas_por_tag);
+            const faltasPorTag = selectedProblema.faltas_por_tag;
             const student = alunos.find((a) => a.id === studentId);
 
             if (!student) return "";
@@ -1055,7 +836,7 @@
         if (!selectedProblema || !selectedProblema.faltas_por_tag) return "";
 
         try {
-            const faltasPorTag = JSON.parse(selectedProblema.faltas_por_tag);
+            const faltasPorTag = selectedProblema.faltas_por_tag;
             const evaluatedStudent = alunos.find((a) => a.id === evaluatedId);
 
             if (!evaluatedStudent) return "";
@@ -1117,43 +898,14 @@
         </div>
     {:else}
         <!-- Filters Section -->
-        <div class="filters-section">
-            <div class="filter-group">
-                <label for="turma-select">Turma:</label>
-                <select
-                    id="turma-select"
-                    value={selectedTurma?.id_turma || ""}
-                    on:change={handleTurmaSelect}
-                    class="filter-select"
-                >
-                    {#each turmas as turma}
-                        <option value={turma.id_turma}>
-                            {turma.nome_turma} ({turma.alunos?.length || 0} alunos)
-                        </option>
-                    {/each}
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="problema-select">Problema:</label>
-                <select
-                    id="problema-select"
-                    value={selectedProblema?.id_problema || ""}
-                    on:change={handleProblemaSelect}
-                    class="filter-select"
-                    disabled={!selectedTurma || problemas.length === 0}
-                >
-                    {#each problemas as problema}
-                        <option value={problema.id_problema}>
-                            {problema.nome_problema} (Média: {problema.media_geral !==
-                                null && problema.media_geral !== undefined
-                                ? problema.media_geral.toFixed(2)
-                                : "Não avaliado"}
-                        </option>
-                    {/each}
-                </select>
-            </div>
-        </div>
+        <RelatoriosFilters
+            {turmas}
+            {selectedTurma}
+            {problemas}
+            {selectedProblema}
+            on:turmaSelect={handleTurmaSelect}
+            on:problemaSelect={handleProblemaSelect}
+        />
 
         <!--  {#if selectedProblema}
             <div class="debug-section">
@@ -1211,16 +963,10 @@
 
         <!-- Evaluation Matrix -->
         {#if selectedProblema && alunos.length > 0}
-            <div class="controls-section">
-                <div class="export-buttons">
-                    <Button variant="secondary" on:click={exportMatrixAsCSV}>
-                        Exportar CSV
-                    </Button>
-                    <Button variant="secondary" on:click={exportMatrixAsPDF}>
-                        Exportar PDF
-                    </Button>
-                </div>
-            </div>
+            <ExportControls
+                on:exportCSV={exportMatrixAsCSV}
+                on:exportPDF={exportMatrixAsPDF}
+            />
             <div class="matrix-section">
                 <h2>Matriz de Avaliações - {selectedProblema.nome_problema}</h2>
                 <p class="matrix-subtitle">
@@ -1229,61 +975,15 @@
                 </p>
 
                 <!-- Matrix Controls -->
-                <div class="matrix-controls">
-                    <!-- Scale Format Switch -->
-                    <div class="scale-switch-container">
-                        <span class="scale-label">Escala de Notas:</span>
-                        <div class="scale-switch-wrapper">
-                            <span class="scale-text {scaleFormat === '0-3' ? 'active' : ''}">0-3</span>
-                            <button 
-                                class="scale-switch {scaleFormat === '0-10' ? 'active' : ''}"
-                                on:click={toggleScaleFormat}
-                                aria-label="Alternar escala de notas"
-                            >
-                                <span class="scale-switch-slider"></span>
-                            </button>
-                            <span class="scale-text {scaleFormat === '0-10' ? 'active' : ''}">0-10</span>
-                        </div>
-                    </div>
-
-                    <!-- Zoom Controls -->
-                    <div class="zoom-controls">
-                        <label for="zoom-slider" class="zoom-label">Zoom:</label>
-                        <div class="zoom-slider-wrapper">
-                            <input
-                                type="range"
-                                id="zoom-slider"
-                                min="0.5"
-                                max="2"
-                                step="0.1"
-                                bind:value={zoomLevel}
-                                class="zoom-slider"
-                                title="Ajustar zoom da matriz"
-                            />
-                            <span class="zoom-value">{Math.round(zoomLevel * 100)}%</span>
-                        </div>
-                    </div>
-                </div>
+                <MatrixControls
+                    {scaleFormat}
+                    {zoomLevel}
+                    on:scaleChange={(e) => (scaleFormat = e.detail)}
+                    on:zoomChange={(e) => (zoomLevel = e.detail)}
+                />
 
                 <!-- Statistics Header -->
-                <div class="statistics-header">
-                    <div class="stat-card">
-                        <div class="stat-value">{statistics.totalAlunos}</div>
-                        <div class="stat-label">Total Alunos</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">{statistics.maiorNota}</div>
-                        <div class="stat-label">Maior Nota</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">{statistics.mediaGeral}</div>
-                        <div class="stat-label">Média Geral</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">{statistics.menorNota}</div>
-                        <div class="stat-label">Menor Nota</div>
-                    </div>
-                </div>
+                <StatisticsHeader {statistics} />
 
                 <div class="matrix-container">
                     <div class="scroll-hint">
@@ -1311,6 +1011,31 @@
                                         style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize}; left: {zoomStyles.averageLeft};"
                                         >Média</th
                                     >
+                                    <!-- New columns for final media calculation -->
+                                    <th
+                                        class="final-media-header"
+                                        style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                        title="Nota do Professor (10 pontos)"
+                                        >Prof.</th
+                                    >
+                                    <th
+                                        class="final-media-header"
+                                        style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                        title="Auto Avaliação (10 pontos)"
+                                        >Auto</th
+                                    >
+                                    <th
+                                        class="final-media-header"
+                                        style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                        title="Avaliação dos Pares (10 pontos)"
+                                        >Pares</th
+                                    >
+                                    <th
+                                        class="final-media-header"
+                                        style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                        title="Total Final (30 pontos)"
+                                        >Total</th
+                                    >
                                     {#each alunos as aluno, index}
                                         <th
                                             class="student-header"
@@ -1324,6 +1049,8 @@
                             </thead>
                             <tbody>
                                 {#each alunos as evaluator, evaluatorIndex}
+                                    {@const finalMedia =
+                                        getFinalMediaForStudent(evaluator.id)}
                                     <tr>
                                         <td
                                             class="student-name"
@@ -1347,6 +1074,35 @@
                                         >
                                             {getReceivedAverage(evaluator.id) ||
                                                 "-"}
+                                        </td>
+                                        <!-- New columns for final media calculation -->
+                                        <td
+                                            class="final-media-cell"
+                                            style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                            title="Nota do Professor (10 pontos)"
+                                        >
+                                            {finalMedia.professor || "-"}
+                                        </td>
+                                        <td
+                                            class="final-media-cell"
+                                            style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                            title="Auto Avaliação (10 pontos)"
+                                        >
+                                            {finalMedia.auto || "-"}
+                                        </td>
+                                        <td
+                                            class="final-media-cell"
+                                            style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                            title="Avaliação dos Pares (10 pontos)"
+                                        >
+                                            {finalMedia.peers || "-"}
+                                        </td>
+                                        <td
+                                            class="final-media-cell"
+                                            style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                            title="Total Final (30 pontos)"
+                                        >
+                                            {finalMedia.total || "-"}
                                         </td>
                                         {#each alunos as evaluated}
                                             {@const grade =
@@ -1372,7 +1128,9 @@
                                                     {#if grade && grade > 0}
                                                         <span
                                                             class="self-eval-grade"
-                                                            >{formatGrade(grade)}</span
+                                                            >{formatGrade(
+                                                                grade,
+                                                            )}</span
                                                         >
                                                     {:else}
                                                         <span>N</span>
@@ -1431,119 +1189,16 @@
                                         {/each}
                                     </tr>
                                 {/each}
-                                <tr class="professor-row">
-                                    <td
-                                        class="student-name"
-                                        title={professor?.nome_completo}
-                                        style="min-width: {zoomStyles.nameWidth}; max-width: {zoomStyles.nameWidth}; padding: {zoomStyles.namePadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
-                                    >
-                                        {professor
-                                            ? professor.nome_completo
-                                                  ?.split(" ")
-                                                  .slice(0, 2)
-                                                  .join(" ")
-                                            : "Professor"}
-                                    </td>
-                                    <td
-                                        class="student-number"
-                                        style="min-width: {zoomStyles.numberWidth}; max-width: {zoomStyles.numberWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize}; left: {zoomStyles.numberLeft};"
-                                        >Prof.</td
-                                    >
-                                    <td
-                                        class="average-cell"
-                                        style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize}; left: {zoomStyles.averageLeft};"
-                                        >-</td
-                                    >
-                                    {#each alunos as evaluated}
-                                        {#if professor && evaluated.id === professor.id}
-                                            <td
-                                                class="grade-cell professor-grade self-evaluation tooltip-cell"
-                                                style="min-width: {zoomStyles.cellWidth}; width: {zoomStyles.cellWidth}; padding: {zoomStyles.padding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
-                                                title="Auto-avaliação do professor"
-                                            >
-                                                <span>X</span>
-                                            </td>
-                                        {:else if getProfessorGradeFor(evaluated.id) === null}
-                                            <td
-                                                class="grade-cell professor-grade tooltip-cell"
-                                                style="min-width: {zoomStyles.cellWidth}; width: {zoomStyles.cellWidth}; padding: {zoomStyles.padding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
-                                                title="Professor não avaliou este aluno"
-                                                >N</td
-                                            >
-                                        {:else}
-                                            <td
-                                                class="grade-cell professor-grade tooltip-cell"
-                                                style="min-width: {zoomStyles.cellWidth}; width: {zoomStyles.cellWidth}; padding: {zoomStyles.padding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
-                                                title="Avaliação do professor: {getProfessorGradeFor(
-                                                    evaluated.id,
-                                                )}"
-                                            >
-                                                {getProfessorGradeFor(
-                                                    evaluated.id,
-                                                )}
-                                            </td>
-                                        {/if}
-                                    {/each}
-                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <div class="matrix-legend">
-                    <h4>Legenda:</h4>
-                    <ul>
-                        <li>
-                            <strong>Número:</strong> Identificação numérica do aluno
-                            na matriz
-                        </li>
-                        <li>
-                            <strong>Média:</strong> Nota média recebida, pelo aluno,
-                            de seus colegas
-                        </li>
-                        <li>
-                            <strong>Colunas numeradas (1, 2, 3...):</strong> Notas
-                            dadas para cada aluno (identificado pelo número)
-                        </li>
-                        <li>
-                            <strong>N:</strong> Avaliação não enviada para o colega
-                        </li>
-                        <li>
-                            <span
-                                style="background:#ffcccc;padding:2px 8px;border-radius:4px;"
-                                >&nbsp;</span
-                            > Nota zero enviada
-                        </li>
-                        <li>
-                            <span
-                                style="background:#fff9c4;padding:2px 8px;border-radius:4px;"
-                                >&nbsp;</span
-                            > Nota fora do padrão dos colegas
-                        </li>
-                        <li>
-                            <span
-                                style="background:#e3fbec;padding:2px 8px;border-radius:4px;color:#168f41;font-weight:600;"
-                                >&nbsp;</span
-                            > Auto-avaliação realizada
-                        </li>
-                    </ul>
-                </div>
+                <MatrixLegend />
             </div>
         {/if}
 
-        {#if turmas.length === 0 && !loading}
-            <div class="empty-state">
-                <p>Nenhuma turma encontrada.</p>
-            </div>
-        {:else if selectedTurma && problemas.length === 0 && !loading}
-            <div class="empty-state">
-                <p>Nenhum problema encontrado para esta turma.</p>
-                <p class="empty-state-subtitle">
-                    Quando problemas forem criados para esta turma, eles
-                    aparecerão aqui.
-                </p>
-            </div>
-        {/if}
+        <EmptyStates {turmas} {selectedTurma} {problemas} {loading} />
     {/if}
 </div>
 
@@ -1593,53 +1248,6 @@
         border-radius: 8px;
     }
 
-    .filters-section {
-        background: #fff;
-        border: 1px solid #e3e6ed;
-        border-radius: 8px;
-        padding: 0.7rem 0.7rem;
-        display: flex;
-        gap: 0.7rem;
-        align-items: end;
-        box-shadow: none;
-    }
-
-    .filter-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
-        min-width: 120px;
-    }
-
-    .filter-group label {
-        font-weight: 600;
-        color: #22223b;
-        font-size: 0.92rem;
-    }
-
-    .filter-select {
-        padding: 0.4rem 0.6rem;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        background: #f8fafc;
-        font-size: 0.97rem;
-        cursor: pointer;
-        transition: border-color 0.2s;
-    }
-
-    .filter-select:hover:not(:disabled),
-    .filter-select:focus {
-        border-color: #6c63ff;
-        outline: none;
-        box-shadow: 0 0 0 2px #e0e7ff;
-    }
-
-    .filter-select:disabled {
-        background: #f1f1f1;
-        color: #b0b0b0;
-        cursor: not-allowed;
-    }
-
     .matrix-section {
         background: #fff;
         border: 1px solid #e3e6ed;
@@ -1659,39 +1267,6 @@
         color: #6c757d;
         font-size: 0.93rem;
         margin-bottom: 0.7rem;
-    }
-
-    .statistics-header {
-        display: flex;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
-        justify-content: center;
-    }
-
-    .stat-card {
-        text-align: center;
-        padding: 0.5rem 0.7rem;
-        background: #f8fafc;
-        border: 1px solid #e0e7ff;
-        border-radius: 6px;
-        box-shadow: none;
-        min-width: 70px;
-        transition: none;
-    }
-
-    .stat-value {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #6c63ff;
-        margin-bottom: 0.1rem;
-    }
-
-    .stat-label {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #6c757d;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
     }
 
     .matrix-container {
@@ -1772,6 +1347,15 @@
         border-right: 1px solid #e0e7ff;
     }
 
+    .final-media-header,
+    .final-media-cell {
+        background: #f0f4ff !important;
+        font-weight: 600;
+        color: #4a5568;
+        text-align: center;
+        border-right: 1px solid #e0e7ff;
+    }
+
     .grade-cell {
         background: #fff !important;
         font-size: 0.95rem;
@@ -1833,285 +1417,6 @@
         font-weight: 600;
     }
 
-    .professor-row {
-        background: #e3f2fd !important;
-        font-weight: 600;
-    }
-    .grade-cell.professor-grade {
-        background: #e3f2fd !important;
-        color: #1976d2 !important;
-        font-weight: 600;
-    }
-
-    .matrix-legend {
-        margin-top: 0.7rem;
-        padding: 0.4rem 0.7rem;
-        background: #f8fafc;
-        border: 1px solid #e3e6ed;
-        border-radius: 6px;
-        font-size: 0.93rem;
-        color: #495057;
-        box-shadow: none;
-    }
-
-    .matrix-legend h4 {
-        margin: 0 0 0.4rem 0;
-        color: #22223b;
-        font-size: 0.97rem;
-        font-weight: 700;
-    }
-
-    .matrix-legend ul {
-        margin: 0;
-        padding-left: 1rem;
-    }
-
-    .matrix-legend li {
-        margin-bottom: 0.2rem;
-        color: #495057;
-        line-height: 1.4;
-    }
-
-    .matrix-legend li:last-child {
-        margin-bottom: 0;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 1rem 0.5rem;
-        background: #fff;
-        border: 1px solid #e3e6ed;
-        border-radius: 6px;
-        color: #6c757d;
-        font-size: 1rem;
-        box-shadow: none;
-    }
-
-    .empty-state-subtitle {
-        font-size: 0.9rem;
-        color: #9ca3af;
-        margin-top: 0.5rem;
-        margin-bottom: 0;
-    }
-
-    .controls-section {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        gap: 1rem;
-        flex-wrap: wrap;
-    }
-
-    .export-buttons {
-        display: flex;
-        gap: 1rem;
-    }
-
-    .matrix-controls {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1.5rem;
-        margin: 1rem 0;
-        padding: 1rem;
-        background: #f8fafc;
-        border: 1px solid #e3e6ed;
-        border-radius: 8px;
-        flex-wrap: wrap;
-    }
-
-    .scale-switch-container {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .scale-label {
-        font-weight: 600;
-        color: #22223b;
-        font-size: 0.95rem;
-        white-space: nowrap;
-    }
-
-    .scale-switch-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .scale-text {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: #6c757d;
-        transition: color 0.3s ease;
-        user-select: none;
-    }
-
-    .scale-text.active {
-        color: #6c63ff;
-    }
-
-    .scale-switch {
-        position: relative;
-        width: 50px;
-        height: 24px;
-        background: #e3e6ed;
-        border: 2px solid #e3e6ed;
-        border-radius: 15px;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        outline: none;
-        overflow: hidden;
-    }
-
-    .scale-switch:hover {
-        background: #d1d5db;
-        border-color: #d1d5db;
-        transform: scale(1.02);
-    }
-
-    .scale-switch:focus {
-        box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
-    }
-
-    .scale-switch.active {
-        background: linear-gradient(135deg, #6c63ff 0%, #5a52d5 100%);
-        border-color: #6c63ff;
-        box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
-    }
-
-    .scale-switch.active:hover {
-        background: linear-gradient(135deg, #5a52d5 0%, #4c44c7 100%);
-        transform: scale(1.02);
-        box-shadow: 0 6px 16px rgba(108, 99, 255, 0.4);
-    }
-
-    .scale-switch-slider {
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        width: 16px;
-        height: 16px;
-        background: #fff;
-        border-radius: 50%;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-    }
-
-    .scale-switch.active .scale-switch-slider {
-        transform: translateX(26px);
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-    }
-
-    .scale-switch:hover .scale-switch-slider {
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    }
-
-    .zoom-controls {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        flex: 1;
-        max-width: 300px;
-    }
-
-    .zoom-label {
-        font-weight: 600;
-        color: #22223b;
-        font-size: 0.95rem;
-        white-space: nowrap;
-    }
-
-    .zoom-slider-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        flex: 1;
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(8px);
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        box-shadow:
-            inset 0 2px 4px rgba(0, 0, 0, 0.05),
-            0 1px 0 rgba(255, 255, 255, 0.8);
-    }
-
-    .zoom-slider {
-        flex: 1;
-        -webkit-appearance: none;
-        appearance: none;
-        height: 6px;
-        background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
-        border-radius: 3px;
-        outline: none;
-        opacity: 0.7;
-        transition: opacity 0.2s;
-        /* Improve touch handling on mobile */
-        touch-action: manipulation;
-        -webkit-tap-highlight-color: transparent;
-    }
-
-    .zoom-slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 20px;
-        height: 20px;
-        background: white;
-        border-radius: 50%;
-        cursor: pointer;
-        border: 2px solid #667eea;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        transition: all 0.2s ease;
-        /* Improve touch target size */
-        min-height: 20px;
-        min-width: 20px;
-    }
-
-    .zoom-slider::-moz-range-thumb {
-        width: 20px;
-        height: 20px;
-        background: white;
-        border-radius: 50%;
-        cursor: pointer;
-        border: 2px solid #667eea;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        transition: all 0.2s ease;
-        /* Improve touch target size */
-        min-height: 20px;
-        min-width: 20px;
-    }
-
-    .zoom-slider:hover {
-        opacity: 1;
-    }
-
-    .zoom-slider::-webkit-slider-thumb:hover {
-        transform: scale(1.1);
-        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
-    }
-
-    .zoom-slider::-moz-range-thumb:hover {
-        transform: scale(1.1);
-        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
-    }
-
-    .zoom-value {
-        min-width: 2rem;
-        text-align: center;
-        font-weight: 500;
-        color: #495057;
-        font-size: 1rem;
-        padding: 0.25rem 0.5rem;
-        background: white;
-        border-radius: 4px;
-        border: 1px solid rgba(206, 212, 218, 0.4);
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    }
-
-
-
     @media (max-width: 768px) {
         .relatorios-container {
             padding: 0.2rem 0.05rem;
@@ -2119,39 +1424,6 @@
             margin-top: 3rem;
         }
 
-        .controls-section {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 0.5rem;
-        }
-
-        .export-buttons {
-            justify-content: center;
-        }
-
-        .matrix-controls {
-            flex-direction: column;
-            gap: 1rem;
-            padding: 0.75rem;
-        }
-
-        .scale-switch-container {
-            justify-content: center;
-        }
-
-        .scale-label {
-            font-size: 0.9rem;
-        }
-
-        .zoom-controls {
-            max-width: none;
-            width: 100%;
-        }
-
-        .zoom-slider-wrapper {
-            gap: 0.5rem;
-            padding: 0.2rem;
-        }
         .header {
             margin-top: 0;
             margin-bottom: 0.5rem;
@@ -2165,20 +1437,7 @@
             font-size: 0.93rem;
             margin-bottom: 0.4rem;
         }
-        .filters-section {
-            flex-direction: column;
-            gap: 0.2rem;
-            align-items: stretch;
-            padding: 0.3rem 0.1rem;
-        }
-        .filter-group {
-            min-width: 100%;
-            gap: 0.1rem;
-        }
-        .filter-select {
-            font-size: 0.93rem;
-            padding: 0.2rem 0.3rem;
-        }
+
         .matrix-section {
             padding: 0.3rem 0.1rem;
         }
@@ -2190,31 +1449,11 @@
             font-size: 0.85rem;
             margin-bottom: 0.3rem;
         }
-        .statistics-header {
-            flex-direction: column;
-            gap: 0.2rem;
-            padding: 0;
-        }
-        .stat-card {
-            padding: 0.2rem 0.3rem;
-            min-width: 60px;
-        }
-        .stat-value {
-            font-size: 0.93rem;
-        }
-        .stat-label {
-            font-size: 0.7rem;
-        }
+
         .matrix-container {
             font-size: 0.9rem;
         }
-        .matrix-legend {
-            padding: 0.2rem 0.1rem;
-            font-size: 0.9rem;
-        }
-        .empty-state {
-            padding: 0.5rem 0.1rem;
-        }
+
         .student-name-header,
         .student-name {
             min-width: 90px;
@@ -2238,17 +1477,9 @@
         .relatorios-container {
             padding: 0.05rem;
         }
-        .filters-section {
-            padding: 0.1rem 0.02rem;
-        }
+
         .matrix-section {
             padding: 0.1rem 0.02rem;
-        }
-        .matrix-legend {
-            padding: 0.08rem 0.02rem;
-        }
-        .empty-state {
-            padding: 0.2rem 0.02rem;
         }
     }
 </style>

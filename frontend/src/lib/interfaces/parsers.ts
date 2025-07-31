@@ -53,7 +53,7 @@ function parseProblema(data: any): ProblemaModel {
         faltas_por_tag[key] = faltas_por_tag_json[key];
     });
 
-    
+
 
     return {
         id_problema: data.id_problema,
@@ -120,7 +120,8 @@ function parseCriterios(criteriosString: string): CriteriosGroup {
         object[key] = criterios[key].map((criterio: any) => ({
             nome_criterio: criterio.nome_criterio,
             descricao_criterio: criterio.descricao_criterio,
-            nota_maxima: criterio.nota_maxima
+            nota_maxima_aluno: criterio.nota_maxima_aluno,
+            nota_maxima_professor: criterio.nota_maxima_professor
         } as Criterio));
     });
     return object;

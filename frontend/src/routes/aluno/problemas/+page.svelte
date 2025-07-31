@@ -8,10 +8,15 @@
     import Toast from "$lib/components/Toast.svelte";
     import type { Column } from "$lib/interfaces/column";
     import { api } from "$lib/utils/api";
-    import { DateUtils, Utils } from "$lib/utils/utils";
-    import type { AlunoModel, ProblemaModel } from "$lib/interfaces/interfaces";
+    import { DateUtils, Utils, MediaCalculator } from "$lib/utils/utils";
+    import type {
+        AlunoModel,
+        ProblemaModel,
+        AvaliacaoModel,
+    } from "$lib/interfaces/interfaces";
     import { currentUser } from "$lib/utils/auth";
     import { Parsers } from "$lib/interfaces/parsers";
+    import { AvaliacoesService } from "$lib/services/avaliacoes_service";
     import { get } from "svelte/store";
 
     let problems: ProblemaModel[] = [];
@@ -21,6 +26,103 @@
     let toastMessage: string = "";
     let toastType: "success" | "error" | "info" = "error";
 
+    // Function to calculate student's average for a specific problem
+    async function calculateStudentAverage(
+        problemaId: number,
+        studentId: number,
+    ): Promise<number | null> {
+        try {
+            // Use AvaliacoesService to get evaluations for this problem
+            const avaliacoes = await AvaliacoesService.getByProblema(
+                problemaId.toString(),
+            );
+
+            if (!avaliacoes || !Array.isArray(avaliacoes)) {
+                return null;
+            }
+
+            // Filter evaluations where this student was evaluated (received evaluations)
+            const receivedEvaluations = avaliacoes.filter(
+                (av: AvaliacaoModel) =>
+                    av.aluno_avaliado?.id === studentId &&
+                    av.aluno_avaliador?.id !== studentId &&
+                    !av.id_professor, // Exclude professor evaluations for now
+            );
+
+            console.log(
+                `Found ${receivedEvaluations.length} evaluations for student ${studentId} in problem ${problemaId}`,
+            );
+
+            if (receivedEvaluations.length === 0) {
+                return null;
+            }
+
+            // Calculate average of all received evaluations
+            let totalSum = 0;
+            let validEvaluations = 0;
+
+            receivedEvaluations.forEach((evaluation: AvaliacaoModel) => {
+                const sum =
+                    MediaCalculator.calculateRawSumFromAvaliacao(evaluation);
+                if (sum > 0) {
+                    totalSum += sum;
+                    validEvaluations++;
+                    console.log(
+                        `Evaluation ${evaluation.id_avaliacao}: sum = ${sum}`,
+                    );
+                }
+            });
+
+            const average =
+                validEvaluations > 0
+                    ? Number((totalSum / validEvaluations).toFixed(2))
+                    : null;
+            console.log(`Final average for student ${studentId}: ${average}`);
+            return average;
+        } catch (error) {
+            console.error("Error calculating student average:", error);
+            return null;
+        }
+    }
+
+    // Function to check if student's average should be shown
+    function shouldShowStudentAverage(problema: ProblemaModel): boolean {
+        const now = new Date();
+        const oneHourInMs = 60 * 60 * 1000; // 1 hour in milliseconds
+
+        // Get all time ranges from the problem
+        const timeRanges = Object.values(
+            problema.data_e_hora_criterios_e_arquivos,
+        );
+
+        if (timeRanges.length === 0) {
+            return false; // No time ranges defined
+        }
+
+        // Check if any time range has ended more than 1 hour ago
+        const hasEndedTimeRange = timeRanges.some((range) => {
+            if (!range.data_e_hora_fim) return false;
+            const endTime = new Date(range.data_e_hora_fim);
+            return now.getTime() - endTime.getTime() >= oneHourInMs;
+        });
+
+        if (!hasEndedTimeRange) {
+            return false; // No time range has ended more than 1 hour ago
+        }
+
+        // Check if any time range is still active
+        const hasActiveTimeRange = timeRanges.some((range) => {
+            if (!range.data_e_hora_inicio || !range.data_e_hora_fim)
+                return false;
+            const startTime = new Date(range.data_e_hora_inicio);
+            const endTime = new Date(range.data_e_hora_fim);
+            return now >= startTime && now <= endTime;
+        });
+
+        // Only show if no time range is currently active
+        return !hasActiveTimeRange;
+    }
+
     const columns: Column[] = [
         {
             key: "nome_problema",
@@ -28,45 +130,35 @@
             sortable: true,
         },
         {
-            key: "data_inicio",
-            label: "Data de Início",
+            key: "periodos",
+            label: "Períodos",
             sortable: true,
             render: (row: ProblemaModel) => {
-                const tagStatusArr =
-                    DateUtils.getDateStartStatusArrayFromProblemaModel(row);
-                const html = tagStatusArr
+                const dateRanges =
+                    DateUtils.getDateRangesFromProblemaModel(row);
+                const html = dateRanges
                     .map(
-                        ({ tag, date, isActive }) =>
-                            `<span class=\"tag-status ${isActive ? "tag-green" : "tag-red"}\">${tag}: ${date}</span>`,
+                        ({ tag, range, isActive }: any) =>
+                            `<span class="tag-status ${isActive ? "tag-green" : "tag-red"}">${tag}: ${range}</span>`,
                     )
                     .join(Utils.isMobile() ? "<br>" : "<br><br>");
                 return { component: "html", props: { html } };
             },
         },
         {
-            key: "data_fim",
-            label: "Data de Término",
-            sortable: true,
-            render: (row: ProblemaModel) => {
-                const tagStatusArr =
-                    DateUtils.getDateEndStatusArrayFromProblemaModel(row);
-                const html = tagStatusArr
-                    .map(
-                        ({ tag, date, isActive }) =>
-                            `<span class=\"tag-status ${isActive ? "tag-green" : "tag-red"}\">${tag}: ${date}</span>`,
-                    )
-                    .join(Utils.isMobile() ? "<br>" : "<br><br>");
-                return { component: "html", props: { html } };
-            },
-        },
-        {
-            key: "media_geral",
+            key: "minha_media",
             label: "Minha Média",
             sortable: true,
-            render: (row: ProblemaModel) =>
-                row.media_geral !== null && row.media_geral !== undefined
-                    ? row.media_geral.toFixed(2)
-                    : "Não avaliado",
+            render: (row: any) => {
+                // Check if we should show the student's average
+                if (!shouldShowStudentAverage(row)) {
+                    return "Aguardando término da avaliação atual";
+                }
+
+                return row.minha_media !== null && row.minha_media !== undefined
+                    ? row.minha_media.toFixed(2)
+                    : "Não avaliado";
+            },
         },
         {
             key: "actions",
@@ -91,15 +183,22 @@
 
             const currentUserData = get(currentUser) as AlunoModel;
 
-            // First, try to refresh user data in case they were added to a turma
+            // Only refresh user data if we don't have it or if it's stale
             if (currentUserData?.id) {
                 try {
                     const updatedUserData = await api.get(
                         `/alunos/get?id_aluno=${currentUserData.id}`,
                     );
                     const parsedUser = Parsers.parseAluno(updatedUserData);
-                    currentUser.set(parsedUser);
-                    console.log("User data refreshed:", parsedUser);
+
+                    // Only update if the data has actually changed
+                    if (
+                        JSON.stringify(parsedUser) !==
+                        JSON.stringify(currentUserData)
+                    ) {
+                        currentUser.set(parsedUser);
+                        console.log("User data refreshed:", parsedUser);
+                    }
                 } catch (e) {
                     console.log("Could not refresh user data:", e);
                     // Continue with existing user data
@@ -123,6 +222,22 @@
             );
 
             problems = Parsers.parseProblemas(problems);
+
+            // Calculate student averages for each problem
+            const problemsWithAverages = await Promise.all(
+                problems.map(async (problem) => {
+                    const minhaMedia = await calculateStudentAverage(
+                        problem.id_problema,
+                        updatedUserData.id,
+                    );
+                    return {
+                        ...problem,
+                        minha_media: minhaMedia,
+                    };
+                }),
+            );
+
+            problems = problemsWithAverages;
 
             // Sort problems alphabetically by name
             problems.sort((a, b) =>
@@ -153,11 +268,11 @@
     $: user = $currentUser as AlunoModel;
 
     // Reactive statement to track user changes for debugging
-    $: console.log("User data updated:", {
-        id: user?.id,
-        id_turma: user?.id_turma,
-        nome: user?.nome_completo,
-    });
+    // $: console.log("User data updated:", {
+    //     id: user?.id,
+    //     id_turma: user?.id_turma,
+    //     nome: user?.nome_completo,
+    // });
 
     onMount(fetchProblems);
 </script>

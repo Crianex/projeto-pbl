@@ -203,9 +203,9 @@ export const TurmaController: EndpointController = {
                         logger.info(`Found ${remainingAvaliacoes?.length || 0} remaining avaliacoes for problema ${problema.id_problema}`);
 
                         if (remainingAvaliacoes) {
-                            // Calculate new average if there are remaining evaluations
+                            // Calculate new sum if there are remaining evaluations
                             if (remainingAvaliacoes.length > 0) {
-                                const notas = remainingAvaliacoes.map(a => MediaCalculator.calculateSimpleMedia(a.notas));
+                                const notas = remainingAvaliacoes.map(a => MediaCalculator.calculateRawSum(a.notas));
                                 const media = notas.reduce((sum, nota) => sum + nota, 0) / notas.length;
 
                                 logger.info(`Calculated new media_geral for problema ${problema.id_problema}: ${media} (from ${notas.length} avaliacoes)`);
@@ -369,9 +369,9 @@ export const TurmaController: EndpointController = {
                             .eq('id_problema', problema.id_problema);
 
                         if (!avaliacoesError && remainingAvaliacoes) {
-                            // Calculate new average if there are remaining evaluations
+                            // Calculate new sum if there are remaining evaluations
                             if (remainingAvaliacoes.length > 0) {
-                                const notas = remainingAvaliacoes.map(a => MediaCalculator.calculateSimpleMedia(a.notas));
+                                const notas = remainingAvaliacoes.map(a => MediaCalculator.calculateRawSum(a.notas));
                                 const media = notas.reduce((sum, nota) => sum + nota, 0) / notas.length;
 
                                 await supabase

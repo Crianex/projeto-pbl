@@ -110,7 +110,8 @@ export interface BaseUser {
 export interface Criterio {
     nome_criterio: string;
     descricao_criterio: string;
-    nota_maxima: number;
+    nota_maxima_aluno: number;
+    nota_maxima_professor: number;
 }
 
 export interface CriteriosGroup {

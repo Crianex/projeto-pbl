@@ -47,7 +47,8 @@
                 {
                     nome_criterio: "",
                     descricao_criterio: "",
-                    nota_maxima: 1.0,
+                    nota_maxima_aluno: 1.0,
+                    nota_maxima_professor: 1.0,
                 },
             ],
         };
@@ -270,16 +271,32 @@
                                 </button>
                             </div>
                             <div class="nota-maxima">
-                                <label>Nota Máxima:</label>
-                                <Input
-                                    type="number"
-                                    bind:value={criterio.nota_maxima}
-                                    min="0"
-                                    max="10"
-                                    step="0.5"
-                                    size="sm"
-                                    required
-                                />
+                                <div class="nota-field">
+                                    <label>Nota Máxima Aluno:</label>
+                                    <Input
+                                        type="number"
+                                        bind:value={criterio.nota_maxima_aluno}
+                                        min="0"
+                                        max="10"
+                                        step="0.5"
+                                        size="sm"
+                                        required
+                                    />
+                                </div>
+                                <div class="nota-field">
+                                    <label>Nota Máxima Professor:</label>
+                                    <Input
+                                        type="number"
+                                        bind:value={
+                                            criterio.nota_maxima_professor
+                                        }
+                                        min="0"
+                                        max="10"
+                                        step="0.5"
+                                        size="sm"
+                                        required
+                                    />
+                                </div>
                             </div>
                         </div>
                         <TextArea
@@ -394,11 +411,18 @@
     .nota-maxima {
         width: 100%;
         display: flex;
+        gap: 1rem;
         align-items: center;
-        gap: 0.5rem;
     }
 
-    .nota-maxima label {
+    .nota-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        flex: 1;
+    }
+
+    .nota-field label {
         color: #495057;
         font-size: 0.875rem;
     }
@@ -475,10 +499,14 @@
             width: 100%;
             flex-direction: column;
             align-items: stretch;
-            gap: 0.3rem;
+            gap: 0.8rem;
         }
 
-        .nota-maxima label {
+        .nota-field {
+            width: 100%;
+        }
+
+        .nota-field label {
             font-size: 0.9rem;
         }
 
