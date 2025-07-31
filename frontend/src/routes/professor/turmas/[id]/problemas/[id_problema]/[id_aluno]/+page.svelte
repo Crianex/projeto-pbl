@@ -9,12 +9,13 @@
         ProblemaModel,
         AlunoModel,
         TurmaModel,
+        AvaliacaoModel,
     } from "$lib/interfaces/interfaces";
     import Container from "$lib/components/Container.svelte";
     import Table from "$lib/components/Table.svelte";
     import BackButton from "$lib/components/BackButton.svelte";
     import Avatar from "$lib/components/Avatar.svelte";
-    import { MediaCalculator } from "$lib/utils/utils";
+    import { DateUtils, MediaCalculator, Utils } from "$lib/utils/utils";
     import Button from "$lib/components/Button.svelte";
     import { ProblemasService } from "$lib/services/problemas_service";
     import { AlunosService } from "$lib/services/alunos_service";
@@ -39,7 +40,7 @@
     let avaliacoesRecebidas: any[] = [];
     let loading = true;
     let error: string | null = null;
-    let avaliacaoProfessor: any = null;
+    let avaliacaoProfessor: AvaliacaoModel | null = null;
 
     // Variáveis para uploads do aluno
     let uploadedFiles: UploadedFile[] = [];
@@ -81,7 +82,7 @@
         {
             key: "aluno",
             label: "Aluno",
-            width: "30%",
+            width: "25%",
             render: (row: any) => ({
                 component: "html",
                 props: {
@@ -96,8 +97,18 @@
         },
         {
             key: "notas",
-            label: "Notas (C/H/A)",
-            width: "50%",
+            label: "Detalhamento das Notas",
+            width: "55%",
+            render: (row: any) => ({
+                component: "html",
+                props: {
+                    html: `
+                        <div style="font-size: 0.85rem; line-height: 1.4;">
+                            ${formatNotasDetailed(row.raw_notas)}
+                        </div>
+                    `,
+                },
+            }),
         },
         {
             key: "enviada_para",
@@ -122,7 +133,7 @@
         {
             key: "aluno",
             label: "Aluno",
-            width: "30%",
+            width: "25%",
             render: (row: any) => ({
                 component: "html",
                 props: {
@@ -137,8 +148,18 @@
         },
         {
             key: "notas",
-            label: "Notas (C/H/A)",
-            width: "50%",
+            label: "Detalhamento das Notas",
+            width: "55%",
+            render: (row: any) => ({
+                component: "html",
+                props: {
+                    html: `
+                        <div style="font-size: 0.85rem; line-height: 1.4;">
+                            ${formatNotasDetailed(row.raw_notas)}
+                        </div>
+                    `,
+                },
+            }),
         },
         {
             key: "enviada_para",
@@ -198,20 +219,35 @@
         });
     }
 
-    onMount(async () => {
+    async function loadAlunoDetails(forceRefresh = false) {
         try {
+            loading = true;
+            error = null;
+
             const { id_problema, id_aluno, id } = $page.params;
             logger.info(
                 `Loading aluno details for id_aluno: ${id_aluno}, problema: ${id_problema}, turma: ${id}`,
             );
 
+            // Add a timeout to prevent infinite loading
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error("Request timeout")), 10000);
+            });
+
+            const fetchPromise = Promise.all([
+                ProblemasService.getById(id_problema, forceRefresh),
+                AlunosService.getById(id_aluno, forceRefresh),
+                TurmasService.getById(id, forceRefresh),
+                AvaliacoesService.getByProblema(id_problema, forceRefresh),
+            ]);
+
             const [problemaData, alunoData, turmaData, avaliacoesData] =
-                await Promise.all([
-                    ProblemasService.getById(id_problema),
-                    AlunosService.getById(id_aluno),
-                    TurmasService.getById(id),
-                    AvaliacoesService.getByProblema(id_problema),
-                ]);
+                (await Promise.race([fetchPromise, timeoutPromise])) as [
+                    any,
+                    any,
+                    any,
+                    any,
+                ];
 
             problema = problemaData;
             aluno = alunoData;
@@ -231,6 +267,7 @@
                         aluno_avatar:
                             aluno?.link_avatar || "/images/default_avatar.png",
                         notas: formatNotas(av.notas),
+                        raw_notas: av.notas,
                         enviada_para:
                             alunoAvaliado?.nome_completo ||
                             "Aluno não encontrado",
@@ -258,6 +295,7 @@
                             alunoAvaliador?.link_avatar ||
                             "/images/default_avatar.png",
                         notas: formatNotas(av.notas),
+                        raw_notas: av.notas,
                         enviada_para: aluno?.nome_completo || "Aluno",
                         enviada_para_avatar:
                             aluno?.link_avatar || "/images/default_avatar.png",
@@ -267,7 +305,7 @@
             // Avaliação do professor
             avaliacaoProfessor = avaliacoesData.find(
                 (av: any) =>
-                    av.id_aluno_avaliado === currentAlunoId && av.id_professor,
+                    av.aluno_avaliado.id === currentAlunoId && av.id_professor,
             );
 
             // Carregar arquivos do aluno
@@ -275,10 +313,49 @@
         } catch (e: any) {
             logger.error("Error loading aluno details:", e);
             error = e.message || "Erro ao carregar os dados";
+            // Ensure loading is set to false on error
+            loading = false;
+            // Clear cache on error to prevent stuck loading state
+            if (e.message === "Request timeout") {
+                // Invalidate relevant caches
+                AvaliacoesService.invalidateCache();
+            }
         } finally {
             loading = false;
         }
+    }
+
+    onMount(() => {
+        loadAlunoDetails();
     });
+
+    // Refresh data when the page becomes visible (simple approach)
+    $: if (
+        typeof document !== "undefined" &&
+        document.visibilityState === "visible"
+    ) {
+        // Only refresh if we're on the aluno page and not already loading
+        if (
+            $page.url.pathname.includes("/professor/turmas/") &&
+            $page.url.pathname.includes("/problemas/") &&
+            $page.url.pathname.includes("/[id_aluno]") &&
+            !loading
+        ) {
+            loadAlunoDetails(true);
+        }
+    }
+
+    // Simple refresh when navigating back to this page
+    $: if (
+        $page.url.pathname.includes("/professor/turmas/") &&
+        $page.url.pathname.includes("/problemas/") &&
+        $page.url.pathname.includes("/[id_aluno]") &&
+        !loading &&
+        (!avaliacaoProfessor || avaliacoesEnviadas.length === 0)
+    ) {
+        // Only refresh if we're on the aluno page, not loading, and have no data
+        loadAlunoDetails(true);
+    }
 
     function formatNotas(notas: string | object | null) {
         if (!notas) return "Não avaliado";
@@ -305,6 +382,124 @@
         const atitude = medias.atitudes || 0;
 
         return `(${competencia.toFixed(2)}, ${habilidade.toFixed(2)}, ${atitude.toFixed(2)})`;
+    }
+
+    function formatNotasDetailed(notas: string | object | null) {
+        if (!notas) return "Não avaliado";
+
+        try {
+            const notasObj =
+                typeof notas === "string" ? JSON.parse(notas) : notas;
+
+            if (!notasObj || typeof notasObj !== "object") {
+                return "Erro ao processar notas";
+            }
+
+            let result = "";
+            const criterios = ["conhecimento", "habilidades", "atitudes"];
+
+            Object.entries(notasObj).forEach(
+                ([tagName, categoria]: [string, any], tagIndex) => {
+                    if (typeof categoria === "object" && categoria !== null) {
+                        if (tagIndex > 0) result += "<br>";
+                        result += `<strong>${tagName}:</strong><br>`;
+
+                        criterios.forEach((criterio, criterioIndex) => {
+                            const valor = categoria[criterio];
+                            if (typeof valor === "number") {
+                                result += `<span style="color: #6b7280; font-weight: 500;">${criterio}: ${valor.toFixed(2)}</span>`;
+                                if (criterioIndex < criterios.length - 1)
+                                    result += " | ";
+                            }
+                        });
+                    }
+                },
+            );
+
+            return result || "Nenhuma nota encontrada";
+        } catch (error) {
+            console.error("Error parsing notas:", error);
+            return "Erro ao processar notas";
+        }
+    }
+
+    function calculateProfessorTotalNota(
+        avaliacaoProfessor: AvaliacaoModel | null,
+    ): string {
+        if (!avaliacaoProfessor) return "Não avaliado";
+
+        try {
+            // Calculate criterios sum
+            let criteriosSum = 0;
+            if (avaliacaoProfessor.notas) {
+                Object.entries(avaliacaoProfessor.notas).forEach(
+                    ([key, val]) => {
+                        if (
+                            key === "media" ||
+                            typeof val !== "object" ||
+                            val === null
+                        )
+                            return;
+                        Object.values(val).forEach((num) => {
+                            if (typeof num === "number" && !isNaN(num)) {
+                                criteriosSum += num;
+                            }
+                        });
+                    },
+                );
+            }
+
+            // Calculate arquivos sum
+            let arquivosSum = 0;
+            if (avaliacaoProfessor.notas_por_arquivo) {
+                const fileGrades =
+                    typeof avaliacaoProfessor.notas_por_arquivo === "string"
+                        ? JSON.parse(avaliacaoProfessor.notas_por_arquivo)
+                        : avaliacaoProfessor.notas_por_arquivo;
+
+                Object.values(fileGrades).forEach((grade) => {
+                    if (typeof grade === "number" && !isNaN(grade)) {
+                        arquivosSum += grade;
+                    }
+                });
+            }
+
+            // Total sum
+            const totalSum = criteriosSum + arquivosSum;
+            return `${totalSum.toFixed(2)} (Criterios: ${criteriosSum.toFixed(2)} + Arquivos: ${arquivosSum.toFixed(2)})`;
+        } catch (error) {
+            console.error("Error calculating professor total nota:", error);
+            return "Erro ao calcular nota";
+        }
+    }
+
+    function formatArquivosDetailed(notas_por_arquivo: string | object | null) {
+        if (!notas_por_arquivo) return "Não avaliado";
+
+        try {
+            const arquivosObj =
+                typeof notas_por_arquivo === "string"
+                    ? JSON.parse(notas_por_arquivo)
+                    : notas_por_arquivo;
+
+            if (!arquivosObj || typeof arquivosObj !== "object") {
+                return "Erro ao processar notas dos arquivos";
+            }
+
+            let result = "";
+
+            Object.entries(arquivosObj).forEach(([fileType, grade], index) => {
+                if (typeof grade === "number") {
+                    if (index > 0) result += "<br>";
+                    result += `<span style="color: #6b7280; font-weight: 500;">${fileType}: ${grade.toFixed(2)}</span>`;
+                }
+            });
+
+            return result || "Nenhuma nota de arquivo encontrada";
+        } catch (error) {
+            console.error("Error parsing arquivos notas:", error);
+            return "Erro ao processar notas dos arquivos";
+        }
     }
 
     function handleAvaliarAluno() {
@@ -461,15 +656,43 @@
                     class="professor-avaliacao-notas"
                     style="font-size: 1.1rem;"
                 >
-                    <strong>Notas:</strong>
-                    {formatNotas(avaliacaoProfessor.notas)}
+                    <strong>Nota Total:</strong>
+                    {calculateProfessorTotalNota(avaliacaoProfessor)}
+                </div>
+                <div
+                    class="professor-avaliacao-details"
+                    style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; font-size: 0.9rem;"
+                >
+                    <strong>Detalhamento:</strong>
+                    <div style="margin-top: 0.5rem; line-height: 1.5;">
+                        <div style="margin-bottom: 1rem;">
+                            <strong style="color: #374151;">Criterios:</strong>
+                            <div style="margin-top: 0.25rem;">
+                                {@html formatNotasDetailed(
+                                    avaliacaoProfessor.notas,
+                                )}
+                            </div>
+                        </div>
+                        {#if avaliacaoProfessor.notas_por_arquivo}
+                            <div>
+                                <strong style="color: #374151;"
+                                    >Arquivos:</strong
+                                >
+                                <div style="margin-top: 0.25rem;">
+                                    {@html formatArquivosDetailed(
+                                        avaliacaoProfessor.notas_por_arquivo,
+                                    )}
+                                </div>
+                            </div>
+                        {/if}
+                    </div>
                 </div>
                 <div
                     class="professor-avaliacao-data"
                     style="font-size: 0.9rem; color: #6c757d; margin-top: 0.5rem;"
                 >
                     <span
-                        >Enviada em: {formatDate(
+                        >Enviada em: {Utils.formatDate(
                             avaliacaoProfessor.created_at,
                         )}</span
                     >
@@ -885,6 +1108,27 @@
     .error-alert strong {
         font-weight: 700;
         margin-right: 0.5rem;
+    }
+
+    /* Detailed notas styling */
+    .table-wrapper :global(.notas-detail) {
+        font-size: 0.85rem;
+        line-height: 1.4;
+        color: #374151;
+    }
+
+    .table-wrapper :global(.notas-detail strong) {
+        color: #1f2937;
+        font-weight: 600;
+    }
+
+    .table-wrapper :global(.notas-detail span) {
+        display: inline-block;
+        margin-right: 0.5rem;
+    }
+
+    .professor-avaliacao-details {
+        border-left: 4px solid #667eea;
     }
 
     /* Responsive Design */

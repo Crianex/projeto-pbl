@@ -47,7 +47,7 @@
                 timeoutPromise,
             ]);
 
-            turmas = fetchedTurmas;
+            turmas = fetchedTurmas as TurmaModel[];
             logger.info(
                 `Fetched ${turmas.length} turmas for professor ${user.id}`,
             );
