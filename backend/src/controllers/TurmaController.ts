@@ -4,6 +4,7 @@ import { Pair } from '../config/utils';
 import { supabase } from '../config/supabase_wrapper';
 import { createControllerLogger } from '../utils/controller_logger';
 import { MediaCalculator } from '../utils/utils';
+import { Utils } from '../config/utils';
 
 const logger = createControllerLogger('Turma', 'Controller');
 
@@ -11,6 +12,12 @@ export const TurmaController: EndpointController = {
     name: 'turmas',
     routes: {
         'list': new Pair(RequestType.GET, async (req: Request, res: Response) => {
+            // Allow both professor and aluno authentication for listing turmas
+            const authUser = await Utils.validateUser(req);
+            if (!authUser) {
+                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
+            }
+
             const { id_professor } = req.query;
 
             let query = supabase
@@ -21,11 +28,34 @@ export const TurmaController: EndpointController = {
                     alunos(*)
                 `);
 
-            if (id_professor) {
-                query = query.eq('id_professor', id_professor);
-                logger.info(`Filtering turmas by professor ${id_professor}`);
-            } else {
-                logger.info('Fetching all turmas (no professor filter)');
+            if (authUser.type === 'professor') {
+                // Professors can see all turmas or filter by professor
+                if (id_professor) {
+                    query = query.eq('id_professor', id_professor);
+                    logger.info(`Filtering turmas by professor ${id_professor}`);
+                } else {
+                    logger.info('Fetching all turmas (no professor filter)');
+                }
+            } else if (authUser.type === 'aluno') {
+                // Alunos can only see turmas they belong to
+                const { data: alunoData, error: alunoError } = await supabase
+                    .from('alunos')
+                    .select('id_turma')
+                    .eq('id_aluno', authUser.id)
+                    .single();
+
+                if (alunoError) {
+                    logger.error(`Error checking aluno turma: ${alunoError.message}`);
+                    return res.status(500).json({ error: alunoError.message });
+                }
+
+                if (!alunoData || !alunoData.id_turma) {
+                    logger.info(`Aluno ${authUser.id} not assigned to any turma`);
+                    return res.json([]);
+                }
+
+                query = query.eq('id_turma', alunoData.id_turma);
+                logger.info(`Fetching turma ${alunoData.id_turma} for aluno ${authUser.id}`);
             }
 
             const { data, error } = await query;
@@ -35,12 +65,18 @@ export const TurmaController: EndpointController = {
                 return res.status(500).json({ error: error.message });
             }
 
-            logger.info(`Fetched ${data.length} turmas`);
+            logger.info(`Fetched ${data.length} turmas for ${authUser.type} ${authUser.id}`);
 
             return res.json(data);
         }),
 
         'get': new Pair(RequestType.GET, async (req: Request, res: Response) => {
+            // Allow both professor and aluno authentication for getting turma details
+            const authUser = await Utils.validateUser(req);
+            if (!authUser) {
+                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
+            }
+
             const { id_turma } = req.query;
 
             if (!id_turma) {
@@ -48,7 +84,26 @@ export const TurmaController: EndpointController = {
                 return res.status(400).json({ error: 'No ID provided' });
             }
 
-            logger.info(`Fetching turma ${id_turma}`);
+            // If user is an aluno, check if they belong to this turma
+            if (authUser.type === 'aluno') {
+                const { data: alunoData, error: alunoError } = await supabase
+                    .from('alunos')
+                    .select('id_turma')
+                    .eq('id_aluno', authUser.id)
+                    .single();
+
+                if (alunoError) {
+                    logger.error(`Error checking aluno turma: ${alunoError.message}`);
+                    return res.status(500).json({ error: alunoError.message });
+                }
+
+                if (!alunoData || alunoData.id_turma !== parseInt(id_turma as string)) {
+                    logger.error(`Aluno ${authUser.id} not authorized to access turma ${id_turma}`);
+                    return res.status(403).json({ error: 'Forbidden: You can only access your own turma' });
+                }
+            }
+
+            logger.info(`Fetching turma ${id_turma} for ${authUser.type} ${authUser.id}`);
             const { data, error } = await supabase
                 .from('turmas')
                 .select(`
@@ -73,6 +128,12 @@ export const TurmaController: EndpointController = {
         }),
 
         'create': new Pair(RequestType.POST, async (req: Request, res: Response) => {
+            // Require professor authentication for creating turmas
+            const authUser = await Utils.validateProfessor(req);
+            if (!authUser) {
+                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+            }
+
             const { nome_turma, id_professor } = req.body;
             const { data, error } = await supabase
                 .from('turmas')
@@ -92,6 +153,12 @@ export const TurmaController: EndpointController = {
         }),
 
         'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
+            // Require professor authentication for updating turmas
+            const authUser = await Utils.validateProfessor(req);
+            if (!authUser) {
+                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+            }
+
             const { id_turma } = req.query;
             const { nome_turma, id_professor, alunos } = req.body;
 
@@ -283,6 +350,12 @@ export const TurmaController: EndpointController = {
         }),
 
         'delete': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
+            // Require professor authentication for deleting turmas
+            const authUser = await Utils.validateProfessor(req);
+            if (!authUser) {
+                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+            }
+
             const { id_turma } = req.query;
             const { error } = await supabase
                 .from('turmas')
@@ -298,6 +371,12 @@ export const TurmaController: EndpointController = {
         }),
 
         'add-aluno': new Pair(RequestType.POST, async (req: Request, res: Response) => {
+            // Require professor authentication for adding alunos to turmas
+            const authUser = await Utils.validateProfessor(req);
+            if (!authUser) {
+                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+            }
+
             const { id_turma, id_aluno } = req.body;
             const { data, error } = await supabase
                 .from('alunos')
@@ -317,6 +396,12 @@ export const TurmaController: EndpointController = {
         }),
 
         'remove-aluno': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
+            // Require professor authentication for removing alunos from turmas
+            const authUser = await Utils.validateProfessor(req);
+            if (!authUser) {
+                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+            }
+
             const { id_turma, id_aluno } = req.query;
 
             try {

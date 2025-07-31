@@ -36,8 +36,9 @@ function parseProblema(data: any): Problema {
         id_turma: data.id_turma || null,
         media_geral: data.media_geral || null,
         criterios: data.criterios || null,
-        definicao_arquivos_de_avaliacao: data.definicao_arquivos_de_avaliacao || null
-
+        definicao_arquivos_de_avaliacao: data.definicao_arquivos_de_avaliacao || null,
+        data_e_hora_criterios_e_arquivos: data.data_e_hora_criterios_e_arquivos || null,
+        faltas_por_tag: data.faltas_por_tag || null
     };
 }
 
