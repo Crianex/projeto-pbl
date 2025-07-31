@@ -4,7 +4,6 @@ import { Pair } from '../config/utils';
 import { supabase } from '../config/supabase_wrapper';
 import { createControllerLogger } from '../utils/controller_logger';
 import { MediaCalculator } from '../utils/utils';
-import { Utils } from '../config/utils';
 
 const logger = createControllerLogger('Problema', 'Controller');
 
@@ -12,12 +11,6 @@ export const ProblemaController: EndpointController = {
     name: 'problemas',
     routes: {
         'list': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            // Require authentication for listing problemas
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             logger.info(`Fetching all problemas`);
 
             const { data, error } = await supabase
@@ -37,12 +30,6 @@ export const ProblemaController: EndpointController = {
         }),
 
         'list-by-turma': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            // Require authentication for listing problemas by turma
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { id_turma, id_aluno } = req.query;
             if (!id_turma) {
                 logger.error('No id_turma provided');
@@ -123,12 +110,6 @@ export const ProblemaController: EndpointController = {
         }),
 
         'get': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            // Require authentication for getting problema details
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { id_problema } = req.query;
             if (!id_problema) {
                 logger.error('No id_problema provided');
@@ -161,12 +142,6 @@ export const ProblemaController: EndpointController = {
         }),
 
         'create': new Pair(RequestType.POST, async (req: Request, res: Response) => {
-            // Require professor authentication for creating problemas
-            const authUser = await Utils.validateProfessor(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
-            }
-
             const requiredFields = ['nome_problema', 'id_turma', 'criterios', 'definicao_arquivos_de_avaliacao', 'data_e_hora_criterios_e_arquivos'];
             const missingFields = requiredFields.filter(field => !req.body[field]);
             if (missingFields.length > 0) {
@@ -202,12 +177,6 @@ export const ProblemaController: EndpointController = {
         }),
 
         'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
-            // Require professor authentication for updating problemas
-            const authUser = await Utils.validateProfessor(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
-            }
-
             const { id_problema } = req.query;
             if (!id_problema) {
                 logger.error('No id_problema provided');
@@ -235,6 +204,8 @@ export const ProblemaController: EndpointController = {
                 `)
                 .single();
 
+
+
             if (error) {
                 logger.error(`Error updating problema ${id_problema}: ${error.message}, Request body: ${JSON.stringify(req.body)}`);
                 return res.status(500).json({ error: error.message });
@@ -245,17 +216,12 @@ export const ProblemaController: EndpointController = {
                 return res.status(404).json({ error: 'Problema not found' });
             }
 
+
             logger.info(`Successfully updated problema ${id_problema}`);
             return res.json(data);
         }),
 
         'delete': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
-            // Require professor authentication for deleting problemas
-            const authUser = await Utils.validateProfessor(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
-            }
-
             const { id_problema } = req.query;
             if (!id_problema) {
                 logger.error('No id_problema provided');
@@ -278,12 +244,6 @@ export const ProblemaController: EndpointController = {
         }),
 
         'add-avaliacao': new Pair(RequestType.POST, async (req: Request, res: Response) => {
-            // Require authentication for adding avaliações
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { id_problema, id_aluno_avaliador, id_aluno_avaliado, notas } = req.body;
             if (!id_problema || !id_aluno_avaliador || !id_aluno_avaliado || !notas) {
                 logger.error('Missing required fields');
@@ -377,12 +337,6 @@ export const ProblemaController: EndpointController = {
         }),
 
         'get-avaliacoes': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            // Require authentication for getting avaliações
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { id_problema } = req.query;
             if (!id_problema) {
                 logger.error('No id_problema provided');
@@ -409,12 +363,6 @@ export const ProblemaController: EndpointController = {
         }),
 
         'upload-arquivo': new Pair(RequestType.POST, async (req: Request, res: Response) => {
-            // Require authentication for uploading arquivos
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { id_aluno, id_problema, nome_tipo } = req.body;
             logger.info(`Uploading arquivo for aluno ${id_aluno}, problema ${id_problema}, tipo ${nome_tipo}`);
             if (!id_aluno || !id_problema || !nome_tipo) {
@@ -541,12 +489,6 @@ export const ProblemaController: EndpointController = {
         }),
 
         'get-arquivos': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            // Require authentication for getting arquivos
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { id_aluno, id_problema, nome_tipo } = req.query;
             if (!id_aluno && !id_problema) {
                 return res.status(400).json({ error: 'id_aluno or id_problema is required' });
@@ -571,4 +513,5 @@ export const ProblemaController: EndpointController = {
             return res.json(data);
         })
     }
+
 }; 

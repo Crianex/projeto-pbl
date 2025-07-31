@@ -4,7 +4,6 @@ import { Pair } from '../config/utils';
 import { supabase } from '../config/supabase_wrapper';
 import { createControllerLogger } from '../utils/controller_logger';
 import { MediaCalculator } from '../utils/utils';
-import { Utils } from '../config/utils';
 
 const logger = createControllerLogger('Avaliacao', 'Controller');
 
@@ -12,12 +11,6 @@ export const AvaliacaoController: EndpointController = {
     name: 'avaliacoes',
     routes: {
         'list': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            // Require authentication for listing avaliações
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { id_problema, id_aluno, id_avaliacao, id_professor, id_aluno_avaliado } = req.query;
 
             var query = supabase
@@ -61,12 +54,6 @@ export const AvaliacaoController: EndpointController = {
         }),
 
         'get': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            // Require authentication for getting avaliação details
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { id_avaliacao } = req.params;
 
             // check if id_avaliacao is present
@@ -98,12 +85,6 @@ export const AvaliacaoController: EndpointController = {
         }),
 
         'create': new Pair(RequestType.POST, async (req: Request, res: Response) => {
-            // Require authentication for creating avaliações
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { id_problema, id_aluno_avaliador, id_aluno_avaliado, notas, id_professor, notas_por_arquivo } = req.body;
 
             // Must provide either id_aluno_avaliador or id_professor, but not both
@@ -159,12 +140,6 @@ export const AvaliacaoController: EndpointController = {
         }),
 
         'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
-            // Require authentication for updating avaliações
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { id_avaliacao } = req.params;
 
             // check if id_avaliacao is present
@@ -224,12 +199,6 @@ export const AvaliacaoController: EndpointController = {
         }),
 
         'delete': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
-            // Require authentication for deleting avaliações
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { id_avaliacao } = req.query;
 
             // check if id_avaliacao is present

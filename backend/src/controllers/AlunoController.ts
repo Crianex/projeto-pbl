@@ -3,7 +3,6 @@ import { Request, Response } from 'express';
 import { Pair } from '../config/utils';
 import { supabase } from '../config/supabase_wrapper';
 import { createControllerLogger } from '../utils/controller_logger';
-import { Utils } from '../config/utils';
 
 const logger = createControllerLogger('Aluno', 'Controller');
 
@@ -11,12 +10,6 @@ export const AlunoController: EndpointController = {
     name: 'alunos',
     routes: {
         'search': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            // Require authentication for search
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { query, exclude_turma_id, exclude_aluno_ids, limit, offset, order } = req.query;
 
             if (!query) {
@@ -67,12 +60,6 @@ export const AlunoController: EndpointController = {
         }),
 
         'list': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            // Require authentication for listing alunos
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { data, error } = await supabase
                 .from('alunos')
                 .select('*');
@@ -86,12 +73,6 @@ export const AlunoController: EndpointController = {
         }),
 
         'get': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            // Require authentication for getting aluno details
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { id_aluno } = req.query;
 
             // check if id_aluno is present
@@ -117,17 +98,9 @@ export const AlunoController: EndpointController = {
         }),
 
         'getByEmail': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            // Allow unauthenticated access for user lookup during auth flow
-            // This is needed because users don't exist yet when they first sign up
-            const authUser = await Utils.validateUser(req);
-
-            // If authentication fails, we still allow the request to proceed
-            // This is specifically for user lookup during the auth flow
-            if (!authUser) {
-                logger.info('No authentication provided for user lookup - allowing for auth flow');
-            }
-
             const { email } = req.query;
+
+
 
             if (!email) {
                 return res.status(400).json({ error: 'Email is required' });
@@ -151,12 +124,6 @@ export const AlunoController: EndpointController = {
         }),
 
         'checkEmail': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            // Require authentication for checking email
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { email } = req.query;
 
             if (!email) {
@@ -180,16 +147,6 @@ export const AlunoController: EndpointController = {
         }),
 
         'create': new Pair(RequestType.POST, async (req: Request, res: Response) => {
-            // Allow unauthenticated access for user creation during auth flow
-            // This is needed because users don't exist yet when they first sign up
-            const authUser = await Utils.validateUser(req);
-
-            // If authentication fails, we still allow the request to proceed
-            // This is specifically for user creation during the auth flow
-            if (!authUser) {
-                logger.info('No authentication provided for user creation - allowing for auth flow');
-            }
-
             const { nome_completo, email, link_avatar: link_avatar_body } = req.body;
 
             // check if data is present
@@ -275,12 +232,6 @@ export const AlunoController: EndpointController = {
         }),
 
         'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
-            // Require authentication for updating alunos
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { id_aluno } = req.query;
             const { nome_completo, email } = req.body;
             const { data, error } = await supabase
@@ -303,12 +254,6 @@ export const AlunoController: EndpointController = {
         }),
 
         'delete': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
-            // Require authentication for deleting alunos
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { id_aluno } = req.query;
             const { error } = await supabase
                 .from('alunos')
@@ -324,12 +269,6 @@ export const AlunoController: EndpointController = {
         }),
 
         'uploadAvatar': new Pair(RequestType.POST, async (req: Request, res: Response) => {
-            // Require authentication for uploading avatar
-            const authUser = await Utils.validateUser(req);
-            if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
-            }
-
             const { id_aluno } = req.query;
 
             if (!id_aluno) {

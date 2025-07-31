@@ -66,10 +66,8 @@ export async function createOrGetUser(session: any): Promise<BaseUser | null> {
         } catch (error) {
             if (error instanceof APIError && error.status === 404) {
                 // Continue to try aluno
-                logger.info('Professor not found, trying aluno', { email: supabaseUser.email });
             } else {
-                logger.error('Error checking for professor:', error);
-                // Continue to try aluno anyway
+                throw error;
             }
         }
 
@@ -82,12 +80,11 @@ export async function createOrGetUser(session: any): Promise<BaseUser | null> {
         } catch (error) {
             if (error instanceof APIError && error.status === 404) {
                 // Continue to create new user
-                logger.info('Aluno not found, creating new aluno', { email: supabaseUser.email });
             } else {
-                logger.error('Error checking for aluno:', error);
-                // Continue to create new user anyway
+                throw error;
             }
         }
+        
 
         // If no user found, create new aluno by default
         logger.info('Creating new aluno account', { email: supabaseUser.email });
@@ -98,7 +95,9 @@ export async function createOrGetUser(session: any): Promise<BaseUser | null> {
         });
 
         var user = parseToAlunoModel(newUser);
+
         return user;
+
 
     } catch (error) {
         logger.error('Error in createOrGetUser:', error);
