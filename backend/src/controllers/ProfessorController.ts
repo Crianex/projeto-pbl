@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { Pair } from '../config/utils';
 import { supabase } from '../config/supabase_wrapper';
 import { createControllerLogger } from '../utils/controller_logger';
+import { Utils } from '../config/utils';
 
 const logger = createControllerLogger('Professor', 'Controller');
 
@@ -10,6 +11,12 @@ export const ProfessorController: EndpointController = {
     name: 'professores',
     routes: {
         'list': new Pair(RequestType.GET, async (req: Request, res: Response) => {
+            // Require professor authentication for listing professores
+            const authUser = await Utils.validateProfessor(req);
+            if (!authUser) {
+                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+            }
+
             const { data, error } = await supabase
                 .from('professores')
                 .select('*');
@@ -23,6 +30,12 @@ export const ProfessorController: EndpointController = {
         }),
 
         'get': new Pair(RequestType.GET, async (req: Request, res: Response) => {
+            // Require professor authentication for getting professor details
+            const authUser = await Utils.validateProfessor(req);
+            if (!authUser) {
+                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+            }
+
             const { id_professor } = req.params;
             const { data, error } = await supabase
                 .from('professores')
@@ -42,6 +55,16 @@ export const ProfessorController: EndpointController = {
         }),
 
         'getByEmail': new Pair(RequestType.GET, async (req: Request, res: Response) => {
+            // Allow unauthenticated access for user lookup during auth flow
+            // This is needed because users don't exist yet when they first sign up
+            const authUser = await Utils.validateProfessor(req);
+
+            // If authentication fails, we still allow the request to proceed
+            // This is specifically for user lookup during the auth flow
+            if (!authUser) {
+                logger.info('No authentication provided for professor lookup - allowing for auth flow');
+            }
+
             const { email } = req.query;
 
             if (!email) {
@@ -66,6 +89,16 @@ export const ProfessorController: EndpointController = {
         }),
 
         'create': new Pair(RequestType.POST, async (req: Request, res: Response) => {
+            // Allow unauthenticated access for user creation during auth flow
+            // This is needed because users don't exist yet when they first sign up
+            const authUser = await Utils.validateProfessor(req);
+
+            // If authentication fails, we still allow the request to proceed
+            // This is specifically for user creation during the auth flow
+            if (!authUser) {
+                logger.info('No authentication provided for professor creation - allowing for auth flow');
+            }
+
             const { nome_completo, email, id_professor } = req.body;
 
             // First check if user already exists with this email
@@ -103,6 +136,12 @@ export const ProfessorController: EndpointController = {
         }),
 
         'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
+            // Require professor authentication for updating professores
+            const authUser = await Utils.validateProfessor(req);
+            if (!authUser) {
+                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+            }
+
             const { id_professor } = req.params;
             const { nome_completo, email } = req.body;
             const { data, error } = await supabase
@@ -124,6 +163,12 @@ export const ProfessorController: EndpointController = {
         }),
 
         'delete': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
+            // Require professor authentication for deleting professores
+            const authUser = await Utils.validateProfessor(req);
+            if (!authUser) {
+                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+            }
+
             const { id_professor } = req.params;
             const { error } = await supabase
                 .from('professores')
@@ -139,8 +184,14 @@ export const ProfessorController: EndpointController = {
         }),
 
         'uploadAvatar': new Pair(RequestType.POST, async (req: Request, res: Response) => {
+            // Require professor authentication for uploading avatar
+            const authUser = await Utils.validateProfessor(req);
+            if (!authUser) {
+                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+            }
+
             const { id_professor } = req.query;
-            
+
             if (!id_professor) {
                 return res.status(400).json({ error: 'id_professor is required' });
             }
@@ -150,7 +201,7 @@ export const ProfessorController: EndpointController = {
             }
 
             const avatarFile = req.files.avatar as any;
-            
+
             // Validate file type
             if (!avatarFile.mimetype.startsWith('image/')) {
                 return res.status(400).json({ error: 'File must be an image' });

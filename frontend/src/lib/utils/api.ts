@@ -1,4 +1,5 @@
 import { logger } from './logger';
+import { supabase } from '../supabase';
 
 const API_URL = import.meta.env.DEV
     ? 'http://localhost:5919'
@@ -25,6 +26,34 @@ export class APIError extends Error {
     }
 }
 
+/**
+ * Gets the current Supabase access token for authentication
+ */
+async function getAuthToken(): Promise<string | null> {
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        return session?.access_token || null;
+    } catch (error) {
+        logger.error('Error getting auth token:', error);
+        return null;
+    }
+}
+
+/**
+ * Prepares headers with authentication token
+ */
+async function prepareHeaders(customHeaders: Record<string, string> = {}): Promise<Record<string, string>> {
+    const headers: Record<string, string> = { ...customHeaders };
+
+    // Get the auth token
+    const token = await getAuthToken();
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return headers;
+}
+
 async function fetchWithLogging(url: string, options: RequestOptions): Promise<any> {
     const fullUrl = `${API_URL}${url}`;
     const startTime = Date.now();
@@ -35,8 +64,8 @@ async function fetchWithLogging(url: string, options: RequestOptions): Promise<a
     });
 
     try {
-        // Prepare headers and body
-        const headers: Record<string, string> = { ...options.headers };
+        // Prepare headers with authentication
+        const headers = await prepareHeaders(options.headers);
         let body: any = options.body;
 
         // Only set Content-Type and stringify if body is not FormData

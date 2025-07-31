@@ -8,6 +8,22 @@ export enum RequestType {
     DELETE = "DELETE",
 }
 
+export interface AuthUser {
+    id: number;
+    email: string;
+    nome_completo: string;
+    type: 'aluno' | 'professor';
+}
+
+// Extend the Request interface to include user
+declare global {
+    namespace Express {
+        interface Request {
+            user?: AuthUser;
+        }
+    }
+}
+
 export interface EndpointController {
     name: string;
     routes: {
