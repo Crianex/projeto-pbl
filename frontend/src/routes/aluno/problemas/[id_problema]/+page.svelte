@@ -63,13 +63,14 @@
     let uploadSuccess: string | null = null;
     let uploadProgress = { current: 0, total: 0 };
     let resetFileUploads = false;
+    let hasProfessorEvaluation = false;
 
     // Reactive statement to track file upload state
     $: allUploadedFilesCount = Array.from(uploadedFilesByType.values()).reduce(
         (total, files) => total + files.length,
         0,
     );
-    $: canSave = allUploadedFilesCount > 0;
+    $: canSave = allUploadedFilesCount > 0 && !hasProfessorEvaluation;
 
     $: paginatedAvaliacoes = avaliacoes.slice(
         (currentPage - 1) * itemsPerPage,
@@ -239,8 +240,16 @@
             const avaliacoesData =
                 await AvaliacoesService.getAvaliacoes(id_problema);
 
-            // Filter evaluations where current user is the evaluator (aluno_avaliador)
+            // Check if current student has been evaluated by a professor
             const currentUserId = $currentUser?.id;
+            const professorEvaluation = avaliacoesData.find(
+                (avaliacao) =>
+                    avaliacao.aluno_avaliado?.id === currentUserId &&
+                    avaliacao.id_professor,
+            );
+            hasProfessorEvaluation = !!professorEvaluation;
+
+            // Filter evaluations where current user is the evaluator (aluno_avaliador)
             const filteredAvaliacoesData = avaliacoesData.filter(
                 (avaliacao) => avaliacao.aluno_avaliador?.id === currentUserId,
             );
@@ -595,164 +604,190 @@
                 in:fade={{ duration: 400, delay: 400 }}
             >
                 <h2>Envio de Arquivos</h2>
-                <p class="upload-description">
-                    Envie os arquivos solicitados para este problema conforme as
-                    especificações abaixo. Você pode enviar múltiplos arquivos
-                    para cada tipo:
-                </p>
 
-                <!-- Upload Loading Overlay -->
-                {#if isUploading}
-                    <div
-                        class="upload-loading-overlay"
-                        in:fade={{ duration: 200 }}
-                    >
-                        <div class="upload-loading-content">
-                            <LoadingSpinner size="lg" />
-                            <p>Enviando arquivos...</p>
-                            <p class="upload-progress">
-                                {uploadProgress.current} de {uploadProgress.total}
-                                arquivos
-                            </p>
+                {#if hasProfessorEvaluation}
+                    <div class="professor-evaluation-notice">
+                        <p>
+                            Você já foi avaliado pelo professor. Não é mais
+                            possível enviar arquivos.
+                        </p>
+                    </div>
+                {:else}
+                    <p class="upload-description">
+                        Envie os arquivos solicitados para este problema
+                        conforme as especificações abaixo. Você pode enviar
+                        múltiplos arquivos para cada tipo:
+                    </p>
+
+                    <!-- Upload Loading Overlay -->
+                    {#if isUploading}
+                        <div
+                            class="upload-loading-overlay"
+                            in:fade={{ duration: 200 }}
+                        >
+                            <div class="upload-loading-content">
+                                <LoadingSpinner size="lg" />
+                                <p>Enviando arquivos...</p>
+                                <p class="upload-progress">
+                                    {uploadProgress.current} de {uploadProgress.total}
+                                    arquivos
+                                </p>
+                            </div>
+                        </div>
+                    {/if}
+
+                    <div class="upload-forms" class:uploading={isUploading}>
+                        {#each problema.definicao_arquivos_de_avaliacao as definicao, index}
+                            {@const existingFilesForType =
+                                existingFilesByType.get(
+                                    definicao.nome_tipo || "",
+                                ) || []}
+                            {@const nomeTipo = definicao.nome_tipo || ""}
+                            {@const isWithinRange =
+                                DateUtils.isNowWithinTagDateRange(
+                                    problema,
+                                    nomeTipo,
+                                )}
+                            <div
+                                class="upload-container"
+                                in:fade={{
+                                    duration: 300,
+                                    delay: 450 + index * 100,
+                                }}
+                            >
+                                <FileUpload
+                                    accept={definicao.tipos_de_arquivos_aceitos?.join(
+                                        ",",
+                                    ) || "*"}
+                                    multiple={true}
+                                    maxSize={10 * 1024 * 1024}
+                                    label={definicao.nome_tipo ||
+                                        `Tipo de Arquivo ${index + 1}`}
+                                    description={definicao.descricao_tipo ||
+                                        "Arraste e solte seus arquivos aqui ou clique para selecionar"}
+                                    supportedFormats={definicao.tipos_de_arquivos_aceitos
+                                        ?.join(", ")
+                                        .toUpperCase() || "Todos os formatos"}
+                                    disabled={isUploading || !isWithinRange}
+                                    reset={resetFileUploads}
+                                    on:filesSelected={(e) =>
+                                        handleFilesSelected(e, definicao)}
+                                    on:fileRemoved={(e) =>
+                                        handleFileRemoved(e, definicao)}
+                                />
+
+                                {#if !isWithinRange}
+                                    <div
+                                        class="upload-error"
+                                        style="margin-top: 0.5rem;"
+                                    >
+                                        O envio deste arquivo só está disponível
+                                        entre
+                                        {#if problema.data_e_hora_criterios_e_arquivos[nomeTipo]?.data_e_hora_inicio}
+                                            {new Date(
+                                                problema.data_e_hora_criterios_e_arquivos[
+                                                    nomeTipo
+                                                ].data_e_hora_inicio,
+                                            ).toLocaleString()}
+                                        {/if}
+                                        e
+                                        {#if problema.data_e_hora_criterios_e_arquivos[nomeTipo]?.data_e_hora_fim}
+                                            {new Date(
+                                                problema.data_e_hora_criterios_e_arquivos[
+                                                    nomeTipo
+                                                ].data_e_hora_fim,
+                                            ).toLocaleString()}
+                                        {/if}
+                                    </div>
+                                {/if}
+
+                                <!-- Display existing files for this type -->
+                                {#if existingFilesForType.length > 0}
+                                    <div class="existing-files">
+                                        <h4>Arquivos já enviados:</h4>
+                                        {#if !isWithinRange}
+                                            <div class="existing-files-notice">
+                                                <p>
+                                                    Os arquivos não podem ser
+                                                    removidos fora do período de
+                                                    envio.
+                                                </p>
+                                            </div>
+                                        {/if}
+                                        <div class="existing-files-list">
+                                            {#each existingFilesForType as file}
+                                                <div class="existing-file-item">
+                                                    <span class="file-name"
+                                                        >{file.nome_arquivo}</span
+                                                    >
+                                                    <div class="file-actions">
+                                                        <a
+                                                            href={file.link_arquivo}
+                                                            target="_blank"
+                                                            class="download-link"
+                                                        >
+                                                            Baixar
+                                                        </a>
+                                                        <DeleteButton
+                                                            size="sm"
+                                                            disabled={!isWithinRange}
+                                                            confirmMessage="Tem certeza que deseja excluir este arquivo?"
+                                                            on:delete={() =>
+                                                                file.id_arquivo &&
+                                                                deleteFile(
+                                                                    file.id_arquivo,
+                                                                )}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            {/each}
+                                        </div>
+                                    </div>
+                                {/if}
+                            </div>
+                        {/each}
+
+                        <!-- Upload Error Message -->
+                        {#if uploadError}
+                            <div
+                                class="upload-error"
+                                in:fade={{ duration: 200 }}
+                            >
+                                {uploadError}
+                            </div>
+                        {/if}
+
+                        <!-- Upload Success Message -->
+                        {#if uploadSuccess}
+                            <div
+                                class="upload-success"
+                                in:fade={{ duration: 200 }}
+                            >
+                                {uploadSuccess}
+                            </div>
+                        {/if}
+
+                        <!-- Save Button -->
+                        <div
+                            class="save-button-container"
+                            in:fade={{ duration: 300 }}
+                        >
+                            <Button
+                                variant="primary"
+                                disabled={isUploading || !canSave}
+                                on:click={uploadFiles}
+                                fullWidth={false}
+                            >
+                                {#if isUploading}
+                                    <LoadingSpinner size="sm" />
+                                    Enviando...
+                                {:else}
+                                    Salvar Arquivos
+                                {/if}
+                            </Button>
                         </div>
                     </div>
                 {/if}
-
-                <div class="upload-forms" class:uploading={isUploading}>
-                    {#each problema.definicao_arquivos_de_avaliacao as definicao, index}
-                        {@const existingFilesForType =
-                            existingFilesByType.get(
-                                definicao.nome_tipo || "",
-                            ) || []}
-                        {@const nomeTipo = definicao.nome_tipo || ""}
-                        {@const isWithinRange =
-                            DateUtils.isNowWithinTagDateRange(
-                                problema,
-                                nomeTipo,
-                            )}
-                        <div
-                            class="upload-container"
-                            in:fade={{
-                                duration: 300,
-                                delay: 450 + index * 100,
-                            }}
-                        >
-                            <FileUpload
-                                accept={definicao.tipos_de_arquivos_aceitos?.join(
-                                    ",",
-                                ) || "*"}
-                                multiple={true}
-                                maxSize={10 * 1024 * 1024}
-                                label={definicao.nome_tipo ||
-                                    `Tipo de Arquivo ${index + 1}`}
-                                description={definicao.descricao_tipo ||
-                                    "Arraste e solte seus arquivos aqui ou clique para selecionar"}
-                                supportedFormats={definicao.tipos_de_arquivos_aceitos
-                                    ?.join(", ")
-                                    .toUpperCase() || "Todos os formatos"}
-                                disabled={isUploading || !isWithinRange}
-                                reset={resetFileUploads}
-                                on:filesSelected={(e) =>
-                                    handleFilesSelected(e, definicao)}
-                                on:fileRemoved={(e) =>
-                                    handleFileRemoved(e, definicao)}
-                            />
-
-                            {#if !isWithinRange}
-                                <div
-                                    class="upload-error"
-                                    style="margin-top: 0.5rem;"
-                                >
-                                    O envio deste arquivo só está disponível
-                                    entre
-                                    {#if problema.data_e_hora_criterios_e_arquivos[nomeTipo]?.data_e_hora_inicio}
-                                        {new Date(
-                                            problema.data_e_hora_criterios_e_arquivos[
-                                                nomeTipo
-                                            ].data_e_hora_inicio,
-                                        ).toLocaleString()}
-                                    {/if}
-                                    e
-                                    {#if problema.data_e_hora_criterios_e_arquivos[nomeTipo]?.data_e_hora_fim}
-                                        {new Date(
-                                            problema.data_e_hora_criterios_e_arquivos[
-                                                nomeTipo
-                                            ].data_e_hora_fim,
-                                        ).toLocaleString()}
-                                    {/if}
-                                </div>
-                            {/if}
-
-                            <!-- Display existing files for this type -->
-                            {#if existingFilesForType.length > 0}
-                                <div class="existing-files">
-                                    <h4>Arquivos já enviados:</h4>
-                                    <div class="existing-files-list">
-                                        {#each existingFilesForType as file}
-                                            <div class="existing-file-item">
-                                                <span class="file-name"
-                                                    >{file.nome_arquivo}</span
-                                                >
-                                                <div class="file-actions">
-                                                    <a
-                                                        href={file.link_arquivo}
-                                                        target="_blank"
-                                                        class="download-link"
-                                                    >
-                                                        Baixar
-                                                    </a>
-                                                    <DeleteButton
-                                                        size="sm"
-                                                        confirmMessage="Tem certeza que deseja excluir este arquivo?"
-                                                        on:delete={() =>
-                                                            file.id_arquivo &&
-                                                            deleteFile(
-                                                                file.id_arquivo,
-                                                            )}
-                                                    />
-                                                </div>
-                                            </div>
-                                        {/each}
-                                    </div>
-                                </div>
-                            {/if}
-                        </div>
-                    {/each}
-
-                    <!-- Upload Error Message -->
-                    {#if uploadError}
-                        <div class="upload-error" in:fade={{ duration: 200 }}>
-                            {uploadError}
-                        </div>
-                    {/if}
-
-                    <!-- Upload Success Message -->
-                    {#if uploadSuccess}
-                        <div class="upload-success" in:fade={{ duration: 200 }}>
-                            {uploadSuccess}
-                        </div>
-                    {/if}
-
-                    <!-- Save Button -->
-                    <div
-                        class="save-button-container"
-                        in:fade={{ duration: 300 }}
-                    >
-                        <Button
-                            variant="primary"
-                            disabled={isUploading || !canSave}
-                            on:click={uploadFiles}
-                            fullWidth={false}
-                        >
-                            {#if isUploading}
-                                <LoadingSpinner size="sm" />
-                                Enviando...
-                            {:else}
-                                Salvar Arquivos
-                            {/if}
-                        </Button>
-                    </div>
-                </div>
             </div>
         {/if}
     {/if}
@@ -909,6 +944,21 @@
         font-weight: 600;
         color: #1a1a1a;
         margin-bottom: 0.75rem;
+    }
+
+    .existing-files-notice {
+        margin-bottom: 1rem;
+        padding: 0.75rem 1rem;
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        color: #856404;
+    }
+
+    .existing-files-notice p {
+        margin: 0;
+        font-size: 0.875rem;
+        font-weight: 500;
     }
 
     .existing-files-list {
