@@ -23,17 +23,7 @@ async function getById(id: string, forceRefresh = false): Promise<ProfessorModel
         }
     }
 
-    if (professorCache.isLoading(cacheKey)) {
-        return new Promise((resolve) => {
-            const unsubscribe = professorCache.subscribe((store) => {
-                const entry = store[cacheKey];
-                if (entry && !entry.loading) {
-                    unsubscribe();
-                    resolve(entry.data!);
-                }
-            });
-        });
-    }
+
 
     try {
         professorCache.setLoading(cacheKey, true);

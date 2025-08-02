@@ -197,21 +197,35 @@ export const AlunoController: EndpointController = {
                 return res.status(400).json({ error: 'Nome completo e email são obrigatórios' });
             }
 
-            // First check if user already exists with this email
-            const { data: existingUser, error: searchError } = await supabase
-                .from('alunos')
-                .select('*')
-                .eq('email', email)
-                .single();
+            // Check if user already exists in either alunos or professores table
+            const [alunosResult, professoresResult] = await Promise.all([
+                supabase.from('alunos').select('*').eq('email', email),
+                supabase.from('professores').select('*').eq('email', email)
+            ]);
 
-            if (searchError && searchError.code !== 'PGRST116') { // PGRST116 is the "no rows returned" error
-                logger.error(`Error checking existing aluno: ${searchError.message}`);
-                return res.status(500).json({ error: searchError.message });
+            if (alunosResult.error) {
+                logger.error(`Error checking existing aluno: ${alunosResult.error.message}`);
+                return res.status(500).json({ error: alunosResult.error.message });
             }
 
-            if (existingUser) {
+            if (professoresResult.error) {
+                logger.error(`Error checking existing professor: ${professoresResult.error.message}`);
+                return res.status(500).json({ error: professoresResult.error.message });
+            }
+
+            // If user exists in alunos table, return existing user
+            if (alunosResult.data && alunosResult.data.length > 0) {
                 logger.info(`Aluno with email ${email} already exists`);
-                return res.json(existingUser);
+                return res.json(alunosResult.data[0]);
+            }
+
+            // If user exists in professores table, return error
+            if (professoresResult.data && professoresResult.data.length > 0) {
+                logger.warn(`Email ${email} already exists as professor`);
+                return res.status(409).json({
+                    error: 'Este e-mail já está registrado como professor',
+                    existingUserType: 'professor'
+                });
             }
 
             let link_avatar = null;
@@ -255,7 +269,7 @@ export const AlunoController: EndpointController = {
                 link_avatar = link_avatar_body;
             }
 
-            // Create new user if doesn't exist
+            // Create new user if doesn't exist in either table
             const { data, error } = await supabase
                 .from('alunos')
                 .insert([{
@@ -400,4 +414,4 @@ export const AlunoController: EndpointController = {
             }
         })
     }
-}; 
+};

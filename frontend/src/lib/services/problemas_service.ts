@@ -24,17 +24,7 @@ async function getByTurma(turmaId: string, forceRefresh = false): Promise<Proble
         }
     }
 
-    if (problemasCache.isLoading(cacheKey)) {
-        return new Promise((resolve) => {
-            const unsubscribe = problemasCache.subscribe((store) => {
-                const entry = store[cacheKey];
-                if (entry && !entry.loading) {
-                    unsubscribe();
-                    resolve(entry.data || []);
-                }
-            });
-        });
-    }
+
 
     try {
         problemasCache.setLoading(cacheKey, true);
@@ -61,17 +51,7 @@ async function getById(id: string, forceRefresh = false): Promise<ProblemaModel>
         }
     }
 
-    if (problemaCache.isLoading(cacheKey)) {
-        return new Promise((resolve) => {
-            const unsubscribe = problemaCache.subscribe((store) => {
-                const entry = store[cacheKey];
-                if (entry && !entry.loading) {
-                    unsubscribe();
-                    resolve(entry.data!);
-                }
-            });
-        });
-    }
+
 
     try {
         problemaCache.setLoading(cacheKey, true);

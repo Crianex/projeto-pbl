@@ -27,20 +27,7 @@ async function getAll(professorId: number, forceRefresh = false): Promise<TurmaM
         }
     }
 
-    // Check if already loading
-    if (turmasCache.isLoading(cacheKey)) {
-        logger.info(`Turmas already loading for professor ${professorId}, waiting...`);
-        // Wait for loading to complete
-        return new Promise((resolve) => {
-            const unsubscribe = turmasCache.subscribe((store) => {
-                const entry = store[cacheKey];
-                if (entry && !entry.loading) {
-                    unsubscribe();
-                    resolve(entry.data || []);
-                }
-            });
-        });
-    }
+
 
     try {
         turmasCache.setLoading(cacheKey, true);
@@ -67,17 +54,7 @@ async function getById(id: string, forceRefresh = false): Promise<TurmaModel> {
         }
     }
 
-    if (turmaCache.isLoading(cacheKey)) {
-        return new Promise((resolve) => {
-            const unsubscribe = turmaCache.subscribe((store) => {
-                const entry = store[cacheKey];
-                if (entry && !entry.loading) {
-                    unsubscribe();
-                    resolve(entry.data!);
-                }
-            });
-        });
-    }
+
 
     try {
         turmaCache.setLoading(cacheKey, true);
@@ -93,7 +70,7 @@ async function getById(id: string, forceRefresh = false): Promise<TurmaModel> {
     }
 }
 
-async function create(turmaData: { nome_turma: string; id_professor: number }): Promise<TurmaModel> {
+async function create(turmaData: { nome_turma: string; id_professor: number; alunos?: number[] }): Promise<TurmaModel> {
     try {
         logger.info('Creating new turma', turmaData);
         const response = await api.post('/turmas/create', turmaData);
@@ -111,7 +88,7 @@ async function create(turmaData: { nome_turma: string; id_professor: number }): 
     }
 }
 
-async function update(id: string, turmaData: { nome_turma: string }): Promise<TurmaModel> {
+async function update(id: string, turmaData: { nome_turma: string; alunos?: number[] }): Promise<TurmaModel> {
     try {
         logger.info(`Updating turma ${id}`, turmaData);
         const response = await api.put(`/turmas/update?id_turma=${id}`, turmaData);

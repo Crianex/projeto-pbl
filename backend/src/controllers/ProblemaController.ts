@@ -435,65 +435,17 @@ export const ProblemaController: EndpointController = {
             }
 
             try {
-                // Check if file already exists for this aluno/problema/tipo combination
-                const { data: existingFiles, error: existingError } = await supabase
-                    .from('arquivos_alunos_problema')
-                    .select('*')
-                    .eq('id_aluno', id_aluno)
-                    .eq('id_problema', id_problema)
-                    .eq('nome_tipo', nome_tipo);
-
-                if (existingError) {
-                    logger.error(`Error checking existing files: ${existingError.message}`);
-                    return res.status(500).json({ error: 'Error checking existing files' });
-                }
-
-                // If file exists, delete it from storage and database
-                if (existingFiles && existingFiles.length > 0) {
-                    logger.info(`Found ${existingFiles.length} existing file(s) for aluno ${id_aluno}, problema ${id_problema}, tipo ${nome_tipo}. Replacing...`);
-
-                    for (const existingFile of existingFiles) {
-                        // Extract filename from signed URL or use a pattern to find the file
-                        const urlParts = existingFile.link_arquivo?.split('/');
-                        const filenamePart = urlParts?.[urlParts.length - 1]?.split('?')[0];
-
-                        if (filenamePart) {
-                            // Try to delete from storage (don't fail if file doesn't exist)
-                            const { error: deleteStorageError } = await supabase.storage
-                                .from('arquivos')
-                                .remove([`aluno_problema/${filenamePart}`]);
-
-                            if (deleteStorageError) {
-                                logger.warn(`Could not delete file from storage: ${deleteStorageError.message}`);
-                            } else {
-                                logger.info(`Deleted existing file from storage: ${filenamePart}`);
-                            }
-                        }
-
-                        // Delete from database
-                        const { error: deleteDbError } = await supabase
-                            .from('arquivos_alunos_problema')
-                            .delete()
-                            .eq('id_arquivo', existingFile.id_arquivo);
-
-                        if (deleteDbError) {
-                            logger.error(`Error deleting existing file from database: ${deleteDbError.message}`);
-                        } else {
-                            logger.info(`Deleted existing file record from database: ${existingFile.id_arquivo}`);
-                        }
-                    }
-                }
-
-                // Generate unique filename
+                // Generate unique filename with timestamp to allow multiple files
                 const fileExtension = arquivoFile.name.split('.').pop();
-                const fileName = `aluno_problema/arquivo_${id_aluno}_${id_problema}_${nome_tipo}_${Date.now()}.${fileExtension}`;
+                const timestamp = Date.now();
+                const fileName = `aluno_problema/arquivo_${id_aluno}_${id_problema}_${nome_tipo}_${timestamp}.${fileExtension}`;
 
                 // Upload to Supabase Storage (bucket: arquivos)
                 const { data: uploadData, error: uploadError } = await supabase.storage
                     .from('arquivos')
                     .upload(fileName, arquivoFile.data, {
                         contentType: arquivoFile.mimetype,
-                        upsert: true
+                        upsert: false // Don't overwrite existing files
                     });
 
                 if (uploadError) {
@@ -569,6 +521,67 @@ export const ProblemaController: EndpointController = {
                 return res.status(500).json({ error: error.message });
             }
             return res.json(data);
+        }),
+
+        'delete-arquivo': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
+            // Require authentication for deleting arquivos
+            const authUser = await Utils.validateUser(req);
+            if (!authUser) {
+                return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
+            }
+
+            const { id_arquivo } = req.query;
+            if (!id_arquivo) {
+                return res.status(400).json({ error: 'id_arquivo is required' });
+            }
+
+            try {
+                // Get file info before deleting
+                const { data: fileData, error: fetchError } = await supabase
+                    .from('arquivos_alunos_problema')
+                    .select('*')
+                    .eq('id_arquivo', id_arquivo)
+                    .single();
+
+                if (fetchError || !fileData) {
+                    logger.error(`Error fetching arquivo ${id_arquivo}: ${fetchError?.message}`);
+                    return res.status(404).json({ error: 'Arquivo not found' });
+                }
+
+                // Extract filename from signed URL
+                const urlParts = fileData.link_arquivo?.split('/');
+                const filenamePart = urlParts?.[urlParts.length - 1]?.split('?')[0];
+
+                if (filenamePart) {
+                    // Try to delete from storage (don't fail if file doesn't exist)
+                    const { error: deleteStorageError } = await supabase.storage
+                        .from('arquivos')
+                        .remove([`aluno_problema/${filenamePart}`]);
+
+                    if (deleteStorageError) {
+                        logger.warn(`Could not delete file from storage: ${deleteStorageError.message}`);
+                    } else {
+                        logger.info(`Deleted file from storage: ${filenamePart}`);
+                    }
+                }
+
+                // Delete from database
+                const { error: deleteDbError } = await supabase
+                    .from('arquivos_alunos_problema')
+                    .delete()
+                    .eq('id_arquivo', id_arquivo);
+
+                if (deleteDbError) {
+                    logger.error(`Error deleting arquivo from database: ${deleteDbError.message}`);
+                    return res.status(500).json({ error: deleteDbError.message });
+                }
+
+                logger.info(`Successfully deleted arquivo ${id_arquivo}`);
+                return res.status(204).send();
+            } catch (error) {
+                logger.error(`Error deleting arquivo ${id_arquivo}: ${error}`);
+                return res.status(500).json({ error: 'Error deleting arquivo' });
+            }
         })
     }
 }; 

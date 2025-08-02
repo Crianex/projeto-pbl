@@ -25,17 +25,7 @@ async function getById(id: string, forceRefresh = false): Promise<AlunoModel> {
         }
     }
 
-    if (alunoCache.isLoading(cacheKey)) {
-        return new Promise((resolve) => {
-            const unsubscribe = alunoCache.subscribe((store) => {
-                const entry = store[cacheKey];
-                if (entry && !entry.loading) {
-                    unsubscribe();
-                    resolve(entry.data!);
-                }
-            });
-        });
-    }
+
 
     try {
         alunoCache.setLoading(cacheKey, true);

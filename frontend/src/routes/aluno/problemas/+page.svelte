@@ -1,6 +1,8 @@
 <script lang="ts">
     import { fade } from "svelte/transition";
     import { onMount } from "svelte";
+    import { page } from "$app/stores";
+    import { afterNavigate } from "$app/navigation";
     import Table from "$lib/components/Table.svelte";
     import Container from "$lib/components/Container.svelte";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
@@ -25,6 +27,10 @@
     let showToast = false;
     let toastMessage: string = "";
     let toastType: "success" | "error" | "info" = "error";
+    let isFetching = false; // Flag to prevent multiple simultaneous calls
+
+    // Cache for shouldShowStudentAverage results
+    const shouldShowCache = new Map<number, boolean>();
 
     // Function to calculate student's average for a specific problem
     async function calculateStudentAverage(
@@ -32,12 +38,23 @@
         studentId: number,
     ): Promise<number | null> {
         try {
+            console.log(
+                `Calculating average for student ${studentId} in problem ${problemaId}`,
+            );
+
             // Use AvaliacoesService to get evaluations for this problem
             const avaliacoes = await AvaliacoesService.getByProblema(
                 problemaId.toString(),
             );
 
+            console.log(
+                `Found ${avaliacoes?.length || 0} total evaluations for problem ${problemaId}`,
+            );
+
             if (!avaliacoes || !Array.isArray(avaliacoes)) {
+                console.log(
+                    `No valid evaluations found for problem ${problemaId}`,
+                );
                 return null;
             }
 
@@ -50,10 +67,13 @@
             );
 
             console.log(
-                `Found ${receivedEvaluations.length} evaluations for student ${studentId} in problem ${problemaId}`,
+                `Found ${receivedEvaluations.length} evaluations received by student ${studentId} in problem ${problemaId}`,
             );
 
             if (receivedEvaluations.length === 0) {
+                console.log(
+                    `No evaluations received by student ${studentId} in problem ${problemaId}`,
+                );
                 return null;
             }
 
@@ -64,12 +84,12 @@
             receivedEvaluations.forEach((evaluation: AvaliacaoModel) => {
                 const sum =
                     MediaCalculator.calculateRawSumFromAvaliacao(evaluation);
+                console.log(
+                    `Evaluation ${evaluation.id_avaliacao}: sum = ${sum}`,
+                );
                 if (sum > 0) {
                     totalSum += sum;
                     validEvaluations++;
-                    console.log(
-                        `Evaluation ${evaluation.id_avaliacao}: sum = ${sum}`,
-                    );
                 }
             });
 
@@ -77,7 +97,9 @@
                 validEvaluations > 0
                     ? Number((totalSum / validEvaluations).toFixed(2))
                     : null;
-            console.log(`Final average for student ${studentId}: ${average}`);
+            console.log(
+                `Final average for student ${studentId} in problem ${problemaId}: ${average} (from ${validEvaluations} valid evaluations)`,
+            );
             return average;
         } catch (error) {
             console.error("Error calculating student average:", error);
@@ -87,6 +109,11 @@
 
     // Function to check if student's average should be shown
     function shouldShowStudentAverage(problema: ProblemaModel): boolean {
+        // Check cache first
+        if (shouldShowCache.has(problema.id_problema)) {
+            return shouldShowCache.get(problema.id_problema)!;
+        }
+
         const now = new Date();
         const oneHourInMs = 60 * 60 * 1000; // 1 hour in milliseconds
 
@@ -95,7 +122,19 @@
             problema.data_e_hora_criterios_e_arquivos,
         );
 
+        console.log(
+            `Checking shouldShowStudentAverage for problem ${problema.id_problema}:`,
+            {
+                timeRanges: timeRanges.length,
+                now: now.toISOString(),
+            },
+        );
+
         if (timeRanges.length === 0) {
+            console.log(
+                `Problem ${problema.id_problema}: No time ranges defined`,
+            );
+            shouldShowCache.set(problema.id_problema, false);
             return false; // No time ranges defined
         }
 
@@ -103,10 +142,21 @@
         const hasEndedTimeRange = timeRanges.some((range) => {
             if (!range.data_e_hora_fim) return false;
             const endTime = new Date(range.data_e_hora_fim);
-            return now.getTime() - endTime.getTime() >= oneHourInMs;
+            const timeDiff = now.getTime() - endTime.getTime();
+            console.log(`Problem ${problema.id_problema} range end:`, {
+                endTime: endTime.toISOString(),
+                timeDiff: timeDiff,
+                oneHourInMs: oneHourInMs,
+                hasEnded: timeDiff >= oneHourInMs,
+            });
+            return timeDiff >= oneHourInMs;
         });
 
         if (!hasEndedTimeRange) {
+            console.log(
+                `Problem ${problema.id_problema}: No time range has ended more than 1 hour ago`,
+            );
+            shouldShowCache.set(problema.id_problema, false);
             return false; // No time range has ended more than 1 hour ago
         }
 
@@ -116,11 +166,27 @@
                 return false;
             const startTime = new Date(range.data_e_hora_inicio);
             const endTime = new Date(range.data_e_hora_fim);
-            return now >= startTime && now <= endTime;
+            const isActive = now >= startTime && now <= endTime;
+            console.log(`Problem ${problema.id_problema} range active check:`, {
+                startTime: startTime.toISOString(),
+                endTime: endTime.toISOString(),
+                isActive: isActive,
+            });
+            return isActive;
         });
 
+        const shouldShow = !hasActiveTimeRange;
+        console.log(`Problem ${problema.id_problema} final result:`, {
+            hasEndedTimeRange,
+            hasActiveTimeRange,
+            shouldShow,
+        });
+
+        // Cache the result
+        shouldShowCache.set(problema.id_problema, shouldShow);
+
         // Only show if no time range is currently active
-        return !hasActiveTimeRange;
+        return shouldShow;
     }
 
     const columns: Column[] = [
@@ -177,67 +243,59 @@
     ];
 
     async function fetchProblems() {
+        // Prevent multiple simultaneous calls
+        if (isFetching) {
+            console.log("fetchProblems already in progress, skipping");
+            return;
+        }
+
         try {
+            isFetching = true;
             loading = true;
             error = null;
 
+            // Clear cache for fresh calculations
+            shouldShowCache.clear();
+
             const currentUserData = get(currentUser) as AlunoModel;
 
-            // Only refresh user data if we don't have it or if it's stale
-            if (currentUserData?.id) {
-                try {
-                    const updatedUserData = await api.get(
-                        `/alunos/get?id_aluno=${currentUserData.id}`,
-                    );
-                    const parsedUser = Parsers.parseAluno(updatedUserData);
-
-                    // Only update if the data has actually changed
-                    if (
-                        JSON.stringify(parsedUser) !==
-                        JSON.stringify(currentUserData)
-                    ) {
-                        currentUser.set(parsedUser);
-                        console.log("User data refreshed:", parsedUser);
-                    }
-                } catch (e) {
-                    console.log("Could not refresh user data:", e);
-                    // Continue with existing user data
-                }
-            }
-
-            // Get the updated user data after refresh
-            const updatedUserData = get(currentUser) as AlunoModel;
-
-            if (!updatedUserData.id_turma) {
+            // Skip user data refresh to avoid duplicate API calls
+            // The user data should already be up to date from auth initialization
+            if (!currentUserData?.id || !currentUserData?.id_turma) {
                 loading = false;
-                console.log("No id_turma after refresh");
+                console.log("No user data or turma ID available");
                 return;
             }
 
+            // Fetch problems directly without refreshing user data
             problems = await api.get(
                 "/problemas/list-by-turma?id_turma=" +
-                    updatedUserData.id_turma +
+                    currentUserData.id_turma +
                     "&id_aluno=" +
-                    updatedUserData.id,
+                    currentUserData.id,
             );
 
             problems = Parsers.parseProblemas(problems);
 
-            // Calculate student averages for each problem
-            const problemsWithAverages = await Promise.all(
-                problems.map(async (problem) => {
-                    const minhaMedia = await calculateStudentAverage(
-                        problem.id_problema,
-                        updatedUserData.id,
-                    );
-                    return {
-                        ...problem,
-                        minha_media: minhaMedia,
-                    };
-                }),
-            );
+            // Only calculate averages if there are problems and we should show them
+            if (problems.length > 0) {
+                // Calculate student averages for each problem more efficiently
+                const problemsWithAverages = await Promise.all(
+                    problems.map(async (problem) => {
+                        // Always calculate average, let the render function decide what to show
+                        const minhaMedia = await calculateStudentAverage(
+                            problem.id_problema,
+                            currentUserData.id,
+                        );
+                        return {
+                            ...problem,
+                            minha_media: minhaMedia,
+                        };
+                    }),
+                );
 
-            problems = problemsWithAverages;
+                problems = problemsWithAverages;
+            }
 
             // Sort problems alphabetically by name
             problems.sort((a, b) =>
@@ -262,19 +320,22 @@
             showToast = true;
         } finally {
             loading = false;
+            isFetching = false;
         }
     }
 
-    $: user = $currentUser as AlunoModel;
+    // Fetch problems when the page loads
+    onMount(() => {
+        fetchProblems();
+    });
 
-    // Reactive statement to track user changes for debugging
-    // $: console.log("User data updated:", {
-    //     id: user?.id,
-    //     id_turma: user?.id_turma,
-    //     nome: user?.nome_completo,
-    // });
-
-    onMount(fetchProblems);
+    // Fetch problems whenever the user navigates to this page
+    afterNavigate(() => {
+        // Only fetch if we're on the problemas page
+        if ($page.url.pathname === "/aluno/problemas") {
+            fetchProblems();
+        }
+    });
 </script>
 
 <svelte:head>
@@ -289,7 +350,15 @@
     </div>
 
     <div class="content" in:fade={{ duration: 400, delay: 200 }}>
-        {#if !loading && !user.id_turma}
+        {#if loading}
+            <div class="loading-section">
+                <LoadingSpinner
+                    message="Carregando problemas..."
+                    size="lg"
+                    color="primary"
+                />
+            </div>
+        {:else if !loading && !($currentUser as AlunoModel)?.id_turma}
             <div class="empty-section">
                 <div class="empty-content">
                     <div class="empty-icon">🎓</div>

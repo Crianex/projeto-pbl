@@ -134,7 +134,7 @@ export const TurmaController: EndpointController = {
                 return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
             }
 
-            const { nome_turma, id_professor } = req.body;
+            const { nome_turma, id_professor,alunos } = req.body;
             const { data, error } = await supabase
                 .from('turmas')
                 .insert([{ nome_turma, id_professor }])
@@ -147,6 +147,31 @@ export const TurmaController: EndpointController = {
             if (error) {
                 logger.error(`Error creating turma: ${error.message}`);
                 return res.status(500).json({ error: error.message });
+            }
+
+            // Add alunos to the turma if provided
+            if (alunos && Array.isArray(alunos) && alunos.length > 0) {
+                logger.info(`Adding ${alunos.length} alunos to newly created turma ${data.id_turma}`);
+
+                for (const alunoId of alunos) {
+                    const { data: alunoData, error: alunoError } = await supabase
+                        .from('alunos')
+                        .update({ id_turma: data.id_turma })
+                        .eq('id_aluno', alunoId)
+                        .select("id_aluno");
+
+                    if (alunoError) {
+                        logger.error(`Error updating aluno ${alunoId}: ${alunoError.message}`);
+                        return res.status(500).json({ error: alunoError.message });
+                    }
+
+                    if (!alunoData) {
+                        logger.error(`Aluno ${alunoId} not found`);
+                        return res.status(404).json({ error: 'Aluno not found' });
+                    }
+                }
+
+                logger.info(`Successfully added ${alunos.length} alunos to turma ${data.id_turma}`);
             }
 
             return res.status(201).json(data);

@@ -13,11 +13,18 @@
     export let supportedFormats = "PDF, PNG, JPG, JPEG";
     export let disabled = false;
     export let error = "";
+    export let reset = false;
 
     let fileInput: HTMLInputElement;
     let dragOver = false;
     let files: FileList | null = null;
     let uploadedFiles: File[] = [];
+
+    // Watch for reset prop changes
+    $: if (reset) {
+        uploadedFiles = [];
+        error = "";
+    }
 
     function handleFileSelect(event: Event) {
         const target = event.target as HTMLInputElement;

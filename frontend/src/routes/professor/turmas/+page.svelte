@@ -104,15 +104,8 @@
         fetchTurmas();
     });
 
-    // Simple refresh when navigating back to this page
-    $: if (
-        $page.url.pathname === "/professor/turmas" &&
-        !loading &&
-        turmas.length === 0
-    ) {
-        // Only refresh if we're on the turmas page, not loading, and have no data
-        fetchTurmas(true);
-    }
+    // Remove the reactive statement that causes infinite loops
+    // The fetch will only happen once when the page loads
 
     // Filter and sort turmas
     $: filteredAndSortedTurmas = (() => {

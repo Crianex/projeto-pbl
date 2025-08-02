@@ -38,13 +38,33 @@
     }
 
     // Check if email already exists
-    async function checkEmailExists(email: string): Promise<boolean> {
+    async function checkEmailExists(
+        email: string,
+    ): Promise<{ exists: boolean; userType?: string }> {
         try {
-            const result = await AlunosService.checkEmail(email);
-            return result.exists;
+            // Check both aluno and professor tables
+            const [alunoResult, professorResult] = await Promise.allSettled([
+                AlunosService.checkEmail(email),
+                api.get(
+                    `/professores/getByEmail?email=${encodeURIComponent(email)}`,
+                ),
+            ]);
+
+            if (
+                alunoResult.status === "fulfilled" &&
+                alunoResult.value.exists
+            ) {
+                return { exists: true, userType: "aluno" };
+            }
+
+            if (professorResult.status === "fulfilled") {
+                return { exists: true, userType: "professor" };
+            }
+
+            return { exists: false };
         } catch (error) {
             logger.error("Error checking email existence", { error, email });
-            return false; // Assume it doesn't exist if we can't check
+            return { exists: false }; // Assume it doesn't exist if we can't check
         }
     }
 
@@ -130,10 +150,12 @@
 
             // Check if email already exists
             const emailExists = await checkEmailExists(email);
-            if (emailExists) {
+            if (emailExists.exists) {
                 toastType = "error";
                 toastMessage =
-                    "Este e-mail já está registrado. Tente fazer login ou use outro e-mail.";
+                    emailExists.userType === "aluno"
+                        ? "Este e-mail já está registrado como aluno. Tente fazer login ou use outro e-mail."
+                        : "Este e-mail já está registrado como professor. Tente fazer login ou use outro e-mail.";
                 showToast = true;
                 loading = false;
                 return;
@@ -190,6 +212,26 @@
                         error: backendError.message,
                         email,
                     });
+
+                    // Handle specific backend errors
+                    if (backendError.status === 409) {
+                        const errorData = backendError.data;
+                        if (errorData?.existingUserType === "professor") {
+                            toastType = "error";
+                            toastMessage =
+                                "Este e-mail já está registrado como professor. Tente fazer login ou use outro e-mail.";
+                        } else {
+                            toastType = "error";
+                            toastMessage =
+                                "Este e-mail já está registrado. Tente fazer login ou use outro e-mail.";
+                        }
+                    } else {
+                        toastType = "error";
+                        toastMessage =
+                            "Erro ao criar conta no sistema. Tente novamente.";
+                    }
+                    showToast = true;
+                    loading = false;
                 }
             }
         } catch (err: any) {

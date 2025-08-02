@@ -1,6 +1,7 @@
 <script lang="ts">
     import Button from "./Button.svelte";
     import Input from "./Input.svelte";
+    import DeleteButton from "./DeleteButton.svelte";
     import TextArea from "./TextArea.svelte";
     import type { CriteriosGroup } from "$lib/interfaces/interfaces";
     import { formatToDateTime, parseToDate } from "brazilian-values";
@@ -199,25 +200,12 @@
                     on:blur={handleTagNameBlur(groupName)}
                     on:keydown={handleTagNameKeydown}
                 />
-                <button
-                    type="button"
-                    class="remove-button"
-                    on:click={() => handleRemoveGroup(groupName)}
-                    title="Remover grupo"
-                >
-                    <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path
-                            d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
-                            fill="currentColor"
-                        />
-                    </svg>
-                </button>
+                <DeleteButton
+                    size="sm"
+                    title="Confirmar Exclusão"
+                    confirmMessage="Tem certeza que deseja remover este grupo de critérios?"
+                    on:delete={() => handleRemoveGroup(groupName)}
+                />
             </div>
             <div class="criterio-datetime">
                 <label>Data e hora de abertura:</label>
@@ -250,25 +238,12 @@
                                     placeholder="Nome do critério"
                                     required
                                 />
-                                <button
-                                    type="button"
-                                    class="remove-button"
-                                    on:click={() =>
-                                        removeCriterio(groupName, index)}
-                                >
-                                    <svg
-                                        width="16"
-                                        height="16"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                        <path
-                                            d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
-                                            fill="currentColor"
-                                        />
-                                    </svg>
-                                </button>
+                                <DeleteButton
+                                    size="sm"
+                                    title="Confirmar Exclusão"
+                                    confirmMessage="Tem certeza que deseja remover este critério?"
+                                    on:delete={() => removeCriterio(groupName, index)}
+                                />
                             </div>
                             <div class="nota-maxima">
                                 <div class="nota-field">
@@ -427,21 +402,7 @@
         font-size: 0.875rem;
     }
 
-    .remove-button {
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 0.5rem;
-        color: #dc3545;
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
 
-    .remove-button:hover {
-        background-color: #f8d7da;
-    }
 
     :global(.criterios-list .button) {
         margin: 1rem;
@@ -464,10 +425,7 @@
             align-items: stretch;
         }
 
-        .criterio-group-header .remove-button {
-            order: -1;
-            align-self: flex-end;
-        }
+
 
         .criterio-datetime {
             grid-template-columns: 1fr;

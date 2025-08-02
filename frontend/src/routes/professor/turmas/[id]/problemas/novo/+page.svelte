@@ -1,14 +1,20 @@
 <script lang="ts">
     import { page } from "$app/stores";
     import { goto } from "$app/navigation";
+    import { onMount } from "svelte";
     import Button from "$lib/components/Button.svelte";
     import CriteriosForm from "$lib/components/CriteriosForm.svelte";
     import Input from "$lib/components/Input.svelte";
+    import TextArea from "$lib/components/TextArea.svelte";
     import PageHeader from "$lib/components/PageHeader.svelte";
+    import DateRangeInput from "$lib/components/DateRangeInput.svelte";
     import ArquivosForm from "$lib/components/ArquivosForm.svelte";
+    import { api } from "$lib/utils/api";
     import { problemaStore } from "$lib/utils/stores";
+    import { Parsers } from "$lib/interfaces/parsers";
     import type {
         CriteriosGroup,
+        ProblemaModel,
         DefinicaoArquivoDeAvaliacao,
     } from "$lib/interfaces/interfaces";
     import { ProblemasService } from "$lib/services/problemas_service";
@@ -46,7 +52,10 @@
         return result;
     }
 
-    // Remove date validation for data_inicio and data_fim
+    // Add date validation
+    $: {
+        // Remove date validation for data_inicio and data_fim
+    }
 
     function getDefaultCriterios(): CriteriosGroup {
         return {
@@ -214,13 +223,6 @@
 
         <CriteriosForm
             bind:criterios={formData.criterios}
-            bind:dataEHoraCriteriosEArquivos={
-                formData.data_e_hora_criterios_e_arquivos
-            }
-        />
-
-        <ArquivosForm
-            bind:definicoes={formData.definicao_arquivos_de_avaliacao}
             dataEHoraCriteriosEArquivos={formData.data_e_hora_criterios_e_arquivos}
             on:changeDataEHoraCriteriosEArquivos={(e) => {
                 console.log(
@@ -228,6 +230,16 @@
                         e.detail,
                     )}`,
                 );
+                formData.data_e_hora_criterios_e_arquivos = e.detail;
+            }}
+        />
+
+        <ArquivosForm
+            bind:definicoes={formData.definicao_arquivos_de_avaliacao}
+            bind:dataEHoraCriteriosEArquivos={
+                formData.data_e_hora_criterios_e_arquivos
+            }
+            on:changeDataEHoraCriteriosEArquivos={(e) => {
                 formData.data_e_hora_criterios_e_arquivos = e.detail;
             }}
         />
@@ -248,16 +260,15 @@
 {/if}
 
 <style>
-    .container {
-        margin: 2rem auto;
-        padding: 1rem 2rem;
-        height: 100%;
-        width: 100%;
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     .form {
         background: white;
-        padding: 2rem;
+        padding: 0.2rem;
         border-radius: 8px;
     }
 

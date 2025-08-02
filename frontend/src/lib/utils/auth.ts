@@ -57,39 +57,35 @@ export async function createOrGetUser(session: any): Promise<BaseUser | null> {
             return null;
         }
 
-        // First, try to find existing user as professor by email
-        try {
-            const professorResponse = await api.get(`/professores/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`);
+        // Check both professor and aluno tables simultaneously to prevent race conditions
+        const [professorPromise, alunoPromise] = await Promise.allSettled([
+            api.get(`/professores/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`),
+            api.get(`/alunos/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`)
+        ]);
+
+        // Check if user exists as professor (priority check)
+        if (professorPromise.status === 'fulfilled') {
             logger.info('Found existing professor', { email: supabaseUser.email });
-            var userProfessor = parseToProfessorModel(professorResponse);
+            const userProfessor = parseToProfessorModel(professorPromise.value);
             return userProfessor;
-        } catch (error) {
-            if (error instanceof APIError && error.status === 404) {
-                // Continue to try aluno
-                logger.info('Professor not found, trying aluno', { email: supabaseUser.email });
-            } else {
-                logger.error('Error checking for professor:', error);
-                // Continue to try aluno anyway
-            }
         }
 
-        // Then try as aluno
-        try {
-            const alunoResponse = await api.get(`/alunos/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`);
+        // Check if user exists as aluno
+        if (alunoPromise.status === 'fulfilled') {
             logger.info('Found existing aluno', { email: supabaseUser.email });
-            var userAluno = parseToAlunoModel(alunoResponse);
+            const userAluno = parseToAlunoModel(alunoPromise.value);
             return userAluno;
-        } catch (error) {
-            if (error instanceof APIError && error.status === 404) {
-                // Continue to create new user
-                logger.info('Aluno not found, creating new aluno', { email: supabaseUser.email });
-            } else {
-                logger.error('Error checking for aluno:', error);
-                // Continue to create new user anyway
-            }
         }
 
-        // If no user found, create new aluno by default
+        // Log any errors from the API calls for debugging
+        if (professorPromise.status === 'rejected') {
+            logger.warn('Error checking professor table:', professorPromise.reason);
+        }
+        if (alunoPromise.status === 'rejected') {
+            logger.warn('Error checking aluno table:', alunoPromise.reason);
+        }
+
+        // If no user found in either table, create new aluno by default
         logger.info('Creating new aluno account', { email: supabaseUser.email });
         const newUser = await api.post('/alunos/create', {
             email: supabaseUser.email,
@@ -97,7 +93,7 @@ export async function createOrGetUser(session: any): Promise<BaseUser | null> {
             link_avatar: supabaseUser.user_metadata?.avatar_url || supabaseUser.user_metadata?.picture || undefined
         });
 
-        var user = parseToAlunoModel(newUser);
+        const user = parseToAlunoModel(newUser);
         return user;
 
     } catch (error) {
@@ -150,14 +146,19 @@ export async function logout() {
             logger.info('No active session found, skipping Supabase logout');
         }
 
-        // Always clear local user state and redirect to home, regardless of Supabase logout result
+        // Always clear local user state and redirect to login, regardless of Supabase logout result
         currentUser.set(null);
         await goto('/');
-        logger.info('User logged out successfully and redirected to home');
+        logger.info('User logged out successfully and redirected to login');
     } catch (error) {
         logger.error('Failed to logout:', error);
-        // Even if goto fails, still clear the user state
+        // Even if goto fails, still clear the user state and try to redirect
         currentUser.set(null);
+        try {
+            await goto('/');
+        } catch (redirectError) {
+            logger.error('Failed to redirect after logout:', redirectError);
+        }
         throw error;
     }
 }

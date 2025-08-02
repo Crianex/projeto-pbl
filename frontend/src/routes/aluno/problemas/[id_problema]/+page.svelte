@@ -2,6 +2,7 @@
     import { fade } from "svelte/transition";
     import { goto } from "$app/navigation";
     import { page } from "$app/stores";
+    import { afterNavigate } from "$app/navigation";
     import { onMount } from "svelte";
     import { currentUser } from "$lib/utils/auth";
     import type { ProblemaModel } from "$lib/interfaces/interfaces";
@@ -11,6 +12,7 @@
     import Container from "$lib/components/Container.svelte";
     import FileUpload from "$lib/components/FileUpload.svelte";
     import Button from "$lib/components/Button.svelte";
+    import DeleteButton from "$lib/components/DeleteButton.svelte";
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
     import { ProblemasService } from "$lib/services/problemas_service";
     import Pagination from "$lib/components/Pagination.svelte";
@@ -34,7 +36,7 @@
     }
 
     interface UploadedFile {
-        id?: number;
+        id_arquivo?: number;
         nome_arquivo: string;
         link_arquivo: string;
         id_aluno?: number;
@@ -47,6 +49,7 @@
     let loading = true;
     let error: string | null = null;
     let tableRows: any[] = [];
+    let isFetching = false; // Flag to prevent multiple simultaneous calls
 
     let currentPage = 1;
     const itemsPerPage = 10;
@@ -57,7 +60,9 @@
     let existingFilesByType: Map<string, UploadedFile[]> = new Map();
     let isUploading = false;
     let uploadError: string | null = null;
+    let uploadSuccess: string | null = null;
     let uploadProgress = { current: 0, total: 0 };
+    let resetFileUploads = false;
 
     // Reactive statement to track file upload state
     $: allUploadedFilesCount = Array.from(uploadedFilesByType.values()).reduce(
@@ -65,12 +70,6 @@
         0,
     );
     $: canSave = allUploadedFilesCount > 0;
-    $: console.log(
-        "Reactive canSave:",
-        canSave,
-        "allUploadedFilesCount:",
-        allUploadedFilesCount,
-    );
 
     $: paginatedAvaliacoes = avaliacoes.slice(
         (currentPage - 1) * itemsPerPage,
@@ -221,7 +220,14 @@
     ];
 
     async function fetchAvaliacoes() {
+        // Prevent multiple simultaneous calls
+        if (isFetching) {
+            console.log("fetchAvaliacoes already in progress, skipping");
+            return;
+        }
+
         try {
+            isFetching = true;
             loading = true;
             error = null;
             const id_problema = parseInt($page.params.id_problema);
@@ -340,6 +346,7 @@
             error = e.message || "Erro ao carregar avaliações";
         } finally {
             loading = false;
+            isFetching = false;
         }
     }
 
@@ -408,6 +415,8 @@
             console.log("Uploading files");
             isUploading = true;
             uploadError = null;
+            uploadSuccess = null;
+            resetFileUploads = false; // Ensure reset is false when starting upload
 
             const id_problema = parseInt($page.params.id_problema);
             const currentUserId = $currentUser?.id;
@@ -451,16 +460,34 @@
 
             // Clear uploaded files and reload existing files
             uploadedFilesByType.clear();
-            uploadedFilesByType = uploadedFilesByType;
+            uploadedFilesByType = uploadedFilesByType; // Trigger reactivity
             uploadProgress = { current: 0, total: 0 };
+
+            // Reset FileUpload components
+            resetFileUploads = true;
+            // Reset the flag after a short delay to allow components to react
+            setTimeout(() => {
+                resetFileUploads = false;
+            }, 100);
 
             await loadExistingFiles();
 
             console.log("All files uploaded successfully");
+            uploadSuccess = "Arquivos enviados com sucesso!";
+            // Clear success message after 3 seconds
+            setTimeout(() => {
+                uploadSuccess = null;
+            }, 3000);
         } catch (e: any) {
             console.error("Error uploading files:", e);
             uploadError = e.message;
+            uploadSuccess = null;
             uploadProgress = { current: 0, total: 0 };
+            // Reset FileUpload components even on error
+            resetFileUploads = true;
+            setTimeout(() => {
+                resetFileUploads = false;
+            }, 100);
         } finally {
             isUploading = false;
         }
@@ -472,9 +499,38 @@
         );
     }
 
+    async function deleteFile(id_arquivo: number) {
+        try {
+            console.log(`Deleting file ${id_arquivo}`);
+            await api.delete(
+                `/problemas/delete-arquivo?id_arquivo=${id_arquivo}`,
+            );
+
+            // Reload existing files after deletion
+            await loadExistingFiles();
+
+            console.log(`File ${id_arquivo} deleted successfully`);
+        } catch (e: any) {
+            console.error("Error deleting file:", e);
+            // You might want to show a toast notification here
+        }
+    }
+
     onMount(async () => {
         await fetchAvaliacoes();
         await loadExistingFiles();
+    });
+
+    // Fetch data whenever the user navigates to this page
+    afterNavigate(() => {
+        // Only fetch if we're on a problema detail page
+        if (
+            $page.url.pathname.includes("/aluno/problemas/") &&
+            $page.params.id_problema
+        ) {
+            fetchAvaliacoes();
+            loadExistingFiles();
+        }
     });
 </script>
 
@@ -541,7 +597,8 @@
                 <h2>Envio de Arquivos</h2>
                 <p class="upload-description">
                     Envie os arquivos solicitados para este problema conforme as
-                    especificações abaixo:
+                    especificações abaixo. Você pode enviar múltiplos arquivos
+                    para cada tipo:
                 </p>
 
                 <!-- Upload Loading Overlay -->
@@ -594,6 +651,7 @@
                                     ?.join(", ")
                                     .toUpperCase() || "Todos os formatos"}
                                 disabled={isUploading || !isWithinRange}
+                                reset={resetFileUploads}
                                 on:filesSelected={(e) =>
                                     handleFilesSelected(e, definicao)}
                                 on:fileRemoved={(e) =>
@@ -635,13 +693,24 @@
                                                 <span class="file-name"
                                                     >{file.nome_arquivo}</span
                                                 >
-                                                <a
-                                                    href={file.link_arquivo}
-                                                    target="_blank"
-                                                    class="download-link"
-                                                >
-                                                    Baixar
-                                                </a>
+                                                <div class="file-actions">
+                                                    <a
+                                                        href={file.link_arquivo}
+                                                        target="_blank"
+                                                        class="download-link"
+                                                    >
+                                                        Baixar
+                                                    </a>
+                                                    <DeleteButton
+                                                        size="sm"
+                                                        confirmMessage="Tem certeza que deseja excluir este arquivo?"
+                                                        on:delete={() =>
+                                                            file.id_arquivo &&
+                                                            deleteFile(
+                                                                file.id_arquivo,
+                                                            )}
+                                                    />
+                                                </div>
                                             </div>
                                         {/each}
                                     </div>
@@ -654,6 +723,13 @@
                     {#if uploadError}
                         <div class="upload-error" in:fade={{ duration: 200 }}>
                             {uploadError}
+                        </div>
+                    {/if}
+
+                    <!-- Upload Success Message -->
+                    {#if uploadSuccess}
+                        <div class="upload-success" in:fade={{ duration: 200 }}>
+                            {uploadSuccess}
                         </div>
                     {/if}
 
@@ -844,6 +920,7 @@
     .existing-file-item {
         display: flex;
         align-items: center;
+        justify-content: space-between;
         background: #f8f9fa;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
@@ -851,6 +928,12 @@
         gap: 0.75rem;
         font-size: 0.875rem;
         color: #4a5568;
+    }
+
+    .file-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .file-name {
@@ -876,6 +959,19 @@
         color: #dc3545;
         background-color: #f8d7da;
         border: 1px solid #f5c6cb;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin-top: 1.5rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-align: center;
+    }
+
+    /* Upload Success Message Styles */
+    .upload-success {
+        color: #155724;
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
         border-radius: 8px;
         padding: 0.75rem 1rem;
         margin-top: 1.5rem;

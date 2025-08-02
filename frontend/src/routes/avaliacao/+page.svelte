@@ -570,6 +570,26 @@
                     }
                 });
                 avaliacaoData.notas = { ...currentValues };
+
+                // Load existing file grades for professor evaluations
+                if (
+                    isProfessorEvaluation &&
+                    existingAvaliacao.notas_por_arquivo
+                ) {
+                    try {
+                        const existingFileGrades = JSON.parse(
+                            existingAvaliacao.notas_por_arquivo,
+                        );
+                        fileGrades = { ...existingFileGrades };
+                        console.log("Loaded existing file grades:", fileGrades);
+                    } catch (e) {
+                        console.warn(
+                            "Failed to parse existing file grades:",
+                            e,
+                        );
+                        fileGrades = {};
+                    }
+                }
             }
         } catch (e: any) {
             error = e.message || "Erro ao carregar dados";
@@ -910,7 +930,7 @@
 
                                 {#if filesForType.length > 0}
                                     <div class="files-list">
-                                        {#each filesForType as file}
+                                        {#each filesForType as file, index}
                                             <div class="file-item">
                                                 <div class="file-info">
                                                     <span class="file-name"
@@ -942,58 +962,55 @@
                                                     >
                                                         Baixar
                                                     </a>
-                                                    <div
-                                                        class="file-grade-section"
-                                                    >
-                                                        <label
-                                                            class="file-grade-label"
-                                                        >
-                                                            <span>Nota:</span>
-                                                            <div
-                                                                class="file-slider-container"
-                                                            >
-                                                                <input
-                                                                    type="range"
-                                                                    step="0.1"
-                                                                    min="0"
-                                                                    max={definicao.nota_maxima ||
-                                                                        10}
-                                                                    value={fileGrades[
-                                                                        nomeTipo
-                                                                    ] || 0}
-                                                                    on:input={(
-                                                                        e,
-                                                                    ) =>
-                                                                        handleFileGradeChange(
-                                                                            nomeTipo,
-                                                                            e,
-                                                                        )}
-                                                                    on:change={(
-                                                                        e,
-                                                                    ) =>
-                                                                        handleFileGradeChange(
-                                                                            nomeTipo,
-                                                                            e,
-                                                                        )}
-                                                                    class="file-slider"
-                                                                />
-                                                                <div
-                                                                    class="file-value-display"
-                                                                >
-                                                                    {(
-                                                                        fileGrades[
-                                                                            nomeTipo
-                                                                        ] || 0
-                                                                    ).toFixed(
-                                                                        1,
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </label>
-                                                    </div>
                                                 </div>
                                             </div>
                                         {/each}
+                                    </div>
+
+                                    <!-- Single evaluation for all files of this type -->
+                                    <div class="file-evaluation-section">
+                                        <div class="file-grade-section">
+                                            <label class="file-grade-label">
+                                                <span
+                                                    >Nota para {definicao.nome_tipo ||
+                                                        `Tipo de Arquivo ${index + 1}`}:</span
+                                                >
+                                                <div
+                                                    class="file-slider-container"
+                                                >
+                                                    <input
+                                                        type="range"
+                                                        step="0.1"
+                                                        min="0"
+                                                        max={definicao.nota_maxima ||
+                                                            10}
+                                                        value={fileGrades[
+                                                            nomeTipo
+                                                        ] || 0}
+                                                        on:input={(e) =>
+                                                            handleFileGradeChange(
+                                                                nomeTipo,
+                                                                e,
+                                                            )}
+                                                        on:change={(e) =>
+                                                            handleFileGradeChange(
+                                                                nomeTipo,
+                                                                e,
+                                                            )}
+                                                        class="file-slider"
+                                                    />
+                                                    <div
+                                                        class="file-value-display"
+                                                    >
+                                                        {(
+                                                            fileGrades[
+                                                                nomeTipo
+                                                            ] || 0
+                                                        ).toFixed(1)}
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        </div>
                                     </div>
                                 {:else}
                                     <div class="no-files">
@@ -1624,6 +1641,16 @@
         margin-left: 1rem;
     }
 
+    .file-evaluation-section {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(5px);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
     .file-grade-label {
         display: flex;
         align-items: center;
@@ -1787,6 +1814,11 @@
             align-items: flex-start;
             gap: 0.5rem;
             width: 100%;
+        }
+
+        .file-evaluation-section {
+            margin-top: 0.75rem;
+            padding: 0.75rem;
         }
 
         .file-slider-container {

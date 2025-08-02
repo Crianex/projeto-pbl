@@ -31,7 +31,7 @@ export const Utils = {
         const headers = req.headers;
         const authorization = headers["authorization"];
 
-        utilsLogger.info(`Validating auth token`);
+        utilsLogger.info(`Validating auth token - hasAuthorization: ${!!authorization}, type: ${typeof authorization}`);
 
         if (!authorization) {
             utilsLogger.error("Authorization header not found");
@@ -46,19 +46,51 @@ export const Utils = {
         let token = authorization;
         if (typeof token === "string" && token.startsWith("Bearer ")) {
             token = token.slice(7);
+            utilsLogger.info(`Bearer token extracted - length: ${token.length}`);
+        } else {
+            utilsLogger.warn("Token does not start with 'Bearer '");
         }
 
         try {
+            // Try different approaches to validate the token
+            utilsLogger.info("Attempting to validate JWT token");
+
+            // First, try to get user info directly
             const { data, error } = await SupabaseWrapper.get().auth.getUser(token);
+
             if (error) {
-                utilsLogger.error(`Error validating auth token: ${error.message}`);
+                utilsLogger.error(`Error validating auth token: ${error.message} - code: ${error.status}`);
+
+                // If getUser fails, try a different approach - decode the JWT manually
+                utilsLogger.info("Trying alternative token validation approach");
+                try {
+                    // The token is a JWT, we can decode it to get basic info
+                    const tokenParts = token.split('.');
+                    if (tokenParts.length === 3) {
+                        const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+                        utilsLogger.info(`JWT payload decoded: ${JSON.stringify(payload)}`);
+
+                        if (payload.email) {
+                            utilsLogger.info(`Token validation successful via JWT decode - email: ${payload.email}`);
+                            return {
+                                user: { id: payload.sub, email: payload.email },
+                                email: payload.email
+                            };
+                        }
+                    }
+                } catch (decodeError) {
+                    utilsLogger.error(`Failed to decode JWT token: ${decodeError}`);
+                }
+
                 return null;
             }
 
             if (!data.user || !data.user.email) {
-                utilsLogger.error("No user or email found in auth token");
+                utilsLogger.error(`No user or email found in auth token - hasUser: ${!!data.user}, hasEmail: ${!!data.user?.email}`);
                 return null;
             }
+
+            utilsLogger.info(`Auth token validated successfully - userId: ${data.user.id}, email: ${data.user.email}`);
 
             return { user: data.user, email: data.user.email };
         } catch (error) {

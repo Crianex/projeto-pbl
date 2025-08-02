@@ -97,12 +97,7 @@
 </svelte:head>
 
 {#if checkingSession}
-    <LoadingSpinner
-        size="lg"
-        color="primary"
-        message="Verificando sessão..."
-        overlay={true}
-    />
+    <LoadingSpinner size="lg" color="primary" message="Verificando sessão..." />
 {:else}
     <PageHeader title="Login" backUrl="/" />
 

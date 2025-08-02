@@ -12,7 +12,6 @@ if (missingEnvVars.length > 0) {
     throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
 }
 
-
 export const SupabaseWrapper = {
     get: () => supabase
 }

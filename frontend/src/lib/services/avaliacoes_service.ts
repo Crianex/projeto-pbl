@@ -48,17 +48,7 @@ async function getByProblema(problemaId: string, forceRefresh = false): Promise<
         }
     }
 
-    if (avaliacoesCache.isLoading(cacheKey)) {
-        return new Promise((resolve) => {
-            const unsubscribe = avaliacoesCache.subscribe((store) => {
-                const entry = store[cacheKey];
-                if (entry && !entry.loading) {
-                    unsubscribe();
-                    resolve(entry.data || []);
-                }
-            });
-        });
-    }
+
 
     try {
         avaliacoesCache.setLoading(cacheKey, true);

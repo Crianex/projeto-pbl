@@ -32,7 +32,16 @@ export class APIError extends Error {
 async function getAuthToken(): Promise<string | null> {
     try {
         const { data: { session } } = await supabase.auth.getSession();
-        return session?.access_token || null;
+        const token = session?.access_token || null;
+
+        if (token) {
+            // Only log once per session, not on every request
+            logger.debug('Auth token retrieved');
+        } else {
+            logger.warn('No auth token found in session');
+        }
+
+        return token;
     } catch (error) {
         logger.error('Error getting auth token:', error);
         return null;
@@ -49,6 +58,8 @@ async function prepareHeaders(customHeaders: Record<string, string> = {}): Promi
     const token = await getAuthToken();
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
+    } else {
+        logger.warn('No auth token available for request');
     }
 
     return headers;
@@ -58,10 +69,7 @@ async function fetchWithLogging(url: string, options: RequestOptions): Promise<a
     const fullUrl = `${API_URL}${url}`;
     const startTime = Date.now();
 
-    logger.http(`API Request: ${options.method} ${url}`, {
-        body: options.body,
-        headers: options.headers
-    });
+    logger.http(`API Request: ${options.method} ${url}`);
 
     try {
         // Prepare headers with authentication

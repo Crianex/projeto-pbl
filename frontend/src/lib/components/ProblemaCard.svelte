@@ -1,5 +1,6 @@
 <script lang="ts">
     import Button from "./Button.svelte";
+    import DeleteButton from "./DeleteButton.svelte";
     import type { ProblemaModel } from "$lib/interfaces/interfaces";
     import { goto } from "$app/navigation";
     import { DateUtils } from "$lib/utils/utils";
@@ -76,26 +77,12 @@
                 />
             </svg>
         </Button>
-        <Button
-            variant="danger"
+        <DeleteButton
             size="icon"
-            class="delete-button"
-            on:click={() => onOpenDeleteConfirm(problema)}
-            title="Excluir problema"
-        >
-            <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-            >
-                <path
-                    d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
-                    fill="currentColor"
-                />
-            </svg>
-        </Button>
+            title="Confirmar Exclusão"
+            confirmMessage="Tem certeza que deseja excluir este problema?"
+            on:delete={() => onOpenDeleteConfirm(problema)}
+        />
     </div>
 </div>
 
@@ -149,18 +136,7 @@
         color: #0d6efd;
     }
 
-    .delete-button {
-        background: none;
-        border: none;
-        padding: 0.5rem;
-        cursor: pointer;
-        color: #dc3545;
-        border-radius: 4px;
-    }
 
-    .delete-button:hover {
-        background-color: #f8f9fa;
-    }
 
     .problema-tags-status {
         margin: 0.2rem 0 0.5rem 0;
