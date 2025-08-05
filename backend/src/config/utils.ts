@@ -20,7 +20,7 @@ export interface AuthUser {
     id: number;
     email: string;
     nome_completo: string;
-    type: 'aluno' | 'professor';
+    type: 'aluno' | 'professor' | 'coordenador';
 }
 
 export const Utils = {
@@ -46,20 +46,17 @@ export const Utils = {
         let token = authorization;
         if (typeof token === "string" && token.startsWith("Bearer ")) {
             token = token.slice(7);
-            utilsLogger.info(`Bearer token extracted - length: ${token.length}`);
         } else {
             utilsLogger.warn("Token does not start with 'Bearer '");
         }
 
         try {
             // Try different approaches to validate the token
-            utilsLogger.info("Attempting to validate JWT token");
 
             // First, try to get user info directly
             const { data, error } = await SupabaseWrapper.get().auth.getUser(token);
 
             if (error) {
-                utilsLogger.error(`Error validating auth token: ${error.message} - code: ${error.status}`);
 
                 // If getUser fails, try a different approach - decode the JWT manually
                 utilsLogger.info("Trying alternative token validation approach");
@@ -182,16 +179,63 @@ export const Utils = {
     },
 
     /**
-     * Validates that the user is either an aluno or professor
+     * Validates that the user is a coordenador and returns the coordenador data
+     */
+    validateCoordenador: async (req: Request): Promise<AuthUser | null> => {
+        const authResult = await Utils.validateAuthToken(req);
+        if (!authResult) {
+            return null;
+        }
+
+        const { email } = authResult;
+
+        try {
+            // Check if user exists as coordenador
+            const { data: coordenador, error } = await SupabaseWrapper.get()
+                .from('coordenadores')
+                .select('*')
+                .eq('email', email)
+                .single();
+
+            if (error) {
+                utilsLogger.error(`Error checking coordenador: ${error.message}`);
+                return null;
+            }
+
+            if (!coordenador) {
+                utilsLogger.error(`Coordenador not found with email: ${email}`);
+                return null;
+            }
+
+            return {
+                id: coordenador.id_coordenador,
+                email: coordenador.email,
+                type: 'coordenador',
+                nome_completo: ""
+            };
+        } catch (error) {
+            utilsLogger.error(`Unexpected error validating coordenador: ${error}`);
+            return null;
+        }
+    },
+
+    /**
+     * Validates that the user is either an aluno, professor, or coordenador
      */
     validateUser: async (req: Request): Promise<AuthUser | null> => {
-        // First try as professor
+        // First try as coordenador
+        const coordenador = await Utils.validateCoordenador(req);
+        if (coordenador) {
+            return coordenador;
+        }
+
+        // Then try as professor
         const professor = await Utils.validateProfessor(req);
         if (professor) {
             return professor;
         }
 
-        // Then try as aluno
+        // Finally try as aluno
         const aluno = await Utils.validateAluno(req);
         if (aluno) {
             return aluno;

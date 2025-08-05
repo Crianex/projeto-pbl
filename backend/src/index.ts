@@ -16,6 +16,7 @@ import { ProfessorController } from './controllers/ProfessorController';
 import { TurmaController } from './controllers/TurmaController';
 import { ProblemaController } from './controllers/ProblemaController';
 import { AvaliacaoController } from './controllers/AvaliacaoController';
+import { CoordenadorController } from './controllers/CoordernadorController';
 
 console.log('🚀 Backend starting...');
 console.log('📁 Current working directory:', process.cwd());
@@ -107,7 +108,8 @@ const controllers: EndpointController[] = [
     ProfessorController,
     TurmaController,
     ProblemaController,
-    AvaliacaoController
+    AvaliacaoController,
+    CoordenadorController
 ];
 
 console.log(`📋 Loaded ${controllers.length} controllers`);

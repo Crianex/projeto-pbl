@@ -15,24 +15,27 @@ export const TurmasService = {
     invalidateCache,
 };
 
-async function getAll(professorId: number, forceRefresh = false): Promise<TurmaModel[]> {
-    const cacheKey = `professor_${professorId}`;
+async function getAll(professorId: number | null, forceRefresh = false): Promise<TurmaModel[]> {
+    const cacheKey = professorId ? `professor_${professorId}` : 'all_turmas';
 
     // Return cached data if available and fresh
     if (!forceRefresh && turmasCache.isFresh(cacheKey)) {
         const cached = turmasCache.getCached(cacheKey);
         if (cached) {
-            logger.info(`Returning cached turmas for professor ${professorId}`);
+            logger.info(`Returning cached turmas for ${professorId ? `professor ${professorId}` : 'all turmas'}`);
             return cached;
         }
     }
 
-
-
     try {
         turmasCache.setLoading(cacheKey, true);
-        logger.info(`Fetching turmas for professor ${professorId} from API`);
-        const data = await api.get(`/turmas/list?id_professor=${professorId}`);
+        logger.info(`Fetching turmas ${professorId ? `for professor ${professorId}` : 'for all turmas'} from API`);
+
+        const url = professorId
+            ? `/turmas/list?id_professor=${professorId}`
+            : '/turmas/list';
+
+        const data = await api.get(url);
         const parsed = Parsers.parseTurmas(data);
         turmasCache.setData(cacheKey, parsed);
         return parsed;
@@ -54,7 +57,17 @@ async function getById(id: string, forceRefresh = false): Promise<TurmaModel> {
         }
     }
 
-
+    if (turmaCache.isLoading(cacheKey)) {
+        return new Promise((resolve) => {
+            const unsubscribe = turmaCache.subscribe((store) => {
+                const entry = store[cacheKey];
+                if (entry && !entry.loading) {
+                    unsubscribe();
+                    resolve(entry.data!);
+                }
+            });
+        });
+    }
 
     try {
         turmaCache.setLoading(cacheKey, true);

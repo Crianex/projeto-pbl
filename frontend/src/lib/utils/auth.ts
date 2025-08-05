@@ -3,7 +3,7 @@ import { writable } from 'svelte/store';
 import { supabase } from '../supabase';
 import { api, APIError } from './api';
 import { logger } from './logger';
-import { parseToAlunoModel, parseToProfessorModel, type AlunoModel, type BaseUser, type ProfessorModel } from '$lib/interfaces/interfaces';
+import { parseToAlunoModel, parseToProfessorModel, parseToCoordenadorModel, type AlunoModel, type BaseUser, type ProfessorModel, type CoordenadorModel } from '$lib/interfaces/interfaces';
 import { redirect } from '@sveltejs/kit';
 
 export const currentUser = writable<BaseUser | null | undefined>(undefined);
@@ -30,8 +30,13 @@ export function isProfessor(user: BaseUser | null): user is ProfessorModel {
     return user?.tipo === 'professor';
 }
 
+export function isCoordenador(user: BaseUser | null): user is CoordenadorModel {
+    console.log('isCoordenador', user);
+    return user?.tipo === 'coordenador';
+}
+
 export async function protectProfessorRoute(user: BaseUser | null) {
-    if (!user || !isProfessor(user)) {
+    if (!user || (!isProfessor(user) && !isCoordenador(user))) {
         logger.info('User is not a professor, redirecting to login');
         await redirect(303, '/login');
         return false;
@@ -40,8 +45,17 @@ export async function protectProfessorRoute(user: BaseUser | null) {
 }
 
 export async function protectAlunoRoute(user: BaseUser | null) {
-    if (!user || !isAluno(user)) {
+    if (!user || (!isAluno(user) && !isCoordenador(user))) {
         logger.info('User is not an aluno, redirecting to login');
+        await redirect(303, '/login');
+        return false;
+    }
+    return true;
+}
+
+export async function protectCoordenadorRoute(user: BaseUser | null) {
+    if (!user || !isCoordenador(user)) {
+        logger.info('User is not a coordenador, redirecting to login');
         await redirect(303, '/login');
         return false;
     }
@@ -57,13 +71,21 @@ export async function createOrGetUser(session: any): Promise<BaseUser | null> {
             return null;
         }
 
-        // Check both professor and aluno tables simultaneously to prevent race conditions
-        const [professorPromise, alunoPromise] = await Promise.allSettled([
+        // Check all user tables simultaneously to prevent race conditions
+        const [professorPromise, alunoPromise, coordenadorPromise] = await Promise.allSettled([
             api.get(`/professores/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`),
-            api.get(`/alunos/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`)
+            api.get(`/alunos/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`),
+            api.get(`/coordenadores/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`)
         ]);
 
-        // Check if user exists as professor (priority check)
+        // Check if user exists as coordenador (highest priority)
+        if (coordenadorPromise.status === 'fulfilled') {
+            logger.info('Found existing coordenador', { email: supabaseUser.email });
+            const userCoordenador = parseToCoordenadorModel(coordenadorPromise.value);
+            return userCoordenador;
+        }
+
+        // Check if user exists as professor
         if (professorPromise.status === 'fulfilled') {
             logger.info('Found existing professor', { email: supabaseUser.email });
             const userProfessor = parseToProfessorModel(professorPromise.value);
@@ -84,8 +106,11 @@ export async function createOrGetUser(session: any): Promise<BaseUser | null> {
         if (alunoPromise.status === 'rejected') {
             logger.warn('Error checking aluno table:', alunoPromise.reason);
         }
+        if (coordenadorPromise.status === 'rejected') {
+            logger.warn('Error checking coordenador table:', coordenadorPromise.reason);
+        }
 
-        // If no user found in either table, create new aluno by default
+        // If no user found in any table, create new aluno by default
         logger.info('Creating new aluno account', { email: supabaseUser.email });
         const newUser = await api.post('/alunos/create', {
             email: supabaseUser.email,
@@ -175,6 +200,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session) {
         try {
             const user = await createOrGetUser(session);
+            logger.info('User created/found in auth state change:', { userType: user?.tipo, userId: user?.id });
             currentUser.set(user);
         } catch (error) {
             logger.error('Error handling sign in:', error);
@@ -187,6 +213,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         if (session) {
             try {
                 const user = await createOrGetUser(session);
+                logger.info('User created/found in initial session:', { userType: user?.tipo, userId: user?.id });
                 currentUser.set(user);
             } catch (error) {
                 logger.error('Error handling initial session:', error);

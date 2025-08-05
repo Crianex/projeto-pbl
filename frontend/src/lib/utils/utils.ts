@@ -315,12 +315,7 @@ export class MediaCalculator {
         const profEval = avaliacoes.find(
             (av) => {
                 const matches = av.id_professor && av.aluno_avaliado?.id === alunoId;
-                console.log("Checking evaluation:", {
-                    id_professor: av.id_professor,
-                    aluno_avaliado_id: av.aluno_avaliado?.id,
-                    alunoId,
-                    matches
-                });
+
                 return matches;
             }
         );
@@ -348,13 +343,7 @@ export class MediaCalculator {
         const autoEval = avaliacoes.find(
             (av) => {
                 const matches = av.aluno_avaliador?.id === alunoId && av.aluno_avaliado?.id === alunoId && !av.id_professor;
-                console.log("Checking auto evaluation:", {
-                    aluno_avaliador_id: av.aluno_avaliador?.id,
-                    aluno_avaliado_id: av.aluno_avaliado?.id,
-                    id_professor: av.id_professor,
-                    alunoId,
-                    matches
-                });
+
                 return matches;
             }
         );
@@ -378,13 +367,7 @@ export class MediaCalculator {
         const peerEvals = avaliacoes.filter(
             (av) => {
                 const matches = av.aluno_avaliado?.id === alunoId && av.aluno_avaliador?.id !== alunoId && !av.id_professor;
-                console.log("Checking peer evaluation:", {
-                    aluno_avaliador_id: av.aluno_avaliador?.id,
-                    aluno_avaliado_id: av.aluno_avaliado?.id,
-                    id_professor: av.id_professor,
-                    alunoId,
-                    matches
-                });
+
                 return matches;
             }
         );

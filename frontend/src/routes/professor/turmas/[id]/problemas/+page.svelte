@@ -14,6 +14,7 @@
     import Button from "$lib/components/Button.svelte";
     import Dialog from "$lib/components/Dialog.svelte";
     import PageHeader from "$lib/components/PageHeader.svelte";
+    import { currentUser } from "$lib/utils/auth";
 
     const turmaId = $page.params.id;
 
@@ -72,7 +73,7 @@
             // Cache will be automatically invalidated by service
             problemaStore.update((ps) =>
                 ps.filter(
-                    (p) => p.id_problema !== problemaToDelete.id_problema,
+                    (p) => p.id_problema !== problemaToDelete?.id_problema,
                 ),
             );
             await fetchData();
@@ -113,7 +114,9 @@
 </script>
 
 <PageHeader
-    backUrl="/professor/turmas"
+    backUrl={$currentUser?.tipo == "coordenador"
+        ? "/coordenador/turmas"
+        : "/professor/turmas"}
     backText="Voltar para turmas"
     title="Problemas - {turma?.nome_turma || ''}"
 />

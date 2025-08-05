@@ -44,6 +44,14 @@ export interface ProfessorDB {
     link_avatar: string | null;
 }
 
+export interface CoordenadorDB {
+    id_coordenador: number;
+    created_at: Date;
+    nome_completo: string | null;
+    email: string | null;
+    link_avatar: string | null;
+}
+
 export interface TurmaDB {
     id_turma: number;
     created_at: Date;
@@ -103,7 +111,7 @@ export interface BaseUser {
     created_at: Date;
     nome_completo: string | null;
     email: string | null;
-    tipo: 'aluno' | 'professor';
+    tipo: 'aluno' | 'professor' | 'coordenador';
     link_avatar: string | null;
 }
 
@@ -127,6 +135,9 @@ export interface ProfessorModel extends BaseUser {
     tipo: 'professor';
 }
 
+export interface CoordenadorModel extends BaseUser {
+    tipo: 'coordenador';
+}
 
 
 export interface AvaliacaoNota {
@@ -176,6 +187,17 @@ export function parseToProfessorModel(data: any): ProfessorModel {
     return {
         tipo: 'professor',
         id: data.id_professor,
+        created_at: data.created_at ? new Date(data.created_at) : new Date(),
+        nome_completo: data.nome_completo || null,
+        email: data.email || null,
+        link_avatar: data.link_avatar || null
+    };
+}
+
+export function parseToCoordenadorModel(data: any): CoordenadorModel {
+    return {
+        tipo: 'coordenador',
+        id: data.id_coordenador,
         created_at: data.created_at ? new Date(data.created_at) : new Date(),
         nome_completo: data.nome_completo || null,
         email: data.email || null,

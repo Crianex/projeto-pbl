@@ -7,21 +7,57 @@
     export let openDropdownId: number | null = null;
     export let onToggleDropdown: (event: MouseEvent, turmaId: number) => void;
     export let onOpenDeleteConfirm: (turma: TurmaModel) => void;
+    export let showProfessor: boolean = false;
+    export let userType: "aluno" | "professor" | "coordenador" = "professor";
+
+    function getTurmaUrl() {
+        if (userType === "coordenador") {
+            // Coordenadores go to the professor's turma page
+            return `/professor/turmas/${turma.id_turma}/problemas`;
+        } else if (userType === "professor") {
+            // Professors go to their own turma page
+            return `/professor/turmas/${turma.id_turma}/problemas`;
+        } else {
+            // Alunos go to their turma page
+            return `/aluno/turmas/${turma.id_turma}/problemas`;
+        }
+    }
+
+    function getEditUrl() {
+        if (userType === "coordenador") {
+            // Coordenadores go to the professor's turma edit page
+            return `/professor/turmas/${turma.id_turma}`;
+        } else if (userType === "professor") {
+            // Professors go to their own turma edit page
+            return `/professor/turmas/${turma.id_turma}`;
+        } else {
+            // Alunos don't have edit access
+            return `/aluno/turmas/${turma.id_turma}`;
+        }
+    }
 </script>
 
 <div
     class="turma-item"
-    on:click={() => goto(`/professor/turmas/${turma.id_turma}/problemas`)}
+    on:click={() => goto(getTurmaUrl())}
     role="button"
     tabindex="0"
     on:keydown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
-            goto(`/professor/turmas/${turma.id_turma}/problemas`);
+            goto(getTurmaUrl());
         }
     }}
 >
     <div class="turma-main-info">
         <span class="turma-nome">{turma.nome_turma}</span>
+        {#if showProfessor && turma.professor}
+            <div class="professor-info">
+                <span class="professor-label">Professor:</span>
+                <span class="professor-nome"
+                    >{turma.professor.nome_completo}</span
+                >
+            </div>
+        {/if}
         <div class="turma-alunos-mobile">
             <span class="alunos-label">Alunos:</span>
             {#if turma.alunos && turma.alunos.length > 0}
@@ -67,7 +103,7 @@
                     class="dropdown-item"
                     on:click={(e) => {
                         e.stopPropagation();
-                        goto(`/professor/turmas/${turma.id_turma}`);
+                        goto(getEditUrl());
                     }}
                 >
                     <svg
@@ -148,6 +184,23 @@
         font-size: 1.08rem;
     }
 
+    .professor-info {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.95rem;
+        color: #666;
+        margin-top: 0.1rem;
+    }
+
+    .professor-label {
+        font-weight: 500;
+    }
+
+    .professor-nome {
+        color: #333;
+    }
+
     .turma-alunos-mobile {
         display: none;
         font-size: 0.98rem;
@@ -198,32 +251,53 @@
         width: max-content;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         border-radius: 4px;
-        z-index: 1;
-        margin-top: 0.25rem;
-        flex-direction: column;
-        gap: 0.1rem;
+        z-index: 1000;
+        padding: 0.5rem 0;
     }
 
     .dropdown-content.show {
-        display: flex;
+        display: block;
     }
 
     .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border: none;
+        background: none;
+        cursor: pointer;
         width: 100%;
-        justify-content: flex-start;
         text-align: left;
+        font-size: 0.9rem;
+        color: #333;
+        transition: background-color 0.2s ease;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .dropdown-item.delete {
+        color: #dc3545;
+    }
+
+    .dropdown-item.delete:hover {
+        background-color: #f8d7da;
     }
 
     @media (max-width: 768px) {
         .turma-item {
-            padding: 0.8rem 0.6rem;
-            font-size: 0.97rem;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 0.8rem 0.8rem;
+            margin-bottom: 0.2rem;
         }
 
-        .actions {
-            gap: 0.1rem;
+        .turma-nome {
+            font-size: 1rem;
+        }
+
+        .professor-info {
+            font-size: 0.9rem;
         }
 
         .turma-alunos-mobile {
@@ -233,14 +307,28 @@
 
     @media (max-width: 480px) {
         .turma-item {
-            padding: 0.6rem 0.4rem;
-            font-size: 0.91rem;
-            border-radius: 3px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 0.6rem 0.6rem;
+            margin-bottom: 0.1rem;
         }
 
-        .actions {
-            gap: 0.05rem;
+        .turma-nome {
+            font-size: 0.95rem;
+        }
+
+        .professor-info {
+            font-size: 0.85rem;
+        }
+
+        .turma-alunos-mobile {
+            font-size: 0.9rem;
+        }
+
+        .alunos-list {
+            margin: 0.1rem 0 0 0.5rem;
+        }
+
+        .aluno-nome {
+            font-size: 0.9rem;
         }
     }
 </style>

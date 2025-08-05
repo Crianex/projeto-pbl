@@ -24,11 +24,19 @@
             if (user !== undefined) {
                 if (user) {
                     logger.info("User already logged in, redirecting...");
-                    // redirect to aluno home or professor home
+                    // redirect based on user type
                     if (user.tipo === "aluno") {
                         goto("/aluno");
-                    } else {
+                    } else if (user.tipo === "professor") {
                         goto("/professor/turmas");
+                    } else if (user.tipo === "coordenador") {
+                        goto("/coordenador/turmas");
+                    } else {
+                        // fallback to login if unknown user type
+                        logger.warn(
+                            "Unknown user type, staying on login page",
+                            { userType: user.tipo },
+                        );
                     }
                 } else {
                     logger.info("User not logged in, showing login form");

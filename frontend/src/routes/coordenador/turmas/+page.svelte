@@ -30,10 +30,16 @@
             loading = true;
             error = null;
 
-            // Get current user to get professor ID
+            // Get current user to verify coordenador access
             const user = $currentUser;
-            if (!user || user.tipo !== "professor") {
-                throw new Error("User not authenticated or not a professor");
+            console.log("Current user in coordenador turmas:", user);
+
+            if (!user || user.tipo !== "coordenador") {
+                console.error(
+                    "User not authenticated or not a coordenador:",
+                    user,
+                );
+                throw new Error("User not authenticated or not a coordenador");
             }
 
             // Add a timeout to prevent infinite loading
@@ -41,7 +47,8 @@
                 setTimeout(() => reject(new Error("Request timeout")), 10000);
             });
 
-            const fetchPromise = TurmasService.getAll(user.id, forceRefresh);
+            // For coordenador, fetch all turmas (not just for a specific professor)
+            const fetchPromise = TurmasService.getAll(null, forceRefresh);
             const fetchedTurmas = await Promise.race([
                 fetchPromise,
                 timeoutPromise,
@@ -49,7 +56,7 @@
 
             turmas = fetchedTurmas as TurmaModel[];
             logger.info(
-                `Fetched ${turmas.length} turmas for professor ${user.id}`,
+                `Fetched ${turmas.length} turmas for coordenador ${user.id}`,
             );
         } catch (err: any) {
             error = err.message || "Failed to fetch turmas";
@@ -66,7 +73,7 @@
     }
 
     function handleCreateTurma() {
-        goto("/professor/turmas/nova");
+        goto("/coordenador/turmas/nova");
     }
 
     function toggleDropdown(event: MouseEvent, turmaId: number) {
@@ -104,16 +111,17 @@
         fetchTurmas();
     });
 
-    // Remove the reactive statement that causes infinite loops
-    // The fetch will only happen once when the page loads
-
     // Filter and sort turmas
     $: filteredAndSortedTurmas = (() => {
         let filtered = searchQuery
-            ? turmas.filter((turma) =>
-                  turma.nome_turma
-                      ?.toLowerCase()
-                      .includes(searchQuery.toLowerCase()),
+            ? turmas.filter(
+                  (turma) =>
+                      turma.nome_turma
+                          ?.toLowerCase()
+                          .includes(searchQuery.toLowerCase()) ||
+                      turma.professor?.nome_completo
+                          ?.toLowerCase()
+                          .includes(searchQuery.toLowerCase()),
               )
             : turmas;
 
@@ -138,7 +146,7 @@
     <div class="search-section">
         <SearchBar
             bind:value={searchQuery}
-            placeholder="Buscar turma..."
+            placeholder="Buscar turma ou professor..."
             buttonText="+ Criar turma"
             on:search={(e) => (searchQuery = e.detail)}
             on:buttonClick={handleCreateTurma}
@@ -161,7 +169,8 @@
                     {openDropdownId}
                     onToggleDropdown={toggleDropdown}
                     onOpenDeleteConfirm={openDeleteConfirm}
-                    userType="professor"
+                    showProfessor={true}
+                    userType="coordenador"
                 />
             {/each}
         </svelte:fragment>

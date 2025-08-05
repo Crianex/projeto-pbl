@@ -1,4 +1,4 @@
-import { type AlunoModel, type ProfessorModel, type ProblemaModel, type TurmaModel, parseToProfessorModel, parseToAlunoModel, type CriteriosGroup, type Criterio, type AvaliacaoModel, type DefinicaoArquivoDeAvaliacao, type DataEHoraDefinition, type UploadedFile } from '$lib/interfaces/interfaces';
+import { type AlunoModel, type ProfessorModel, type CoordenadorModel, type ProblemaModel, type TurmaModel, parseToProfessorModel, parseToCoordenadorModel, parseToAlunoModel, type CriteriosGroup, type Criterio, type AvaliacaoModel, type DefinicaoArquivoDeAvaliacao, type DataEHoraDefinition, type UploadedFile } from '$lib/interfaces/interfaces';
 
 /**
  * Parses raw Supabase data into strongly typed interfaces
@@ -8,10 +8,12 @@ export const Parsers = {
     parseAluno,
     parseProblema,
     parseProfessor,
+    parseCoordenador,
     parseTurma,
     parseAlunos,
     parseProblemas,
     parseProfessores,
+    parseCoordenadores,
     parseTurmas,
     parseCriterios,
     parseAvaliacao,
@@ -82,6 +84,10 @@ function parseProfessor(data: any): ProfessorModel {
     return parseToProfessorModel(data);
 }
 
+function parseCoordenador(data: any): CoordenadorModel {
+    return parseToCoordenadorModel(data);
+}
+
 function parseTurma(data: any): TurmaModel {
     return {
         id_turma: data.id_turma,
@@ -105,6 +111,10 @@ function parseProblemas(data: any[]): ProblemaModel[] {
 
 function parseProfessores(data: any[]): ProfessorModel[] {
     return data.map(item => parseProfessor(item));
+}
+
+function parseCoordenadores(data: any[]): CoordenadorModel[] {
+    return data.map(item => parseCoordenador(item));
 }
 
 function parseTurmas(data: any[]): TurmaModel[] {

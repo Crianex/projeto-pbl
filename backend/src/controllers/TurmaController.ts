@@ -12,7 +12,7 @@ export const TurmaController: EndpointController = {
     name: 'turmas',
     routes: {
         'list': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            // Allow both professor and aluno authentication for listing turmas
+            // Allow professor, aluno, and coordenador authentication for listing turmas
             const authUser = await Utils.validateUser(req);
             if (!authUser) {
                 return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
@@ -35,6 +35,14 @@ export const TurmaController: EndpointController = {
                     logger.info(`Filtering turmas by professor ${id_professor}`);
                 } else {
                     logger.info('Fetching all turmas (no professor filter)');
+                }
+            } else if (authUser.type === 'coordenador') {
+                // Coordenadores can see all turmas
+                if (id_professor) {
+                    query = query.eq('id_professor', id_professor);
+                    logger.info(`Filtering turmas by professor ${id_professor} for coordenador`);
+                } else {
+                    logger.info('Fetching all turmas for coordenador');
                 }
             } else if (authUser.type === 'aluno') {
                 // Alunos can only see turmas they belong to
@@ -134,7 +142,7 @@ export const TurmaController: EndpointController = {
                 return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
             }
 
-            const { nome_turma, id_professor,alunos } = req.body;
+            const { nome_turma, id_professor, alunos } = req.body;
             const { data, error } = await supabase
                 .from('turmas')
                 .insert([{ nome_turma, id_professor }])

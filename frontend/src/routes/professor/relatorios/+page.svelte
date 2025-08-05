@@ -31,6 +31,12 @@
     let loading = true;
     let error: string | null = null;
 
+    // Cache for loaded data
+    let problemasCache: { [turmaId: number]: ProblemaModel[] } = {};
+    let avaliacoesCache: { [problemaId: number]: AvaliacaoModel[] } = {};
+    let loadingProblemas = false;
+    let loadingAvaliacoes = false;
+
     // Matrix data structure
     let evaluationMatrix: {
         [evaluatorId: number]: { [evaluatedId: number]: number };
@@ -233,55 +239,34 @@
             Array.isArray(turmas),
         );
 
-        for (const turma of turmas) {
-            try {
-                const problemasData = await ProblemasService.getByTurma(
-                    turma.id_turma.toString(),
-                );
-
-                // Select the first turma regardless of whether it has problems or avaliações
-                selectedTurma = turma;
-                problemas = problemasData.sort(
-                    (a: ProblemaModel, b: ProblemaModel) =>
-                        (a.nome_problema || "").localeCompare(
-                            b.nome_problema || "",
-                            "pt-BR",
-                            {
-                                sensitivity: "base",
-                            },
-                        ),
-                );
-
-                // Auto-select first problem if available
-                if (problemasData.length > 0) {
-                    selectedProblema = problemasData[0];
-                    await fetchAvaliacoes(problemasData[0].id_problema);
-                } else {
-                    selectedProblema = null;
-                    avaliacoes = [];
-                    evaluationMatrix = {};
-                }
-                break;
-            } catch (err) {
-                console.error(
-                    `Error fetching problemas for turma ${turma.id_turma}:`,
-                    err,
-                );
-                // Even if there's an error, still select the turma
-                selectedTurma = turma;
-                problemas = [];
-                selectedProblema = null;
-                avaliacoes = [];
-                evaluationMatrix = {};
-                break;
-            }
+        // Just select the first turma without loading problemas
+        if (turmas.length > 0) {
+            selectedTurma = turmas[0];
+            problemas = [];
+            selectedProblema = null;
+            avaliacoes = [];
+            evaluationMatrix = {};
         }
     }
 
     async function fetchProblemas(turmaId: number) {
         try {
-            loading = true;
+            loadingProblemas = true;
             error = null;
+
+            // Check cache first
+            if (problemasCache[turmaId]) {
+                console.log(
+                    "fetchProblemas - using cached data for turmaId:",
+                    turmaId,
+                );
+                problemas = problemasCache[turmaId];
+                selectedProblema = null;
+                avaliacoes = [];
+                evaluationMatrix = {};
+                return;
+            }
+
             console.log(
                 "fetchProblemas - calling service for turmaId:",
                 turmaId,
@@ -290,7 +275,8 @@
             console.log("fetchProblemas - service response:", data);
             console.log("fetchProblemas - data type:", typeof data);
             console.log("fetchProblemas - isArray:", Array.isArray(data));
-            problemas = data.sort((a: ProblemaModel, b: ProblemaModel) =>
+
+            const sortedData = data.sort((a: ProblemaModel, b: ProblemaModel) =>
                 (a.nome_problema || "").localeCompare(
                     b.nome_problema || "",
                     "pt-BR",
@@ -300,15 +286,14 @@
                 ),
             );
 
-            // Auto-select first problem if available
-            if (data.length > 0) {
-                selectedProblema = data[0];
-                await fetchAvaliacoes(data[0].id_problema);
-            } else {
-                selectedProblema = null;
-                avaliacoes = [];
-                evaluationMatrix = {};
-            }
+            // Cache the data
+            problemasCache[turmaId] = sortedData;
+            problemas = sortedData;
+
+            // Don't auto-select first problem - let user choose
+            selectedProblema = null;
+            avaliacoes = [];
+            evaluationMatrix = {};
         } catch (err) {
             error =
                 err instanceof Error
@@ -321,13 +306,25 @@
             avaliacoes = [];
             evaluationMatrix = {};
         } finally {
-            loading = false;
+            loadingProblemas = false;
         }
     }
 
     async function fetchAvaliacoes(problemaId: number) {
         try {
-            loading = true;
+            loadingAvaliacoes = true;
+
+            // Check cache first
+            if (avaliacoesCache[problemaId]) {
+                console.log(
+                    "fetchAvaliacoes - using cached data for problemaId:",
+                    problemaId,
+                );
+                avaliacoes = avaliacoesCache[problemaId];
+                buildEvaluationMatrix();
+                return;
+            }
+
             console.log(`Fetching avaliacoes for problema: ${problemaId}`);
             const data = await AvaliacoesService.getByProblema(
                 problemaId.toString(),
@@ -337,14 +334,20 @@
             console.log("fetchAvaliacoes - isArray:", Array.isArray(data));
 
             // Ensure avaliacoes is always an array
+            let processedData: AvaliacaoModel[] = [];
             if (Array.isArray(data)) {
-                avaliacoes = data;
+                processedData = data;
             } else if (data && typeof data === "object") {
                 // If it's a single object, wrap it in an array
-                avaliacoes = [data];
+                processedData = [data];
             } else {
-                avaliacoes = [];
+                processedData = [];
             }
+
+            // Cache the data
+            avaliacoesCache[problemaId] = processedData;
+            avaliacoes = processedData;
+
             console.log("fetchAvaliacoes - final avaliacoes:", avaliacoes);
             console.log(
                 "fetchAvaliacoes - final avaliacoes type:",
@@ -363,7 +366,7 @@
                     : "Failed to fetch avaliacoes";
             console.error("Error fetching avaliacoes:", err);
         } finally {
-            loading = false;
+            loadingAvaliacoes = false;
         }
     }
 
@@ -435,7 +438,6 @@
         if (turmaId) {
             selectedTurma = turmas.find((t) => t.id_turma === turmaId) || null;
             selectedProblema = null;
-            problemas = [];
             avaliacoes = [];
             evaluationMatrix = {};
             await fetchProblemas(turmaId);
@@ -455,7 +457,13 @@
         if (problemaId) {
             selectedProblema =
                 problemas.find((p) => p.id_problema === problemaId) || null;
-            await fetchAvaliacoes(problemaId);
+            if (selectedProblema) {
+                await fetchAvaliacoes(problemaId);
+            }
+        } else {
+            selectedProblema = null;
+            avaliacoes = [];
+            evaluationMatrix = {};
         }
     }
 
@@ -887,7 +895,17 @@
     {#if loading}
         <div class="loading">
             <LoadingSpinner />
-            <p>Carregando dados...</p>
+            <p>Carregando turmas...</p>
+        </div>
+    {:else if loadingProblemas}
+        <div class="loading">
+            <LoadingSpinner />
+            <p>Carregando problemas...</p>
+        </div>
+    {:else if loadingAvaliacoes}
+        <div class="loading">
+            <LoadingSpinner />
+            <p>Carregando avaliações...</p>
         </div>
     {:else if error}
         <div class="error">
@@ -962,7 +980,11 @@
         {/if} -->
 
         <!-- Evaluation Matrix -->
-        {#if selectedProblema && alunos.length > 0}
+        {#if selectedTurma && !selectedProblema}
+            <div class="no-problema-selected">
+                <p>Selecione um problema para visualizar as avaliações</p>
+            </div>
+        {:else if selectedProblema && alunos.length > 0}
             <ExportControls
                 on:exportCSV={exportMatrixAsCSV}
                 on:exportPDF={exportMatrixAsPDF}
@@ -1246,6 +1268,16 @@
         color: #721c24;
         border: 1px solid #f5c6cb;
         border-radius: 8px;
+    }
+
+    .no-problema-selected {
+        text-align: center;
+        padding: 3rem 2rem;
+        background: #f8f9fa;
+        color: #6c757d;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 1rem;
     }
 
     .matrix-section {

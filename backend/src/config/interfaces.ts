@@ -12,7 +12,7 @@ export interface AuthUser {
     id: number;
     email: string;
     nome_completo: string;
-    type: 'aluno' | 'professor';
+    type: 'aluno' | 'professor' | 'coordenador';
 }
 
 // Extend the Request interface to include user
@@ -65,12 +65,19 @@ export interface Problema {
     faltas_por_tag: string;
 }
 
+export interface Coordenador {
+    id_coordenador: number;
+    created_at: Date;
+    email: string;
+}
+
 export interface Professor {
     id_professor: number;
     created_at: Date;
     nome_completo: string | null;
     email: string | null;
     link_avatar: string | null;
+    id_turma: number | null;
 }
 
 export interface Turma {

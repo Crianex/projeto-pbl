@@ -73,7 +73,9 @@
                     targetPath:
                         user.tipo === "professor"
                             ? "/professor/turmas"
-                            : "/aluno",
+                            : user.tipo == "coordenador"
+                              ? "/coordenador/turmas"
+                              : "/aluno",
                 });
 
                 // Clear timeout since we succeeded
@@ -88,7 +90,9 @@
                         targetPath:
                             user.tipo === "professor"
                                 ? "/professor/turmas"
-                                : "/aluno",
+                                : user.tipo == "coordenador"
+                                  ? "/coordenador/turmas"
+                                  : "/aluno",
                     });
 
                     // Redirect based on user type
@@ -97,6 +101,11 @@
                             "Redirecting professor to /professor/turmas",
                         );
                         goto("/professor/turmas");
+                    } else if (user.tipo == "coordenador") {
+                        logger.info(
+                            "Redirecting student to /coordenador/turmas",
+                        );
+                        goto("/coordenador/turmas");
                     } else {
                         logger.info("Redirecting student to /aluno");
                         goto("/aluno");
