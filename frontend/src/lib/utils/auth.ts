@@ -66,6 +66,8 @@ export async function createOrGetUser(session: any): Promise<BaseUser | null> {
     try {
         const { user: supabaseUser } = session;
 
+        console.log("Calling createOrGetUser");
+
         if (!supabaseUser) {
             logger.error('No Supabase user found in session');
             return null;
@@ -133,9 +135,19 @@ export async function initializeAuth() {
         return;
     }
 
+    console.log("Calling initializeAuth");
+
     try {
         isInitializing = true;
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Calling supabase.auth.getSession");
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        logger.info("Session:", session);
+
+        if (error) {
+            logger.error("Error getting session:", error);
+        }
+
         if (session) {
             const user = await createOrGetUser(session);
             currentUser.set(user);

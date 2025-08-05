@@ -220,6 +220,25 @@ export const Utils = {
     },
 
     /**
+     * Validates that the user is either a professor or coordenador (admin)
+     */
+    validateProfessorOrCoordenador: async (req: Request): Promise<AuthUser | null> => {
+        // First try as coordenador
+        const coordenador = await Utils.validateCoordenador(req);
+        if (coordenador) {
+            return coordenador;
+        }
+
+        // Then try as professor
+        const professor = await Utils.validateProfessor(req);
+        if (professor) {
+            return professor;
+        }
+
+        return null;
+    },
+
+    /**
      * Validates that the user is either an aluno, professor, or coordenador
      */
     validateUser: async (req: Request): Promise<AuthUser | null> => {
@@ -272,6 +291,22 @@ export const Utils = {
             next();
         }).catch(error => {
             utilsLogger.error(`Error in requireProfessorAuth: ${error}`);
+            return res.status(500).json({ error: 'Internal server error during authentication' });
+        });
+    },
+
+    /**
+     * Middleware function to require professor or coordenador authentication
+     */
+    requireProfessorOrCoordenadorAuth: (req: Request, res: any, next: any) => {
+        Utils.validateProfessorOrCoordenador(req).then(user => {
+            if (!user) {
+                return res.status(401).json({ error: 'Unauthorized: Valid professor or coordenador authentication required' });
+            }
+            req.user = user;
+            next();
+        }).catch(error => {
+            utilsLogger.error(`Error in requireProfessorOrCoordenadorAuth: ${error}`);
             return res.status(500).json({ error: 'Internal server error during authentication' });
         });
     },

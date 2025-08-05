@@ -22,11 +22,10 @@
 
         loadingText = "Verificando autenticação...";
         logger.info("Starting authentication verification process");
-
-        // Initialize auth to ensure backend account creation
-        initializeAuth().catch((error) => {
-            logger.error("Failed to initialize auth", { error });
-        });
+        (async () => {
+            // Initialize auth to ensure backend account creation
+            await initializeAuth();
+        })();
 
         // Set a timeout to handle cases where auth doesn't complete
         const timeout = setTimeout(() => {

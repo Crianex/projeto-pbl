@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { Pair } from '../config/utils';
 import { supabase } from '../config/supabase_wrapper';
 import { createControllerLogger } from '../utils/controller_logger';
-import { MediaCalculator } from '../utils/utils';
+import { MediaCalculator } from '../utils/media_utils';
 import { Utils } from '../config/utils';
 
 const logger = createControllerLogger('Avaliacao', 'Controller');

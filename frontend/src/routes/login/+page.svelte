@@ -17,6 +17,13 @@
     let errorMessage = "";
 
     onMount(() => {
+        console.log("Current user store", currentUser);
+        console.log("Current user", $currentUser);
+
+        if (!$currentUser) {
+            checkingSession = false;
+        }
+
         // Check if we're already logged in
         const unsubscribe = currentUser.subscribe((user) => {
             // Only stop checking when we get a definitive answer (user or null)

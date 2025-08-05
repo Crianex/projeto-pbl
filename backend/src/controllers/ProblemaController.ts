@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { Pair } from '../config/utils';
 import { supabase } from '../config/supabase_wrapper';
 import { createControllerLogger } from '../utils/controller_logger';
-import { MediaCalculator } from '../utils/utils';
+import { MediaCalculator } from '../utils/media_utils';
 import { Utils } from '../config/utils';
 
 const logger = createControllerLogger('Problema', 'Controller');
@@ -161,10 +161,10 @@ export const ProblemaController: EndpointController = {
         }),
 
         'create': new Pair(RequestType.POST, async (req: Request, res: Response) => {
-            // Require professor authentication for creating problemas
-            const authUser = await Utils.validateProfessor(req);
+            // Require professor or coordenador authentication for creating problemas
+            const authUser = await Utils.validateProfessorOrCoordenador(req);
             if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+                return res.status(401).json({ error: 'Unauthorized: Valid professor or coordenador authentication required' });
             }
 
             const requiredFields = ['nome_problema', 'id_turma', 'criterios', 'definicao_arquivos_de_avaliacao', 'data_e_hora_criterios_e_arquivos'];
@@ -202,10 +202,10 @@ export const ProblemaController: EndpointController = {
         }),
 
         'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
-            // Require professor authentication for updating problemas
-            const authUser = await Utils.validateProfessor(req);
+            // Require professor or coordenador authentication for updating problemas
+            const authUser = await Utils.validateProfessorOrCoordenador(req);
             if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+                return res.status(401).json({ error: 'Unauthorized: Valid professor or coordenador authentication required' });
             }
 
             const { id_problema } = req.query;
@@ -250,10 +250,10 @@ export const ProblemaController: EndpointController = {
         }),
 
         'delete': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
-            // Require professor authentication for deleting problemas
-            const authUser = await Utils.validateProfessor(req);
+            // Require professor or coordenador authentication for deleting problemas
+            const authUser = await Utils.validateProfessorOrCoordenador(req);
             if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+                return res.status(401).json({ error: 'Unauthorized: Valid professor or coordenador authentication required' });
             }
 
             const { id_problema } = req.query;
