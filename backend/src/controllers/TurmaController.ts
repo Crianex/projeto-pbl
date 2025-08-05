@@ -136,10 +136,10 @@ export const TurmaController: EndpointController = {
         }),
 
         'create': new Pair(RequestType.POST, async (req: Request, res: Response) => {
-            // Require professor authentication for creating turmas
-            const authUser = await Utils.validateProfessor(req);
+            // Require professor or coordenador authentication for creating turmas
+            const authUser = await Utils.validateProfessorOrCoordenador(req);
             if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+                return res.status(401).json({ error: 'Unauthorized: Valid professor or coordenador authentication required' });
             }
 
             const { nome_turma, id_professor, alunos } = req.body;
@@ -186,10 +186,10 @@ export const TurmaController: EndpointController = {
         }),
 
         'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
-            // Require professor authentication for updating turmas
-            const authUser = await Utils.validateProfessor(req);
+            // Require professor or coordenador authentication for updating turmas
+            const authUser = await Utils.validateProfessorOrCoordenador(req);
             if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+                return res.status(401).json({ error: 'Unauthorized: Valid professor or coordenador authentication required' });
             }
 
             const { id_turma } = req.query;
@@ -383,10 +383,10 @@ export const TurmaController: EndpointController = {
         }),
 
         'delete': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
-            // Require professor authentication for deleting turmas
-            const authUser = await Utils.validateProfessor(req);
+            // Require professor or coordenador authentication for deleting turmas
+            const authUser = await Utils.validateProfessorOrCoordenador(req);
             if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+                return res.status(401).json({ error: 'Unauthorized: Valid professor or coordenador authentication required' });
             }
 
             const { id_turma } = req.query;
@@ -404,10 +404,10 @@ export const TurmaController: EndpointController = {
         }),
 
         'add-aluno': new Pair(RequestType.POST, async (req: Request, res: Response) => {
-            // Require professor authentication for adding alunos to turmas
-            const authUser = await Utils.validateProfessor(req);
+            // Require professor or coordenador authentication for adding alunos to turmas
+            const authUser = await Utils.validateProfessorOrCoordenador(req);
             if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+                return res.status(401).json({ error: 'Unauthorized: Valid professor or coordenador authentication required' });
             }
 
             const { id_turma, id_aluno } = req.body;
@@ -429,10 +429,10 @@ export const TurmaController: EndpointController = {
         }),
 
         'remove-aluno': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
-            // Require professor authentication for removing alunos from turmas
-            const authUser = await Utils.validateProfessor(req);
+            // Require professor or coordenador authentication for removing alunos from turmas
+            const authUser = await Utils.validateProfessorOrCoordenador(req);
             if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+                return res.status(401).json({ error: 'Unauthorized: Valid professor or coordenador authentication required' });
             }
 
             const { id_turma, id_aluno } = req.query;
