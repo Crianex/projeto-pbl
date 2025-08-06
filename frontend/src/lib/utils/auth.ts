@@ -210,27 +210,25 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     }
 
     if (event === 'SIGNED_IN' && session) {
-        try {
-            const user = await createOrGetUser(session);
+        createOrGetUser(session).then((user) => {
             logger.info('User created/found in auth state change:', { userType: user?.tipo, userId: user?.id });
             currentUser.set(user);
-        } catch (error) {
+        }).catch((error) => {
             logger.error('Error handling sign in:', error);
             currentUser.set(null);
-        }
+        });
     } else if (event === 'SIGNED_OUT') {
         currentUser.set(null);
     } else if (event === 'INITIAL_SESSION') {
         // Handle initial session check
         if (session) {
-            try {
-                const user = await createOrGetUser(session);
+            createOrGetUser(session).then((user) => {
                 logger.info('User created/found in initial session:', { userType: user?.tipo, userId: user?.id });
                 currentUser.set(user);
-            } catch (error) {
+            }).catch((error) => {
                 logger.error('Error handling initial session:', error);
                 currentUser.set(null);
-            }
+            });
         } else {
             currentUser.set(null);
         }

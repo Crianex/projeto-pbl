@@ -181,7 +181,7 @@
     async function fetchProfessores() {
         try {
             loadingProfessores = true;
-            const data = await ProfessoresService.list(true);
+            const data = await ProfessoresService.list();
             professores = data.sort((a, b) =>
                 (a.nome_completo || "").localeCompare(
                     b.nome_completo || "",
@@ -217,15 +217,14 @@
                 if (selectedProfessorId) {
                     allTurmas = await TurmasService.getAll(
                         selectedProfessorId,
-                        true,
                     );
                 } else {
                     // Get all turmas without professor filter
-                    allTurmas = await TurmasService.getAll(null, true);
+                    allTurmas = await TurmasService.getAll(null);
                 }
             } else {
                 // Professors see all turmas (existing behavior)
-                allTurmas = await TurmasService.getAll(user.id, true);
+                allTurmas = await TurmasService.getAll(user.id);
             }
 
             // Debug logging (can be removed in production)

@@ -10,7 +10,6 @@
     import DateRangeInput from "$lib/components/DateRangeInput.svelte";
     import ArquivosForm from "$lib/components/ArquivosForm.svelte";
     import { api } from "$lib/utils/api";
-    import { problemaStore } from "$lib/utils/stores";
     import { Parsers } from "$lib/interfaces/parsers";
     import type {
         CriteriosGroup,
@@ -177,9 +176,7 @@
                 ),
             };
 
-            const newProblema = await ProblemasService.create(payload);
-
-            problemaStore.update((problemas) => [...problemas, newProblema]);
+            await ProblemasService.create(payload);
 
             await goto(`/professor/turmas/${turmaId}/problemas`);
         } catch (err) {

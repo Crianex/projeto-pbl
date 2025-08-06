@@ -116,7 +116,7 @@
                 );
             }
         });
-
+        /* 
         // Handle auth errors
         supabase.auth.onAuthStateChange((event, session) => {
             logger.info("Supabase auth state change", {
@@ -158,7 +158,7 @@
                     hasSession: !!session,
                 });
             }
-        });
+        }); */
 
         // Log initial auth state
         supabase.auth.getSession().then(({ data, error }) => {
