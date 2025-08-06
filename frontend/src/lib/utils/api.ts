@@ -69,7 +69,7 @@ async function fetchWithLogging(url: string, options: RequestOptions): Promise<a
     const fullUrl = `${API_URL}${url}`;
     const startTime = Date.now();
 
-    logger.http(`API Request: ${options.method} ${url}`);
+    //logger.http(`API Request: ${options.method} ${url}`);
 
     try {
         // Prepare headers with authentication
@@ -104,11 +104,11 @@ async function fetchWithLogging(url: string, options: RequestOptions): Promise<a
             );
         }
 
-        logger.http(`API Response: ${options.method} ${url}`, {
+        /* logger.http(`API Response: ${options.method} ${url}`, {
             status: response.status,
             duration,
             data
-        });
+        }); */
 
         return data;
     } catch (error) {

@@ -215,9 +215,7 @@
             if (isCoordenador(user)) {
                 // Coordenadores can see all turmas, optionally filtered by professor
                 if (selectedProfessorId) {
-                    allTurmas = await TurmasService.getAll(
-                        selectedProfessorId,
-                    );
+                    allTurmas = await TurmasService.getAll(selectedProfessorId);
                 } else {
                     // Get all turmas without professor filter
                     allTurmas = await TurmasService.getAll(null);
@@ -273,13 +271,16 @@
             Array.isArray(turmas),
         );
 
-        // Just select the first turma without loading problemas
+        // Select the first turma and load its problemas
         if (turmas.length > 0) {
             selectedTurma = turmas[0];
-            problemas = [];
-            selectedProblema = null;
-            avaliacoes = [];
-            evaluationMatrix = {};
+            await fetchProblemas(selectedTurma.id_turma);
+
+            // Auto-select the first problema if available
+            if (problemas.length > 0) {
+                selectedProblema = problemas[0];
+                await fetchAvaliacoes(selectedProblema.id_problema);
+            }
         }
     }
 
@@ -295,9 +296,16 @@
                     turmaId,
                 );
                 problemas = problemasCache[turmaId];
-                selectedProblema = null;
-                avaliacoes = [];
-                evaluationMatrix = {};
+
+                // Auto-select first problem if this is the initial load (no selectedProblema yet)
+                if (!selectedProblema && problemas.length > 0) {
+                    selectedProblema = problemas[0];
+                    await fetchAvaliacoes(selectedProblema.id_problema);
+                } else {
+                    selectedProblema = null;
+                    avaliacoes = [];
+                    evaluationMatrix = {};
+                }
                 return;
             }
 
@@ -324,10 +332,15 @@
             problemasCache[turmaId] = sortedData;
             problemas = sortedData;
 
-            // Don't auto-select first problem - let user choose
-            selectedProblema = null;
-            avaliacoes = [];
-            evaluationMatrix = {};
+            // Auto-select first problem if this is the initial load (no selectedProblema yet)
+            if (!selectedProblema && sortedData.length > 0) {
+                selectedProblema = sortedData[0];
+                await fetchAvaliacoes(selectedProblema.id_problema);
+            } else {
+                selectedProblema = null;
+                avaliacoes = [];
+                evaluationMatrix = {};
+            }
         } catch (err) {
             error =
                 err instanceof Error

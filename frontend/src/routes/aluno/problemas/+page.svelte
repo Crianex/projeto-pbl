@@ -38,23 +38,12 @@
         studentId: number,
     ): Promise<number | null> {
         try {
-            console.log(
-                `Calculating average for student ${studentId} in problem ${problemaId}`,
-            );
-
             // Use AvaliacoesService to get evaluations for this problem
             const avaliacoes = await AvaliacoesService.getByProblema(
                 problemaId.toString(),
             );
 
-            console.log(
-                `Found ${avaliacoes?.length || 0} total evaluations for problem ${problemaId}`,
-            );
-
             if (!avaliacoes || !Array.isArray(avaliacoes)) {
-                console.log(
-                    `No valid evaluations found for problem ${problemaId}`,
-                );
                 return null;
             }
 
@@ -66,14 +55,7 @@
                     !av.id_professor, // Exclude professor evaluations for now
             );
 
-            console.log(
-                `Found ${receivedEvaluations.length} evaluations received by student ${studentId} in problem ${problemaId}`,
-            );
-
             if (receivedEvaluations.length === 0) {
-                console.log(
-                    `No evaluations received by student ${studentId} in problem ${problemaId}`,
-                );
                 return null;
             }
 
@@ -84,9 +66,6 @@
             receivedEvaluations.forEach((evaluation: AvaliacaoModel) => {
                 const sum =
                     MediaCalculator.calculateRawSumFromAvaliacao(evaluation);
-                console.log(
-                    `Evaluation ${evaluation.id_avaliacao}: sum = ${sum}`,
-                );
                 if (sum > 0) {
                     totalSum += sum;
                     validEvaluations++;
@@ -97,9 +76,6 @@
                 validEvaluations > 0
                     ? Number((totalSum / validEvaluations).toFixed(2))
                     : null;
-            console.log(
-                `Final average for student ${studentId} in problem ${problemaId}: ${average} (from ${validEvaluations} valid evaluations)`,
-            );
             return average;
         } catch (error) {
             console.error("Error calculating student average:", error);
@@ -122,18 +98,7 @@
             problema.data_e_hora_criterios_e_arquivos,
         );
 
-        console.log(
-            `Checking shouldShowStudentAverage for problem ${problema.id_problema}:`,
-            {
-                timeRanges: timeRanges.length,
-                now: now.toISOString(),
-            },
-        );
-
         if (timeRanges.length === 0) {
-            console.log(
-                `Problem ${problema.id_problema}: No time ranges defined`,
-            );
             shouldShowCache.set(problema.id_problema, false);
             return false; // No time ranges defined
         }
@@ -143,19 +108,10 @@
             if (!range.data_e_hora_fim) return false;
             const endTime = new Date(range.data_e_hora_fim);
             const timeDiff = now.getTime() - endTime.getTime();
-            console.log(`Problem ${problema.id_problema} range end:`, {
-                endTime: endTime.toISOString(),
-                timeDiff: timeDiff,
-                oneHourInMs: oneHourInMs,
-                hasEnded: timeDiff >= oneHourInMs,
-            });
             return timeDiff >= oneHourInMs;
         });
 
         if (!hasEndedTimeRange) {
-            console.log(
-                `Problem ${problema.id_problema}: No time range has ended more than 1 hour ago`,
-            );
             shouldShowCache.set(problema.id_problema, false);
             return false; // No time range has ended more than 1 hour ago
         }
@@ -167,20 +123,10 @@
             const startTime = new Date(range.data_e_hora_inicio);
             const endTime = new Date(range.data_e_hora_fim);
             const isActive = now >= startTime && now <= endTime;
-            console.log(`Problem ${problema.id_problema} range active check:`, {
-                startTime: startTime.toISOString(),
-                endTime: endTime.toISOString(),
-                isActive: isActive,
-            });
             return isActive;
         });
 
         const shouldShow = !hasActiveTimeRange;
-        console.log(`Problem ${problema.id_problema} final result:`, {
-            hasEndedTimeRange,
-            hasActiveTimeRange,
-            shouldShow,
-        });
 
         // Cache the result
         shouldShowCache.set(problema.id_problema, shouldShow);
@@ -245,7 +191,6 @@
     async function fetchProblems() {
         // Prevent multiple simultaneous calls
         if (isFetching) {
-            console.log("fetchProblems already in progress, skipping");
             return;
         }
 
@@ -263,7 +208,6 @@
             // The user data should already be up to date from auth initialization
             if (!currentUserData?.id || !currentUserData?.id_turma) {
                 loading = false;
-                console.log("No user data or turma ID available");
                 return;
             }
 
