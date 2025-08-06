@@ -10,7 +10,7 @@ export const CoordenadoresService = {
     checkEmail,
 };
 
-async function getById(id: string, forceRefresh = false): Promise<CoordenadorModel> {
+async function getById(id: string): Promise<CoordenadorModel> {
     try {
         logger.info(`Fetching coordenador ${id} from API`);
         const data = await api.get(`/coordenadores/get?id_coordenador=${id}`);

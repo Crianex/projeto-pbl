@@ -1,13 +1,26 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
-    import type { TurmaModel, ProblemaModel } from "$lib/interfaces/interfaces";
+    import type {
+        TurmaModel,
+        ProblemaModel,
+        ProfessorModel,
+    } from "$lib/interfaces/interfaces";
 
     export let turmas: TurmaModel[] = [];
     export let selectedTurma: TurmaModel | null = null;
     export let problemas: ProblemaModel[] = [];
     export let selectedProblema: ProblemaModel | null = null;
+    export let professores: ProfessorModel[] = [];
+    export let selectedProfessorId: number | null = null;
+    export let isCoordenador: boolean = false;
 
     const dispatch = createEventDispatcher();
+
+    function handleProfessorSelect(event: Event) {
+        const target = event.target as HTMLSelectElement;
+        const professorId = parseInt(target.value);
+        dispatch("professorSelect", professorId);
+    }
 
     function handleTurmaSelect(event: Event) {
         const target = event.target as HTMLSelectElement;
@@ -23,6 +36,25 @@
 </script>
 
 <div class="filters-section">
+    {#if isCoordenador}
+        <div class="filter-group">
+            <label for="professor-select">Professor:</label>
+            <select
+                id="professor-select"
+                value={selectedProfessorId || ""}
+                on:change={handleProfessorSelect}
+                class="filter-select"
+            >
+                <option value="">Todos os professores</option>
+                {#each professores as professor}
+                    <option value={professor.id}>
+                        {professor.nome_completo}
+                    </option>
+                {/each}
+            </select>
+        </div>
+    {/if}
+
     <div class="filter-group">
         <label for="turma-select">Turma:</label>
         <select

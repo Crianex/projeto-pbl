@@ -25,7 +25,7 @@
     let deleteConfirmOpen = false;
     let turmaToDelete: TurmaModel | null = null;
 
-    async function fetchTurmas(forceRefresh = false) {
+    async function fetchTurmas() {
         try {
             loading = true;
             error = null;
@@ -48,7 +48,7 @@
             });
 
             // For coordenador, fetch all turmas (not just for a specific professor)
-            const fetchPromise = TurmasService.getAll(null, forceRefresh);
+            const fetchPromise = TurmasService.getAll(null);
             const fetchedTurmas = await Promise.race([
                 fetchPromise,
                 timeoutPromise,
@@ -63,10 +63,6 @@
             logger.error("Error fetching turmas:", err);
             // Ensure loading is set to false on error
             loading = false;
-            // Clear cache on error to prevent stuck loading state
-            if (err.message === "Request timeout") {
-                TurmasService.invalidateCache();
-            }
         } finally {
             loading = false;
         }
@@ -97,7 +93,7 @@
         try {
             loading = true;
             await TurmasService.delete(turmaToDelete.id_turma.toString());
-            await fetchTurmas(true);
+            await fetchTurmas();
             closeDeleteConfirm();
         } catch (err: any) {
             error = err.message || "Failed to delete turma";
@@ -160,7 +156,7 @@
         loadingMessage="Carregando turmas..."
         emptyMessage="Nenhuma turma encontrada."
         showRetryButton={true}
-        onRetry={() => fetchTurmas(true)}
+        onRetry={() => fetchTurmas()}
     >
         <svelte:fragment slot="default">
             {#each paginatedTurmas as turma}

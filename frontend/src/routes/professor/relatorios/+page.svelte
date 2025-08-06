@@ -1,15 +1,17 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { currentUser, isProfessor } from "$lib/utils/auth";
+    import { currentUser, isCoordenador, isProfessor } from "$lib/utils/auth";
     import { TurmasService } from "$lib/services/turmas_service";
     import { ProblemasService } from "$lib/services/problemas_service";
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
+    import { ProfessoresService } from "$lib/services/professores_service";
     import { MediaCalculator, PDFExportUtils } from "$lib/utils/utils";
     import type {
         TurmaModel,
         AlunoModel,
         AvaliacaoModel,
         ProblemaModel,
+        ProfessorModel,
     } from "$lib/interfaces/interfaces";
     import Button from "$lib/components/Button.svelte";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
@@ -30,6 +32,11 @@
     let avaliacoes: AvaliacaoModel[] = [];
     let loading = true;
     let error: string | null = null;
+
+    // Professor filter for coordenadores
+    let professores: ProfessorModel[] = [];
+    let selectedProfessorId: number | null = null;
+    let loadingProfessores = false;
 
     // Cache for loaded data
     let problemasCache: { [turmaId: number]: ProblemaModel[] } = {};
@@ -171,6 +178,25 @@
         }
     }
 
+    async function fetchProfessores() {
+        try {
+            loadingProfessores = true;
+            const data = await ProfessoresService.list(true);
+            professores = data.sort((a, b) =>
+                (a.nome_completo || "").localeCompare(
+                    b.nome_completo || "",
+                    "pt-BR",
+                    { sensitivity: "base" },
+                ),
+            );
+        } catch (err) {
+            console.error("Error fetching professores:", err);
+            professores = [];
+        } finally {
+            loadingProfessores = false;
+        }
+    }
+
     async function fetchTurmas() {
         try {
             loading = true;
@@ -178,12 +204,29 @@
 
             const user = $currentUser;
 
-            if (!user || !isProfessor(user)) {
-                throw new Error("User not authenticated or not a professor");
+            if (!user || (!isProfessor(user) && !isCoordenador(user))) {
+                throw new Error(
+                    "User not authenticated or not a professor/coordenador",
+                );
             }
 
-            // Use TurmasService.getAll() with the current professor's ID
-            const allTurmas = await TurmasService.getAll(user.id, true);
+            let allTurmas: TurmaModel[] = [];
+
+            if (isCoordenador(user)) {
+                // Coordenadores can see all turmas, optionally filtered by professor
+                if (selectedProfessorId) {
+                    allTurmas = await TurmasService.getAll(
+                        selectedProfessorId,
+                        true,
+                    );
+                } else {
+                    // Get all turmas without professor filter
+                    allTurmas = await TurmasService.getAll(null, true);
+                }
+            } else {
+                // Professors see all turmas (existing behavior)
+                allTurmas = await TurmasService.getAll(user.id, true);
+            }
 
             // Debug logging (can be removed in production)
             console.log("Debug fetchTurmas:", {
@@ -191,34 +234,26 @@
                 user_id: user?.id,
                 user_email: user?.email,
                 isProfessor: user ? isProfessor(user) : false,
+                isCoordenador: user ? isCoordenador(user) : false,
+                selectedProfessorId,
                 allTurmas: allTurmas,
                 allTurmasType: typeof allTurmas,
                 isArray: Array.isArray(allTurmas),
             });
 
-            if (user && isProfessor(user)) {
-                // Show all turmas (consistent with /professor/turmas/ page behavior)
-                // Note: The application allows professors to see all turmas, not just their own
-                // This enables collaboration and administrative oversight
-                turmas = allTurmas.sort((a, b) =>
-                    (a.nome_turma || "").localeCompare(
-                        b.nome_turma || "",
-                        "pt-BR",
-                        {
-                            sensitivity: "base",
-                        },
-                    ),
-                );
+            // Sort turmas alphabetically
+            turmas = allTurmas.sort((a, b) =>
+                (a.nome_turma || "").localeCompare(
+                    b.nome_turma || "",
+                    "pt-BR",
+                    {
+                        sensitivity: "base",
+                    },
+                ),
+            );
 
-                // Auto-select first turma that has problems
-                await autoSelectFirstTurmaWithProblems();
-            } else {
-                turmas = [];
-                error =
-                    user === undefined
-                        ? "Loading user information..."
-                        : "Access denied: You must be a professor to view reports";
-            }
+            // Auto-select first turma that has problems
+            await autoSelectFirstTurmaWithProblems();
         } catch (err) {
             error =
                 err instanceof Error ? err.message : "Failed to fetch turmas";
@@ -467,6 +502,21 @@
         }
     }
 
+    async function handleProfessorSelect(event: CustomEvent) {
+        const professorId = event.detail;
+        selectedProfessorId = professorId;
+
+        // Reset selections when professor changes
+        selectedTurma = null;
+        selectedProblema = null;
+        problemas = [];
+        avaliacoes = [];
+        evaluationMatrix = {};
+
+        // Fetch turmas for the selected professor
+        await fetchTurmas();
+    }
+
     onMount(() => {
         // Test MediaCalculator with sample data
         console.log("Testing MediaCalculator:");
@@ -488,6 +538,11 @@
                 hasLoaded = true;
                 console.log("onMount - calling fetchTurmas");
                 fetchTurmas();
+
+                // Fetch professores if user is coordenador
+                if (isCoordenador(user)) {
+                    fetchProfessores();
+                }
             }
         });
 
@@ -921,8 +976,12 @@
             {selectedTurma}
             {problemas}
             {selectedProblema}
+            {professores}
+            {selectedProfessorId}
+            isCoordenador={$currentUser ? isCoordenador($currentUser) : false}
             on:turmaSelect={handleTurmaSelect}
             on:problemaSelect={handleProblemaSelect}
+            on:professorSelect={handleProfessorSelect}
         />
 
         <!--  {#if selectedProblema}

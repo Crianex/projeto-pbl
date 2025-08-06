@@ -35,7 +35,7 @@ export function isCoordenador(user: BaseUser | null): user is CoordenadorModel {
     return user?.tipo === 'coordenador';
 }
 
-export async function protectProfessorRoute(user: BaseUser | null) {
+export async function protectProfessorRoute(user: BaseUser | null | undefined) {
     if (!user || (!isProfessor(user) && !isCoordenador(user))) {
         logger.info('User is not a professor, redirecting to login');
         await redirect(303, '/login');
@@ -44,7 +44,7 @@ export async function protectProfessorRoute(user: BaseUser | null) {
     return true;
 }
 
-export async function protectAlunoRoute(user: BaseUser | null) {
+export async function protectAlunoRoute(user: BaseUser | null | undefined) {
     if (!user || (!isAluno(user) && !isCoordenador(user))) {
         logger.info('User is not an aluno, redirecting to login');
         await redirect(303, '/login');

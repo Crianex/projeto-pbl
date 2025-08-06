@@ -219,7 +219,7 @@
         });
     }
 
-    async function loadAlunoDetails(forceRefresh = false) {
+    async function loadAlunoDetails() {
         try {
             loading = true;
             error = null;
@@ -235,10 +235,10 @@
             });
 
             const fetchPromise = Promise.all([
-                ProblemasService.getById(id_problema, forceRefresh),
-                AlunosService.getById(id_aluno, forceRefresh),
-                TurmasService.getById(id, forceRefresh),
-                AvaliacoesService.getByProblema(id_problema, forceRefresh),
+                ProblemasService.getById(id_problema),
+                AlunosService.getById(id_aluno),
+                TurmasService.getById(id),
+                AvaliacoesService.getByProblema(id_problema),
             ]);
 
             const [problemaData, alunoData, turmaData, avaliacoesData] =
@@ -315,11 +315,6 @@
             error = e.message || "Erro ao carregar os dados";
             // Ensure loading is set to false on error
             loading = false;
-            // Clear cache on error to prevent stuck loading state
-            if (e.message === "Request timeout") {
-                // Invalidate relevant caches
-                AvaliacoesService.invalidateCache();
-            }
         } finally {
             loading = false;
         }
@@ -341,7 +336,7 @@
             $page.url.pathname.includes("/[id_aluno]") &&
             !loading
         ) {
-            loadAlunoDetails(true);
+            loadAlunoDetails();
         }
     }
 
@@ -354,7 +349,7 @@
         (!avaliacaoProfessor || avaliacoesEnviadas.length === 0)
     ) {
         // Only refresh if we're on the aluno page, not loading, and have no data
-        loadAlunoDetails(true);
+        loadAlunoDetails();
     }
 
     function formatNotas(notas: string | object | null) {

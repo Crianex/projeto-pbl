@@ -2,7 +2,6 @@ import type { AlunoDB, AlunoModel, AvaliacaoDB, AvaliacaoModel, AvaliacaoNota, P
 import { Parsers } from "$lib/interfaces/parsers";
 import { api } from "$lib/utils/api";
 import { logger } from "$lib/utils/logger";
-import { avaliacoesCache, autoInvalidate, triggerPageRefresh } from "$lib/utils/cache";
 
 export const AvaliacoesService = {
     getAvaliacoes,
@@ -10,7 +9,6 @@ export const AvaliacoesService = {
     create,
     update,
     delete: deleteAvaliacao,
-    invalidateCache,
 }
 
 async function getAvaliacoes(id_problema: number): Promise<AvaliacaoModel[]> {
@@ -38,32 +36,17 @@ async function getAvaliacoes(id_problema: number): Promise<AvaliacaoModel[]> {
     return avaliacoes;
 }
 
-async function getByProblema(problemaId: string, forceRefresh = false): Promise<AvaliacaoModel[]> {
-    const cacheKey = `problema_${problemaId}`;
-
-    if (!forceRefresh && avaliacoesCache.isFresh(cacheKey)) {
-        const cached = avaliacoesCache.getCached(cacheKey);
-        if (cached) {
-            logger.info(`Returning cached avaliacoes for problema ${problemaId}`);
-            return cached;
-        }
-    }
-
-
-
+async function getByProblema(problemaId: string): Promise<AvaliacaoModel[]> {
     try {
-        avaliacoesCache.setLoading(cacheKey, true);
         logger.info(`Fetching avaliacoes for problema ${problemaId} from API`);
         const data = await api.get(`/avaliacoes/list?id_problema=${problemaId}`);
         // parse data to AvaliacaoModel[]
         const parsedData = data.map((avaliacao: AvaliacaoDB) =>
             Parsers.parseAvaliacao(avaliacao)
         );
-        avaliacoesCache.setData(cacheKey, parsedData);
         return parsedData;
     } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Failed to fetch avaliacoes';
-        avaliacoesCache.setError(cacheKey, errorMsg);
         throw error;
     }
 }
@@ -86,10 +69,6 @@ async function create(avaliacaoData: {
             await api.post('/problemas/add-avaliacao', avaliacaoData);
         }
 
-        // Auto-invalidate related caches
-        await autoInvalidate.avaliacaoCreated(avaliacaoData.id_problema.toString());
-        triggerPageRefresh.avaliacoes();
-
         logger.info('Avaliacao created successfully', { problemaId: avaliacaoData.id_problema });
     } catch (error) {
         logger.error('Failed to create avaliacao', error);
@@ -105,10 +84,6 @@ async function update(id: string, avaliacaoData: {
         logger.info(`Updating avaliacao ${id}`, avaliacaoData);
         await api.put(`/avaliacoes/update?id_avaliacao=${id}`, avaliacaoData);
 
-        // Auto-invalidate related caches
-        await autoInvalidate.avaliacaoUpdated(avaliacaoData.id_problema.toString());
-        triggerPageRefresh.avaliacoes();
-
         logger.info('Avaliacao updated successfully', { id });
     } catch (error) {
         logger.error('Failed to update avaliacao', error);
@@ -121,22 +96,10 @@ async function deleteAvaliacao(id: string, problemaId: string): Promise<void> {
         logger.info(`Deleting avaliacao ${id}`);
         await api.delete(`/avaliacoes/delete?id_avaliacao=${id}`);
 
-        // Auto-invalidate related caches
-        await autoInvalidate.avaliacaoDeleted(problemaId);
-        triggerPageRefresh.avaliacoes();
-
         logger.info('Avaliacao deleted successfully', { id });
     } catch (error) {
         logger.error('Failed to delete avaliacao', error);
         throw error;
-    }
-}
-
-function invalidateCache(problemaId?: string) {
-    if (problemaId) {
-        avaliacoesCache.clear(`problema_${problemaId}`);
-    } else {
-        avaliacoesCache.clearAll();
     }
 }
 

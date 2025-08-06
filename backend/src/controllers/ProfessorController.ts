@@ -11,10 +11,10 @@ export const ProfessorController: EndpointController = {
     name: 'professores',
     routes: {
         'list': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            // Require professor authentication for listing professores
-            const authUser = await Utils.validateProfessor(req);
+            // Require professor or coordenador authentication for listing professores
+            const authUser = await Utils.validateProfessorOrCoordenador(req);
             if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+                return res.status(401).json({ error: 'Unauthorized: Valid professor or coordenador authentication required' });
             }
 
             const { data, error } = await supabase
