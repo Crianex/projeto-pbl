@@ -7,7 +7,7 @@
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
     import { logger } from "$lib/utils/logger";
-    import { currentUser } from "$lib/utils/auth";
+    import { currentUser, logout } from "$lib/utils/auth";
     import PageHeader from "$lib/components/PageHeader.svelte";
 
     let email = "";
@@ -15,6 +15,8 @@
     let loading = false;
     let checkingSession = true; // New state for initial session check
     let errorMessage = "";
+    let showStuckActions = false;
+    let stuckTimer: ReturnType<typeof setTimeout> | undefined;
 
     onMount(() => {
         console.log("Current user store", currentUser);
@@ -45,11 +47,21 @@
                     logger.info("User not logged in, showing login form");
                 }
                 checkingSession = false;
+                if (stuckTimer) clearTimeout(stuckTimer);
+                showStuckActions = false;
             }
         });
 
+        // If session verification takes too long, offer a logout option
+        stuckTimer = setTimeout(() => {
+            if (checkingSession) {
+                showStuckActions = true;
+            }
+        }, 3000);
+
         return () => {
             unsubscribe();
+            if (stuckTimer) clearTimeout(stuckTimer);
         };
     });
 
@@ -109,12 +121,40 @@
 
 {#if checkingSession}
     <LoadingSpinner size="lg" color="primary" message="Verificando sessão..." />
+    {#if showStuckActions}
+        <div class="stuck-message">
+            <p>
+                Está demorando para verificar sua sessão. Você pode tentar sair
+                e entrar novamente.
+            </p>
+            <div class="stuck-actions">
+                <Button
+                    type="button"
+                    variant="secondary"
+                    on:click={logout}
+                    disabled={loading}
+                >
+                    Sair da conta
+                </Button>
+            </div>
+        </div>
+    {/if}
 {:else}
     <PageHeader title="Login" backUrl="/" />
 
     {#if errorMessage}
         <div class="error-message">
             {errorMessage}
+            <div class="error-actions">
+                <Button
+                    type="button"
+                    variant="secondary"
+                    on:click={logout}
+                    disabled={loading}
+                >
+                    Sair da conta
+                </Button>
+            </div>
         </div>
     {/if}
 
@@ -310,6 +350,28 @@
         font-weight: 500;
         box-shadow: 0 4px 12px var(--color-shadow-error);
         text-align: center;
+    }
+
+    .error-actions {
+        margin-top: 0.75rem;
+        display: flex;
+        justify-content: center;
+    }
+
+    .stuck-message {
+        margin-top: 1rem;
+        background: var(--color-warning-background, #fff8e1);
+        color: var(--color-text-primary);
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid var(--color-warning-border, #ffe082);
+        text-align: center;
+    }
+
+    .stuck-actions {
+        margin-top: 0.75rem;
+        display: flex;
+        justify-content: center;
     }
 
     .google-icon {
