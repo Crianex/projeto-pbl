@@ -8,9 +8,15 @@
     import SearchAlunoDialog from "../SearchAlunoDialog.svelte";
     import Dialog from "$lib/components/Dialog.svelte";
     import { TurmasService } from "$lib/services/turmas_service";
-    import type { AlunoModel } from "$lib/interfaces/interfaces";
+    import { ProfessoresService } from "$lib/services/professores_service";
+    import { currentUser } from "$lib/utils/auth";
+    import type {
+        AlunoModel,
+        ProfessorModel,
+    } from "$lib/interfaces/interfaces";
     import PageHeader from "$lib/components/PageHeader.svelte";
     import Input from "$lib/components/Input.svelte";
+    import Select from "$lib/components/Select.svelte";
     import TrashIcon from "$lib/components/TrashIcon.svelte";
     import { toastStore } from "$lib/utils/toast";
 
@@ -26,6 +32,10 @@
     };
     let alunosMatriculados: AlunoModel[] = [];
     let originalAlunosMatriculados: AlunoModel[] = [];
+    let professores: ProfessorModel[] = [];
+    let professoresLoading = false;
+    let professoresLoaded = false;
+    let selectedProfessorId: string = "";
     let loading = true;
     let saving = false;
     let error: string | null = null;
@@ -46,6 +56,7 @@
                 id_professor: turmaData.id_professor?.toString() || "",
             };
             originalTurma = { ...turma };
+            selectedProfessorId = turma.id_professor;
 
             if (turmaData.alunos) {
                 // Sort alunos alphabetically by name
@@ -69,6 +80,36 @@
         }
     });
 
+    async function loadProfessores() {
+        try {
+            professoresLoading = true;
+            const list = await ProfessoresService.list();
+            professores = list.sort((a, b) =>
+                (a.nome_completo || "").localeCompare(
+                    b.nome_completo || "",
+                    "pt-BR",
+                    { sensitivity: "base" },
+                ),
+            );
+            if (!selectedProfessorId && professores.length > 0) {
+                selectedProfessorId = String(professores[0].id);
+            }
+            professoresLoaded = true;
+        } catch (err: any) {
+            error = err.message || "Erro ao carregar professores";
+        } finally {
+            professoresLoading = false;
+        }
+    }
+
+    $: if (
+        $currentUser?.tipo === "coordenador" &&
+        !professoresLoaded &&
+        !professoresLoading
+    ) {
+        loadProfessores();
+    }
+
     function handleSave() {
         saveChanges();
     }
@@ -77,6 +118,7 @@
         // Reset to original values
         turma = { ...originalTurma };
         alunosMatriculados = [...originalAlunosMatriculados];
+        selectedProfessorId = originalTurma.id_professor;
         hasUnsavedChanges = false;
         goto("/professor/turmas");
     }
@@ -86,9 +128,17 @@
             saving = true;
             error = null;
 
+            if ($currentUser?.tipo === "coordenador" && !selectedProfessorId) {
+                error = "Selecione um professor";
+                return;
+            }
+
             const payload = {
                 nome_turma: turma.nome_turma,
-                id_professor: turma.id_professor,
+                id_professor:
+                    $currentUser?.tipo === "coordenador"
+                        ? Number(selectedProfessorId)
+                        : turma.id_professor,
                 alunos: alunosMatriculados.map((aluno) => aluno.id),
             };
 
@@ -140,8 +190,11 @@
                 (aluno, index) =>
                     originalAlunosMatriculados[index]?.id !== aluno.id,
             );
+        const professorChanged =
+            $currentUser?.tipo === "coordenador" &&
+            selectedProfessorId !== (originalTurma.id_professor || "");
 
-        hasUnsavedChanges = nameChanged || alunosChanged;
+        hasUnsavedChanges = nameChanged || alunosChanged || !!professorChanged;
     }
 
     function getChangesSummary() {
@@ -154,7 +207,15 @@
                     (aluno, index) =>
                         originalAlunosMatriculados[index]?.id !== aluno.id,
                 ),
+            professorChanged:
+                $currentUser?.tipo === "coordenador" &&
+                selectedProfessorId !== (originalTurma.id_professor || ""),
         };
+    }
+
+    function handleUndoProfessorChange() {
+        selectedProfessorId = originalTurma.id_professor;
+        checkForChanges();
     }
 
     function handleUndoNameChange() {
@@ -195,6 +256,24 @@
                     required
                 />
             </div>
+
+            {#if $currentUser?.tipo === "coordenador"}
+                <div class="form-group">
+                    <Select
+                        id="professor_select_inline"
+                        label="Professor"
+                        bind:value={selectedProfessorId}
+                        required
+                        loading={professoresLoading}
+                        placeholder="Selecione um professor"
+                        options={professores.map((p) => ({
+                            value: String(p.id),
+                            label: p.nome_completo || `Professor ${p.id}`,
+                        }))}
+                        on:change={checkForChanges}
+                    />
+                </div>
+            {/if}
 
             <div class="alunos-section">
                 <h2>Alunos Matriculados</h2>
@@ -312,6 +391,23 @@
             </div>
         {/if}
 
+        {#if getChangesSummary().professorChanged}
+            <div class="change-item">
+                <div class="change-header">
+                    <span class="change-title">Professor</span>
+                    <Button
+                        variant="secondary"
+                        on:click={handleUndoProfessorChange}
+                        disabled={saving}
+                        loading={saving}
+                    >
+                        Desfazer
+                    </Button>
+                </div>
+                <p class="change-detail">Professor alterado</p>
+            </div>
+        {/if}
+
         <div class="dialog-actions">
             <Button
                 variant="secondary"
@@ -373,6 +469,8 @@
         border-color: #0d6efd;
         box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
     }
+
+    /* Select uses same input classes via component */
 
     .alunos-section {
         margin-bottom: 2rem;

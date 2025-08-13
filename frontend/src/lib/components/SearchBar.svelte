@@ -37,7 +37,7 @@
 
 <div class="search-bar">
     <input type="text" bind:value {placeholder} on:input={handleInput} />
-    {#if showButton}
+    {#if showButton && buttonText}
         <Button
             variant={buttonVariant}
             class="action-button"

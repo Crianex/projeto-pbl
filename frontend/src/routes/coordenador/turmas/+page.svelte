@@ -69,7 +69,7 @@
     }
 
     function handleCreateTurma() {
-        goto("/coordenador/turmas/nova");
+        goto("/professor/turmas/nova");
     }
 
     function toggleDropdown(event: MouseEvent, turmaId: number) {

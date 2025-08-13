@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import Button from "$lib/components/Button.svelte";
     import BackButton from "$lib/components/BackButton.svelte";
@@ -7,9 +6,14 @@
     import SearchAlunoDialog from "../SearchAlunoDialog.svelte";
     import Dialog from "$lib/components/Dialog.svelte";
     import { TurmasService } from "$lib/services/turmas_service";
-    import type { AlunoModel } from "$lib/interfaces/interfaces";
+    import { ProfessoresService } from "$lib/services/professores_service";
+    import type {
+        AlunoModel,
+        ProfessorModel,
+    } from "$lib/interfaces/interfaces";
     import PageHeader from "$lib/components/PageHeader.svelte";
     import Input from "$lib/components/Input.svelte";
+    import Select from "$lib/components/Select.svelte";
     import TrashIcon from "$lib/components/TrashIcon.svelte";
     import { currentUser } from "$lib/utils/auth";
     import { toastStore } from "$lib/utils/toast";
@@ -18,6 +22,10 @@
         nome_turma: "",
         id_professor: "",
     };
+    let professores: ProfessorModel[] = [];
+    let professoresLoading = false;
+    let professoresLoaded = false;
+    let selectedProfessorId: string = ""; // used when current user is coordenador
     let alunosMatriculados: AlunoModel[] = [];
     let loading = false;
     let saving = false;
@@ -26,10 +34,36 @@
     let changesSummaryOpen = false;
     let hasUnsavedChanges = false;
 
-    onMount(() => {
-        // Initialize with current user as professor
-        turma.id_professor = "1"; // This should be the current user's ID
-    });
+    async function loadProfessores() {
+        try {
+            professoresLoading = true;
+            error = null;
+            const list = await ProfessoresService.list();
+            professores = list.sort((a, b) =>
+                (a.nome_completo || "").localeCompare(
+                    b.nome_completo || "",
+                    "pt-BR",
+                    { sensitivity: "base" },
+                ),
+            );
+            if (!selectedProfessorId && professores.length > 0) {
+                selectedProfessorId = String(professores[0].id);
+            }
+            professoresLoaded = true;
+        } catch (err: any) {
+            error = err.message || "Erro ao carregar professores";
+        } finally {
+            professoresLoading = false;
+        }
+    }
+
+    $: if (
+        $currentUser?.tipo === "coordenador" &&
+        !professoresLoaded &&
+        !professoresLoading
+    ) {
+        loadProfessores();
+    }
 
     function handleSave() {
         saveChanges();
@@ -39,9 +73,13 @@
         // Reset to original values
         turma = {
             nome_turma: "",
-            id_professor: "1",
+            id_professor:
+                $currentUser?.tipo === "professor"
+                    ? String($currentUser.id)
+                    : "",
         };
         alunosMatriculados = [];
+        selectedProfessorId = "";
         hasUnsavedChanges = false;
         goto("/professor/turmas");
     }
@@ -56,9 +94,17 @@
             saving = true;
             error = null;
 
+            if ($currentUser?.tipo === "coordenador" && !selectedProfessorId) {
+                error = "Selecione um professor";
+                return;
+            }
+
             const payload = {
                 nome_turma: turma.nome_turma,
-                id_professor: $currentUser?.id!,
+                id_professor:
+                    $currentUser?.tipo === "coordenador"
+                        ? Number(selectedProfessorId)
+                        : ($currentUser?.id as number),
                 alunos: alunosMatriculados.map((aluno) => aluno.id),
             };
 
@@ -160,6 +206,23 @@
                     placeholder="Digite o nome da turma"
                 />
             </div>
+
+            {#if $currentUser?.tipo === "coordenador"}
+                <div class="form-group">
+                    <Select
+                        id="professor_select"
+                        label="Professor"
+                        bind:value={selectedProfessorId}
+                        required
+                        loading={professoresLoading}
+                        placeholder="Selecione um professor"
+                        options={professores.map((p) => ({
+                            value: String(p.id),
+                            label: p.nome_completo || `Professor ${p.id}`,
+                        }))}
+                    />
+                </div>
+            {/if}
 
             <div class="alunos-section">
                 <h2>Alunos Matriculados</h2>
@@ -336,6 +399,8 @@
         border-color: #0d6efd;
         box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
     }
+
+    /* Select uses same input classes via component */
 
     .alunos-section {
         margin-bottom: 2rem;
