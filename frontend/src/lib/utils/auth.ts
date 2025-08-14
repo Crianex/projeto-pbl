@@ -73,43 +73,21 @@ export async function createOrGetUser(session: any): Promise<BaseUser | null> {
             return null;
         }
 
-        // Check all user tables simultaneously to prevent race conditions
-        const [professorPromise, alunoPromise, coordenadorPromise] = await Promise.allSettled([
-            api.get(`/professores/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`),
-            api.get(`/alunos/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`),
-            api.get(`/coordenadores/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`)
-        ]);
+        // Single endpoint to get user by email regardless of type, priority:
+        // coordenador -> professor -> aluno
+        const unified = await api.get(`/users/getByEmail?email=${encodeURIComponent(supabaseUser.email)}`);
 
-        // Check if user exists as coordenador (highest priority)
-        if (coordenadorPromise.status === 'fulfilled') {
+        if (unified && unified.tipo === 'coordenador') {
             logger.info('Found existing coordenador', { email: supabaseUser.email });
-            const userCoordenador = parseToCoordenadorModel(coordenadorPromise.value);
-            return userCoordenador;
+            return parseToCoordenadorModel(unified);
         }
-
-        // Check if user exists as professor
-        if (professorPromise.status === 'fulfilled') {
+        if (unified && unified.tipo === 'professor') {
             logger.info('Found existing professor', { email: supabaseUser.email });
-            const userProfessor = parseToProfessorModel(professorPromise.value);
-            return userProfessor;
+            return parseToProfessorModel(unified);
         }
-
-        // Check if user exists as aluno
-        if (alunoPromise.status === 'fulfilled') {
+        if (unified && unified.tipo === 'aluno') {
             logger.info('Found existing aluno', { email: supabaseUser.email });
-            const userAluno = parseToAlunoModel(alunoPromise.value);
-            return userAluno;
-        }
-
-        // Log any errors from the API calls for debugging
-        if (professorPromise.status === 'rejected') {
-            logger.warn('Error checking professor table:', professorPromise.reason);
-        }
-        if (alunoPromise.status === 'rejected') {
-            logger.warn('Error checking aluno table:', alunoPromise.reason);
-        }
-        if (coordenadorPromise.status === 'rejected') {
-            logger.warn('Error checking coordenador table:', coordenadorPromise.reason);
+            return parseToAlunoModel(unified);
         }
 
         // If no user found in any table, create new aluno by default

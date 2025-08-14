@@ -17,6 +17,7 @@ import { TurmaController } from './controllers/TurmaController';
 import { ProblemaController } from './controllers/ProblemaController';
 import { AvaliacaoController } from './controllers/AvaliacaoController';
 import { CoordenadorController } from './controllers/CoordernadorController';
+import { UserController } from './controllers/UserController';
 
 console.log('🚀 Backend starting...');
 console.log('📁 Current working directory:', process.cwd());
@@ -109,7 +110,8 @@ const controllers: EndpointController[] = [
     TurmaController,
     ProblemaController,
     AvaliacaoController,
-    CoordenadorController
+    CoordenadorController,
+    UserController
 ];
 
 console.log(`📋 Loaded ${controllers.length} controllers`);
