@@ -24,7 +24,6 @@ export const AvaliacaoController: EndpointController = {
                 .from('avaliacoes')
                 .select(`
                     *,
-                    problema:problemas(*),
                     avaliador:alunos!avaliacoes_id_aluno_avaliador_fkey(*),
                     avaliado:alunos!avaliacoes_id_aluno_avaliado_fkey(*)
                 `);

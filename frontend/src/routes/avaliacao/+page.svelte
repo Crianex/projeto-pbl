@@ -493,18 +493,19 @@
                 return;
             }
 
-            // Get the problem details
-            const problemaResponse = await api.get(
-                `/problemas/get?id_problema=${id_problema}`,
+            // Get the problem details (avoid unnecessary joins)
+            const problemaResult = await ProblemasService.getByIdWithOptions(
+                id_problema.toString(),
+                { include_avaliacoes: false },
             );
-            problema = Parsers.parseProblema(problemaResponse);
+            problema = problemaResult;
             criterios = problema.criterios;
 
             console.log("Problema loaded:", {
                 id_problema: problema.id_problema,
                 nome_problema: problema.nome_problema,
                 faltas_por_tag: problema.faltas_por_tag,
-                raw_faltas_por_tag: problemaResponse.faltas_por_tag,
+                raw_faltas_por_tag: problema.faltas_por_tag,
             });
 
             // Clean up corrupted faltas_por_tag data if needed
@@ -634,44 +635,32 @@
                 return;
             }
 
-            // 1. Fetch all evaluations for this problem
-            const allAvaliacoes = await AvaliacoesService.getByProblema(
-                id_problema.toString(),
-                true,
-            );
-
-            console.log(`allAvaliacoes: ${JSON.stringify(allAvaliacoes)}`);
-
-            // 2. Filter for duplicates
-            let duplicates = [];
+            // 1. Fetch only the potentially duplicate evaluations using filtered queries
+            let possibleDuplicates = [] as any[];
             if (isProfessorEvaluation) {
-                duplicates = allAvaliacoes.filter(
-                    (av) =>
-                        av.id_problema === parseInt(id_problema) &&
-                        av.id_professor === parseInt(id_professor!) &&
-                        av.aluno_avaliado?.id ===
-                            parseInt(id_aluno_avaliado || "0"),
+                const byAvaliado =
+                    await AvaliacoesService.getByProblemaForAvaliado(
+                        parseInt(id_problema),
+                        parseInt(id_aluno_avaliado!),
+                    );
+                possibleDuplicates = byAvaliado.filter(
+                    (av) => av.id_professor === parseInt(id_professor!),
                 );
             } else {
-                duplicates = allAvaliacoes.filter(
+                const byAvaliador =
+                    await AvaliacoesService.getByProblemaForAvaliador(
+                        parseInt(id_problema),
+                        parseInt(id_aluno_avaliador!),
+                    );
+                possibleDuplicates = byAvaliador.filter(
                     (av) =>
-                        av.id_problema === parseInt(id_problema) &&
-                        av.aluno_avaliador?.id ===
-                            parseInt(id_aluno_avaliador!) &&
                         av.aluno_avaliado?.id ===
-                            parseInt(id_aluno_avaliado || "0"),
-                );
-
-                console.log(
-                    `duplicates: ${JSON.stringify(duplicates)}`,
-                    `id_problema: ${id_problema}`,
-                    `id_aluno_avaliador: ${id_aluno_avaliador}`,
-                    `id_aluno_avaliado: ${id_aluno_avaliado}`,
+                        parseInt(id_aluno_avaliado || "0"),
                 );
             }
 
             // 3. Delete duplicates
-            for (const av of duplicates) {
+            for (const av of possibleDuplicates) {
                 await AvaliacoesService.delete(
                     av.id_avaliacao.toString(),
                     id_problema.toString(),

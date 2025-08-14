@@ -6,6 +6,8 @@ import { logger } from "$lib/utils/logger";
 export const AvaliacoesService = {
     getAvaliacoes,
     getByProblema,
+    getByProblemaForAvaliador,
+    getByProblemaForAvaliado,
     create,
     update,
     delete: deleteAvaliacao,
@@ -47,6 +49,30 @@ async function getByProblema(problemaId: string): Promise<AvaliacaoModel[]> {
         return parsedData;
     } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Failed to fetch avaliacoes';
+        throw error;
+    }
+}
+
+// Get evaluations for a specific problema filtered by evaluator (aluno_avaliador)
+async function getByProblemaForAvaliador(problemaId: number, avaliadorId: number): Promise<AvaliacaoModel[]> {
+    try {
+        logger.info(`Fetching avaliacoes for problema ${problemaId} and avaliador ${avaliadorId}`);
+        const data = await api.get(`/avaliacoes/list?id_problema=${problemaId}&id_aluno=${avaliadorId}`);
+        return Parsers.parseAvaliacoes(data);
+    } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Failed to fetch filtered avaliacoes';
+        throw error;
+    }
+}
+
+// Get evaluations for a specific problema filtered by evaluated student (aluno_avaliado)
+async function getByProblemaForAvaliado(problemaId: number, avaliadoId: number): Promise<AvaliacaoModel[]> {
+    try {
+        logger.info(`Fetching avaliacoes for problema ${problemaId} and avaliado ${avaliadoId}`);
+        const data = await api.get(`/avaliacoes/list?id_problema=${problemaId}&id_aluno_avaliado=${avaliadoId}`);
+        return Parsers.parseAvaliacoes(data);
+    } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Failed to fetch filtered avaliacoes';
         throw error;
     }
 }

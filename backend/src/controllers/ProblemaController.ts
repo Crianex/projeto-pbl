@@ -129,20 +129,26 @@ export const ProblemaController: EndpointController = {
                 return res.status(401).json({ error: 'Unauthorized: Valid authentication required' });
             }
 
-            const { id_problema } = req.query;
+            const { id_problema, include_avaliacoes } = req.query as { id_problema?: string, include_avaliacoes?: string };
             if (!id_problema) {
                 logger.error('No id_problema provided');
                 return res.status(400).json({ error: 'No id_problema provided' });
             }
-            logger.info(`Fetching problema with id_problema: ${id_problema}`);
+            // Default behavior: include avaliacoes (backwards-compatible)
+            const shouldIncludeAvaliacoes = include_avaliacoes === undefined
+                ? true
+                : include_avaliacoes === 'true';
+
+            logger.info(`Fetching problema with id_problema: ${id_problema}, include_avaliacoes=${shouldIncludeAvaliacoes}`);
+
+            // Build select clause dynamically based on include_avaliacoes
+            const selectClause = shouldIncludeAvaliacoes
+                ? `*, turma:turmas(*,alunos:alunos(*)), avaliacoes:avaliacoes(*)`
+                : `*, turma:turmas(*,alunos:alunos(*))`;
 
             const { data, error } = await supabase
                 .from('problemas')
-                .select(`
-                    *,
-                    turma:turmas(*,alunos:alunos(*)),
-                    avaliacoes:avaliacoes(*)
-                `)
+                .select(selectClause)
                 .eq('id_problema', id_problema)
                 .single();
 

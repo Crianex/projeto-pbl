@@ -16,7 +16,7 @@
         ProblemaModel,
         AvaliacaoModel,
     } from "$lib/interfaces/interfaces";
-    import { currentUser } from "$lib/utils/auth";
+    import { currentUser, initializeAuth } from "$lib/utils/auth";
     import { Parsers } from "$lib/interfaces/parsers";
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
     import { get } from "svelte/store";
@@ -28,6 +28,7 @@
     let toastMessage: string = "";
     let toastType: "success" | "error" | "info" = "error";
     let isFetching = false; // Flag to prevent multiple simultaneous calls
+    let isRefreshing = false; // Loading state for the "Atualizar" button when not in turma
 
     // Cache for shouldShowStudentAverage results
     const shouldShowCache = new Map<number, boolean>();
@@ -268,6 +269,18 @@
         }
     }
 
+    // Refresh the logged-in user data (to get updated turma) then refetch problems
+    async function refreshUserAndRefetch() {
+        if (isRefreshing) return;
+        try {
+            isRefreshing = true;
+            await initializeAuth();
+            await fetchProblems();
+        } finally {
+            isRefreshing = false;
+        }
+    }
+
     // Fetch problems when the page loads
     onMount(() => {
         fetchProblems();
@@ -312,7 +325,12 @@
                         matriculado em uma turma. Entre em contato com seu
                         professor para ser adicionado.
                     </p>
-                    <Button variant="secondary" on:click={fetchProblems}>
+                    <Button
+                        variant="secondary"
+                        on:click={refreshUserAndRefetch}
+                        loading={isRefreshing}
+                        disabled={isRefreshing || isFetching}
+                    >
                         Atualizar
                     </Button>
                 </div>

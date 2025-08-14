@@ -6,6 +6,7 @@ import { logger } from "$lib/utils/logger";
 export const ProblemasService = {
     getByTurma,
     getById,
+    getByIdWithOptions,
     create,
     update,
     delete: deleteProblema,
@@ -31,6 +32,23 @@ async function getById(id: string): Promise<ProblemaModel> {
         return parsed;
     } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Failed to fetch problema';
+        throw error;
+    }
+}
+
+// Optional parameters to control expansion in backend (default matches previous behavior)
+async function getByIdWithOptions(id: string, options?: { include_avaliacoes?: boolean }): Promise<ProblemaModel> {
+    try {
+        const includeAvaliacoes = options?.include_avaliacoes;
+        const query = includeAvaliacoes === undefined
+            ? `/problemas/get?id_problema=${id}`
+            : `/problemas/get?id_problema=${id}&include_avaliacoes=${includeAvaliacoes}`;
+        logger.info(`Fetching problema ${id} from API with options`, options || {});
+        const data = await api.get(query);
+        const parsed = Parsers.parseProblema(data);
+        return parsed;
+    } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Failed to fetch problema with options';
         throw error;
     }
 }

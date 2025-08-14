@@ -232,27 +232,41 @@
             loading = true;
             error = null;
             const id_problema = parseInt($page.params.id_problema);
-
-            // Get the problem details first using cache service
-            problema = await ProblemasService.getById(id_problema.toString());
-
-            // Get all evaluations using the service
-            const avaliacoesData =
-                await AvaliacoesService.getAvaliacoes(id_problema);
-
-            // Check if current student has been evaluated by a professor
             const currentUserId = $currentUser?.id;
-            const professorEvaluation = avaliacoesData.find(
-                (avaliacao) =>
-                    avaliacao.aluno_avaliado?.id === currentUserId &&
-                    avaliacao.id_professor,
-            );
-            hasProfessorEvaluation = !!professorEvaluation;
 
-            // Filter evaluations where current user is the evaluator (aluno_avaliador)
-            const filteredAvaliacoesData = avaliacoesData.filter(
-                (avaliacao) => avaliacao.aluno_avaliador?.id === currentUserId,
+            if (!currentUserId) {
+                loading = false;
+                isFetching = false;
+                return;
+            }
+
+            // Fetch problema and only the necessary evaluations in parallel
+            const [problemaResult, minhasAvaliacoes, avaliacoesMeAvaliaram] =
+                await Promise.all([
+                    // We don't need avaliacoes expansion from problema for this page
+                    ProblemasService.getByIdWithOptions(
+                        id_problema.toString(),
+                        { include_avaliacoes: false },
+                    ),
+                    AvaliacoesService.getByProblemaForAvaliador(
+                        id_problema,
+                        currentUserId,
+                    ),
+                    AvaliacoesService.getByProblemaForAvaliado(
+                        id_problema,
+                        currentUserId,
+                    ),
+                ]);
+
+            problema = problemaResult;
+
+            // Detect if there is any professor evaluation for the current user
+            hasProfessorEvaluation = (avaliacoesMeAvaliaram || []).some(
+                (av) => !!av.id_professor,
             );
+
+            // We only need the evaluations created by the current user to populate rows
+            const filteredAvaliacoesData = minhasAvaliacoes || [];
 
             // Transform the data to match our interface
             avaliacoes = filteredAvaliacoesData
