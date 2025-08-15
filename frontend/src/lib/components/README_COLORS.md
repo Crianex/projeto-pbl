@@ -10,6 +10,7 @@ Este documento descreve o sistema de cores centralizado implementado no projeto,
 
 ## 🎨 Estrutura do Sistema de Cores
 
+
 ### Cores Principais do Tema
 
 ```css
