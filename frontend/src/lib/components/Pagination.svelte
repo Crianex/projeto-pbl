@@ -2,10 +2,12 @@
     import Button from "./Button.svelte";
     import { createEventDispatcher } from "svelte";
     import { onMount } from "svelte";
+    import Icon from "./Icon.svelte";
 
     export let currentPage: number = 1;
     export let totalPages: number = 1;
     export let disabled: boolean = false;
+    export let showPageNumbers: boolean = true;
 
     const dispatch = createEventDispatcher();
 
@@ -83,24 +85,25 @@
     })();
 </script>
 
-<div class="pagination">
-    <div class="page-numbers">
-        {#each visiblePages as page}
-            {#if page === "..."}
-                <span class="ellipsis">...</span>
-            {:else}
-                <Button
-                    variant={currentPage === page ? "primary" : "secondary"}
-                    class="page-number"
-                    on:click={() => setPage(page as number)}
-                    {disabled}
-                >
-                    {page}
-                </Button>
-            {/if}
-        {/each}
-    </div>
-
+<div class="pagination" class:no-numbers={!showPageNumbers}>
+    {#if showPageNumbers}
+        <div class="page-numbers">
+            {#each visiblePages as page}
+                {#if page === "..."}
+                    <span class="ellipsis">...</span>
+                {:else}
+                    <Button
+                        variant={currentPage === page ? "primary" : "secondary"}
+                        class="page-number"
+                        on:click={() => setPage(page as number)}
+                        {disabled}
+                    >
+                        {page}
+                    </Button>
+                {/if}
+            {/each}
+        </div>
+    {/if}
     <div class="page-navigation">
         <Button
             variant="secondary"
@@ -108,7 +111,7 @@
             disabled={currentPage === 1 || disabled}
             on:click={() => setPage(currentPage - 1)}
         >
-            ←
+            <Icon name="faChevronLeft" />
         </Button>
 
         <Button
@@ -117,7 +120,7 @@
             disabled={currentPage === totalPages || disabled}
             on:click={() => setPage(currentPage + 1)}
         >
-            →
+            <Icon name="faChevronRight" />
         </Button>
     </div>
 </div>
@@ -129,6 +132,10 @@
         gap: 0.5rem;
         margin-top: 2rem;
         align-items: center;
+    }
+
+    .pagination.no-numbers {
+        margin-top: 0;
     }
 
     .page-numbers {

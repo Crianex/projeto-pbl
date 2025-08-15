@@ -36,6 +36,8 @@ async function getById(id: string): Promise<ProblemaModel> {
     }
 }
 
+
+
 // Optional parameters to control expansion in backend (default matches previous behavior)
 async function getByIdWithOptions(id: string, options?: { include_avaliacoes?: boolean }): Promise<ProblemaModel> {
     try {

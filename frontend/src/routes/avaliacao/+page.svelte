@@ -12,6 +12,7 @@
         ProblemaModel,
         AvaliacaoNota,
         UploadedFile,
+        AlunoModel,
     } from "$lib/interfaces/interfaces";
     import { Parsers } from "$lib/interfaces/parsers";
     import { logger } from "$lib/utils/logger";
@@ -21,6 +22,7 @@
     import { ProblemasService } from "$lib/services/problemas_service";
     import { DateUtils } from "$lib/utils/utils";
     import Button from "$lib/components/Button.svelte";
+    import Pagination from "$lib/components/Pagination.svelte";
     import { toastStore } from "$lib/utils/toast";
 
     interface AvaliacaoData {
@@ -61,6 +63,125 @@
     let loadingFiles = false;
     let filesError: string | null = null;
     let fileGrades: { [fileId: string]: number } = {};
+
+    // Navigation state for moving between alunos
+    let sortedAlunos: AlunoModel[] = [];
+    let currentAlunoIndex = -1;
+
+    // Navigation functions
+    async function handlePageChange(event: CustomEvent<{ page: number }>) {
+        const newIndex = event.detail.page - 1; // Convert from 1-based to 0-based
+        if (newIndex >= 0 && newIndex < sortedAlunos.length) {
+            const targetAluno = sortedAlunos[newIndex];
+
+            // Update the URL without reloading
+            const url = new URL(window.location.href);
+            url.searchParams.set(
+                "id_aluno_avaliado",
+                targetAluno.id.toString(),
+            );
+            window.history.pushState({}, "", url.toString());
+
+            // Update the current aluno ID
+            id_aluno_avaliado = targetAluno.id.toString();
+            currentAlunoIndex = newIndex;
+
+            // Fetch data for the new aluno
+            await fetchAlunoData(targetAluno);
+        }
+    }
+
+    // Function to fetch data for a specific aluno
+    async function fetchAlunoData(aluno: AlunoModel) {
+        try {
+            loading = true;
+            error = null;
+
+            // Update the aluno info
+            avaliacaoData = {
+                aluno: {
+                    nome: aluno.nome_completo || "",
+                    avatar: aluno.link_avatar || "/images/default_avatar.png",
+                },
+                notas: {},
+            };
+
+            // Initialize the current values for the new aluno
+            currentValues = initializeNotas();
+            avaliacaoData.notas = { ...currentValues };
+
+            // Reset file grades for professor evaluations
+            if (isProfessorEvaluation) {
+                fileGrades = {};
+                uploadedFilesByType.clear();
+                await loadStudentFiles();
+            }
+
+            // Get existing evaluation if any
+            let avaliacoes;
+            if (isProfessorEvaluation) {
+                // For professor evaluations, filter by professor and student being evaluated
+                avaliacoes = await api.get(
+                    `/avaliacoes/list?id_problema=${id_problema}&id_professor=${id_professor}&id_aluno_avaliado=${aluno.id}`,
+                );
+            } else {
+                // For student evaluations, filter by student evaluator
+                avaliacoes = await api.get(
+                    `/avaliacoes/list?id_problema=${id_problema}&id_aluno=${id_aluno_avaliador}`,
+                );
+            }
+
+            // Ensure avaliacoes is always an array
+            if (!Array.isArray(avaliacoes)) {
+                avaliacoes = avaliacoes ? [avaliacoes] : [];
+            }
+
+            const existingAvaliacao = avaliacoes.find(
+                (av: any) => av.id_aluno_avaliado === aluno.id,
+            );
+
+            if (existingAvaliacao) {
+                const existingNotas = JSON.parse(existingAvaliacao.notas);
+                Object.entries(currentValues).forEach(([tag, criterios]) => {
+                    if (existingNotas[tag]) {
+                        currentValues[tag] = {
+                            ...criterios,
+                            ...existingNotas[tag],
+                        };
+                    }
+                });
+                avaliacaoData.notas = { ...currentValues };
+
+                // Load existing file grades for professor evaluations
+                if (
+                    isProfessorEvaluation &&
+                    existingAvaliacao.notas_por_arquivo
+                ) {
+                    try {
+                        const existingFileGrades = JSON.parse(
+                            existingAvaliacao.notas_por_arquivo,
+                        );
+                        fileGrades = { ...existingFileGrades };
+                        console.log("Loaded existing file grades:", fileGrades);
+                    } catch (e) {
+                        console.warn(
+                            "Failed to parse existing file grades:",
+                            e,
+                        );
+                        fileGrades = {};
+                    }
+                }
+            }
+
+            console.log(`Loaded data for aluno: ${aluno.nome_completo}`);
+        } catch (e: any) {
+            error = e.message || "Erro ao carregar dados do aluno";
+            toastStore.error(error || "Erro ao carregar dados do aluno");
+            logger.error(e);
+        } finally {
+            loading = false;
+        }
+    }
 
     // Helper function to check if a student has a falta for a specific tag
     function hasFalta(tag: string): boolean {
@@ -501,6 +622,26 @@
             problema = problemaResult;
             criterios = problema.criterios;
 
+            // Set up navigation - sort alunos alphabetically and find current index
+            if (problema.turma?.alunos) {
+                sortedAlunos = [...problema.turma.alunos].sort((a, b) =>
+                    (a.nome_completo || "").localeCompare(
+                        b.nome_completo || "",
+                        "pt-BR",
+                        { sensitivity: "base" },
+                    ),
+                );
+                currentAlunoIndex = sortedAlunos.findIndex(
+                    (aluno) => aluno.id === parseInt(id_aluno_avaliado!),
+                );
+                console.log("Navigation setup:", {
+                    totalAlunos: sortedAlunos.length,
+                    currentIndex: currentAlunoIndex,
+                    currentAluno:
+                        sortedAlunos[currentAlunoIndex]?.nome_completo,
+                });
+            }
+
             console.log("Problema loaded:", {
                 id_problema: problema.id_problema,
                 nome_problema: problema.nome_problema,
@@ -516,82 +657,14 @@
                 problema.faltas_por_tag,
             );
 
-            // Get the student details (who is being evaluated)
-            const aluno = await api.get(
-                `/alunos/get?id_aluno=${id_aluno_avaliado}`,
-            );
-
-            // Load student files for professor evaluation
-            if (isProfessorEvaluation) {
-                await loadStudentFiles();
+            // Get the current aluno from the sorted list
+            const currentAluno = sortedAlunos[currentAlunoIndex];
+            if (!currentAluno) {
+                throw new Error("Aluno não encontrado");
             }
 
-            // Initialize the current values
-            currentValues = initializeNotas();
-            avaliacaoData = {
-                aluno: {
-                    nome: aluno.nome_completo,
-                    avatar: aluno.link_avatar || "/images/default_avatar.png",
-                },
-                notas: { ...currentValues },
-            };
-
-            // Get existing evaluation if any
-            let avaliacoes;
-            if (isProfessorEvaluation) {
-                // For professor evaluations, filter by professor and student being evaluated
-                avaliacoes = await api.get(
-                    `/avaliacoes/list?id_problema=${id_problema}&id_professor=${id_professor}&id_aluno_avaliado=${id_aluno_avaliado}`,
-                );
-            } else {
-                // For student evaluations, filter by student evaluator
-                avaliacoes = await api.get(
-                    `/avaliacoes/list?id_problema=${id_problema}&id_aluno=${id_aluno_avaliador}`,
-                );
-            }
-
-            // Ensure avaliacoes is always an array
-            if (!Array.isArray(avaliacoes)) {
-                avaliacoes = avaliacoes ? [avaliacoes] : [];
-            }
-
-            const existingAvaliacao = avaliacoes.find(
-                (av: any) =>
-                    av.id_aluno_avaliado === parseInt(id_aluno_avaliado!),
-            );
-
-            if (existingAvaliacao) {
-                const existingNotas = JSON.parse(existingAvaliacao.notas);
-                Object.entries(currentValues).forEach(([tag, criterios]) => {
-                    if (existingNotas[tag]) {
-                        currentValues[tag] = {
-                            ...criterios,
-                            ...existingNotas[tag],
-                        };
-                    }
-                });
-                avaliacaoData.notas = { ...currentValues };
-
-                // Load existing file grades for professor evaluations
-                if (
-                    isProfessorEvaluation &&
-                    existingAvaliacao.notas_por_arquivo
-                ) {
-                    try {
-                        const existingFileGrades = JSON.parse(
-                            existingAvaliacao.notas_por_arquivo,
-                        );
-                        fileGrades = { ...existingFileGrades };
-                        console.log("Loaded existing file grades:", fileGrades);
-                    } catch (e) {
-                        console.warn(
-                            "Failed to parse existing file grades:",
-                            e,
-                        );
-                        fileGrades = {};
-                    }
-                }
-            }
+            // Fetch data for the current aluno
+            await fetchAlunoData(currentAluno);
         } catch (e: any) {
             error = e.message || "Erro ao carregar dados";
             toastStore.error(error || "Erro ao carregar dados");
@@ -611,26 +684,18 @@
         showDialog = false;
     }
 
-    function zerarTodasNotas() {
-        Object.entries(criterios).forEach(([tag, criteriosList]) => {
-            if (!currentValues[tag]) {
-                currentValues[tag] = {};
-            }
-            criteriosList.forEach((criterio) => {
-                const criterioKey = criterio.nome_criterio.toLowerCase();
-                currentValues[tag][criterioKey] = 0;
-            });
-        });
-        avaliacaoData.notas = { ...currentValues };
-        // Força uma atualização reativa
-        currentValues = { ...currentValues };
-    }
-
     async function handleSubmit() {
         try {
             isSubmitting = true;
 
-            if (!id_problema || !id_aluno_avaliado) {
+            // Get the current aluno being evaluated
+            const currentAluno = sortedAlunos[currentAlunoIndex];
+            if (!currentAluno) {
+                error = "Aluno não encontrado.";
+                return;
+            }
+
+            if (!id_problema) {
                 error = "Parâmetros obrigatórios não fornecidos.";
                 return;
             }
@@ -641,7 +706,7 @@
                 const byAvaliado =
                     await AvaliacoesService.getByProblemaForAvaliado(
                         parseInt(id_problema),
-                        parseInt(id_aluno_avaliado!),
+                        currentAluno.id,
                     );
                 possibleDuplicates = byAvaliado.filter(
                     (av) => av.id_professor === parseInt(id_professor!),
@@ -653,9 +718,7 @@
                         parseInt(id_aluno_avaliador!),
                     );
                 possibleDuplicates = byAvaliador.filter(
-                    (av) =>
-                        av.aluno_avaliado?.id ===
-                        parseInt(id_aluno_avaliado || "0"),
+                    (av) => av.aluno_avaliado?.id === currentAluno.id,
                 );
             }
 
@@ -674,7 +737,7 @@
                 const payload = {
                     id_problema: parseInt(id_problema),
                     id_professor: parseInt(id_professor!),
-                    id_aluno_avaliado: parseInt(id_aluno_avaliado),
+                    id_aluno_avaliado: currentAluno.id,
                     notas: JSON.stringify(notas),
                     notas_por_arquivo: JSON.stringify(fileGrades),
                 };
@@ -690,7 +753,7 @@
                 const payload = {
                     id_problema: parseInt(id_problema),
                     id_aluno_avaliador: parseInt(id_aluno_avaliador!),
-                    id_aluno_avaliado: parseInt(id_aluno_avaliado),
+                    id_aluno_avaliado: currentAluno.id,
                     notas: JSON.stringify(notasWithMedia),
                 };
                 await AvaliacoesService.create(payload);
@@ -713,6 +776,16 @@
 <div class="evaluation-container">
     <div class="back-section">
         <BackButton text="Voltar" on:click={() => history.back()} />
+        {#if sortedAlunos.length > 1}
+            <div class="mobile-pagination">
+                <Pagination
+                    currentPage={currentAlunoIndex + 1}
+                    totalPages={sortedAlunos.length}
+                    showPageNumbers={false}
+                    on:pageChange={handlePageChange}
+                />
+            </div>
+        {/if}
     </div>
 
     {#if loading}
@@ -735,6 +808,16 @@
                     ? "(Professor)"
                     : ""}
             </h1>
+            {#if sortedAlunos.length > 1}
+                <div class="desktop-pagination">
+                    <Pagination
+                        currentPage={currentAlunoIndex + 1}
+                        totalPages={sortedAlunos.length}
+                        showPageNumbers={false}
+                        on:pageChange={handlePageChange}
+                    />
+                </div>
+            {/if}
         </div>
         <div class="student-info">
             <div class="avatar">
@@ -855,15 +938,15 @@
                                                 ).toFixed(1)}
                                             </div>
                                         </div>
-                                        <button
+                                        <Button
+                                            variant="secondary"
                                             type="button"
-                                            class="criteria-btn"
                                             on:click={() =>
                                                 showCriterios(tag, criterio)}
                                             disabled={isInputDisabled(tag)}
                                         >
                                             Critérios
-                                        </button>
+                                        </Button>
                                     </div>
                                 </label>
                             {/each}
@@ -1068,13 +1151,27 @@
     }
     .back-section {
         margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     .header {
         display: flex;
         align-items: center;
+        justify-content: space-between;
         gap: 1rem;
         margin: 0 0 2rem 0;
     }
+
+    .desktop-pagination {
+        display: block;
+    }
+
+    .mobile-pagination {
+        display: none;
+        justify-content: center;
+    }
+
     h1 {
         font-size: 1.5rem;
         font-weight: 700;
@@ -1264,6 +1361,26 @@
             inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
     @media (max-width: 768px) {
+        .header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .desktop-pagination {
+            display: none;
+        }
+
+        .mobile-pagination {
+            display: flex;
+        }
+
+        .back-section {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         .evaluation-grid {
             grid-template-columns: 1fr;
             gap: 1rem;
