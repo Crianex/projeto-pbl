@@ -2,12 +2,18 @@
 	import { page } from "$app/stores";
 	import { fade, fly } from "svelte/transition";
 	import "../app.css";
+	import { onMount } from "svelte";
+
+	let key = "";
+	let isHomePage = false;
 
 	// Use the pathname as key to trigger transitions on route changes
-	$: key = $page.url.pathname;
+	//$: key = $page.url.pathname;
 
-	// Check if current page is home to avoid layout constraints
-	$: isHomePage = $page.url.pathname === "/";
+	onMount(() => {
+		console.log("onMount - key:", key);
+		isHomePage = $page.url.pathname === "/";
+	});
 </script>
 
 <div class="app">

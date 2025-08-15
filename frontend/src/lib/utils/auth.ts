@@ -26,12 +26,12 @@ export function isAluno(user: BaseUser | null): user is AlunoModel {
 }
 
 export function isProfessor(user: BaseUser | null): user is ProfessorModel {
-    console.log('isProfessor', user);
+    //console.log('isProfessor', user);
     return user?.tipo === 'professor';
 }
 
 export function isCoordenador(user: BaseUser | null): user is CoordenadorModel {
-    console.log('isCoordenador', user);
+    //console.log('isCoordenador', user);
     return user?.tipo === 'coordenador';
 }
 

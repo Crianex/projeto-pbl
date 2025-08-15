@@ -24,6 +24,7 @@
     import StatisticsHeader from "$lib/components/StatisticsHeader.svelte";
     import RelatoriosFilters from "$lib/components/RelatoriosFilters.svelte";
     import MatrixControls from "$lib/components/MatrixControls.svelte";
+    import { turmaCache } from "$lib/utils/cache";
 
     let turmas: TurmaModel[] = [];
     let selectedTurma: TurmaModel | null = null;
@@ -32,6 +33,7 @@
     let avaliacoes: AvaliacaoModel[] = [];
     let loading = true;
     let error: string | null = null;
+    let firstLoad = true;
 
     // Professor filter for coordenadores
     let professores: ProfessorModel[] = [];
@@ -41,6 +43,7 @@
     // Cache for loaded data
     let problemasCache: { [turmaId: number]: ProblemaModel[] } = {};
     let avaliacoesCache: { [problemaId: number]: AvaliacaoModel[] } = {};
+    let turmasCache: TurmaModel[] = [];
     let loadingProblemas = false;
     let loadingAvaliacoes = false;
 
@@ -100,6 +103,11 @@
                 studentId,
             });
             return { professor: 0, auto: 0, peers: 0, total: 0 };
+        }
+
+        // If showing average of all problems, calculate average across all problems
+        if (selectedProblema.id_problema === -1) {
+            return getAverageFinalMediaAcrossAllProblems(studentId);
         }
 
         try {
@@ -178,6 +186,117 @@
         }
     }
 
+    // Helper function to calculate average final media across all problems
+    function getAverageFinalMediaAcrossAllProblems(studentId: number): {
+        professor: number;
+        auto: number;
+        peers: number;
+        total: number;
+    } {
+        if (!problemas || problemas.length === 0) {
+            return { professor: 0, auto: 0, peers: 0, total: 0 };
+        }
+
+        const allResults: {
+            professor: number;
+            auto: number;
+            peers: number;
+            total: number;
+        }[] = [];
+
+        // Calculate final media for each problem
+        for (const problema of problemas) {
+            try {
+                // Get avaliacoes for this specific problem
+                const problemAvaliacoes = avaliacoes.filter(
+                    (av) => av.id_problema === problema.id_problema,
+                );
+
+                if (problemAvaliacoes.length === 0) continue;
+
+                // Parse criterios and file definitions from the problem
+                let criteriosGroup = {};
+                let fileDefs = [];
+                try {
+                    criteriosGroup =
+                        typeof problema.criterios === "string"
+                            ? JSON.parse(problema.criterios)
+                            : problema.criterios;
+                } catch {}
+                try {
+                    fileDefs =
+                        typeof problema.definicao_arquivos_de_avaliacao ===
+                        "string"
+                            ? JSON.parse(
+                                  problema.definicao_arquivos_de_avaliacao,
+                              )
+                            : problema.definicao_arquivos_de_avaliacao;
+                } catch {}
+
+                // Parse avaliacoes to get proper structure
+                const parsedAvaliacoes = problemAvaliacoes.map((av) => {
+                    let notas = av.notas;
+                    let notas_por_arquivo = av.notas_por_arquivo;
+                    try {
+                        notas =
+                            typeof notas === "string"
+                                ? JSON.parse(notas)
+                                : notas;
+                    } catch {}
+                    try {
+                        notas_por_arquivo =
+                            typeof notas_por_arquivo === "string"
+                                ? JSON.parse(notas_por_arquivo)
+                                : notas_por_arquivo;
+                    } catch {}
+                    return { ...av, notas, notas_por_arquivo };
+                });
+
+                // Calculate final media for this problem
+                const result = MediaCalculator.calculateFinalMedia(
+                    parsedAvaliacoes,
+                    studentId,
+                    criteriosGroup,
+                    fileDefs,
+                );
+
+                allResults.push({
+                    professor: result.professor,
+                    auto: result.auto,
+                    peers: result.peers,
+                    total: result.total,
+                });
+            } catch (error) {
+                console.warn(
+                    `Error calculating final media for problema ${problema.id_problema}:`,
+                    error,
+                );
+            }
+        }
+
+        // Calculate averages
+        if (allResults.length === 0) {
+            return { professor: 0, auto: 0, peers: 0, total: 0 };
+        }
+
+        const avgProfessor =
+            allResults.reduce((sum, r) => sum + r.professor, 0) /
+            allResults.length;
+        const avgAuto =
+            allResults.reduce((sum, r) => sum + r.auto, 0) / allResults.length;
+        const avgPeers =
+            allResults.reduce((sum, r) => sum + r.peers, 0) / allResults.length;
+        const avgTotal =
+            allResults.reduce((sum, r) => sum + r.total, 0) / allResults.length;
+
+        return {
+            professor: formatGrade(Number(avgProfessor.toFixed(2))),
+            auto: formatGrade(Number(avgAuto.toFixed(2))),
+            peers: formatGrade(Number(avgPeers.toFixed(2))),
+            total: formatGrade(Number(avgTotal.toFixed(2))),
+        };
+    }
+
     async function fetchProfessores() {
         try {
             loadingProfessores = true;
@@ -213,16 +332,29 @@
             let allTurmas: TurmaModel[] = [];
 
             if (isCoordenador(user)) {
-                // Coordenadores can see all turmas, optionally filtered by professor
-                if (selectedProfessorId) {
-                    allTurmas = await TurmasService.getAll(selectedProfessorId);
+                if (turmasCache.length > 0) {
+                    allTurmas = turmasCache;
+                    if (selectedProfessorId) {
+                        allTurmas = allTurmas.filter(
+                            (t) => t.professor?.id === selectedProfessorId,
+                        );
+                    }
                 } else {
+                    // Coordenadores can see all turmas, optionally filtered by professor
                     // Get all turmas without professor filter
                     allTurmas = await TurmasService.getAll(null);
+                    turmasCache = turmas;
+
+                    if (selectedProfessorId) {
+                        allTurmas = allTurmas.filter(
+                            (t) => t.professor?.id === selectedProfessorId,
+                        );
+                    }
                 }
             } else {
                 // Professors see all turmas (existing behavior)
                 allTurmas = await TurmasService.getAll(user.id);
+                turmasCache = turmas;
             }
 
             // Debug logging (can be removed in production)
@@ -276,10 +408,22 @@
             selectedTurma = turmas[0];
             await fetchProblemas(selectedTurma.id_turma);
 
+            console.log(
+                "autoSelectFirstTurmaWithProblems - problemas:",
+                problemas,
+            );
+
             // Auto-select the first problema if available
-            if (problemas.length > 0) {
+            if (problemas.length > 1) {
                 selectedProblema = problemas[0];
+                if (selectedProblema.id_problema === -1) {
+                    selectedProblema = problemas[1];
+                }
                 await fetchAvaliacoes(selectedProblema.id_problema);
+            } else {
+                selectedProblema = null;
+                avaliacoes = [];
+                evaluationMatrix = {};
             }
         }
     }
@@ -297,9 +441,28 @@
                 );
                 problemas = problemasCache[turmaId];
 
+                problemas = [
+                    {
+                        id_problema: -1,
+                        nome_problema: "Média de Todos os Problemas",
+                        media_geral: null,
+                        id_turma: selectedTurma?.id_turma || 0,
+                        created_at: new Date(),
+                        turma: null,
+                        criterios: {},
+                        definicao_arquivos_de_avaliacao: [],
+                        data_e_hora_criterios_e_arquivos: {},
+                        faltas_por_tag: {},
+                    },
+                    ...problemas,
+                ];
+
                 // Auto-select first problem if this is the initial load (no selectedProblema yet)
-                if (!selectedProblema && problemas.length > 0) {
+                if (!selectedProblema && problemas.length > 1) {
                     selectedProblema = problemas[0];
+                    if (selectedProblema.id_problema === -1) {
+                        selectedProblema = problemas[1];
+                    }
                     await fetchAvaliacoes(selectedProblema.id_problema);
                 } else {
                     selectedProblema = null;
@@ -332,9 +495,28 @@
             problemasCache[turmaId] = sortedData;
             problemas = sortedData;
 
+            problemas = [
+                {
+                    id_problema: -1,
+                    nome_problema: "Média de Todos os Problemas",
+                    media_geral: null,
+                    id_turma: selectedTurma?.id_turma || 0,
+                    created_at: new Date(),
+                    turma: null,
+                    criterios: {},
+                    definicao_arquivos_de_avaliacao: [],
+                    data_e_hora_criterios_e_arquivos: {},
+                    faltas_por_tag: {},
+                },
+                ...problemas,
+            ];
+
             // Auto-select first problem if this is the initial load (no selectedProblema yet)
             if (!selectedProblema && sortedData.length > 0) {
                 selectedProblema = sortedData[0];
+                if (selectedProblema.id_problema === -1) {
+                    selectedProblema = sortedData[1];
+                }
                 await fetchAvaliacoes(selectedProblema.id_problema);
             } else {
                 selectedProblema = null;
@@ -417,6 +599,93 @@
         }
     }
 
+    async function fetchAllProblemsAvaliacoes() {
+        try {
+            loadingAvaliacoes = true;
+            error = null;
+
+            if (!selectedTurma || problemas.length === 0) {
+                avaliacoes = [];
+                buildEvaluationMatrix();
+                return;
+            }
+
+            // Check if we already have all problems cached
+            const allProblemsCached = problemas.every(
+                (problema) => avaliacoesCache[problema.id_problema],
+            );
+
+            if (allProblemsCached) {
+                console.log("All problems already cached, combining data...");
+                const allAvaliacoes = problemas.flatMap(
+                    (problema) => avaliacoesCache[problema.id_problema],
+                );
+                avaliacoes = allAvaliacoes;
+                console.log("Combined cached avaliacoes:", avaliacoes.length);
+                buildEvaluationMatrix();
+                return;
+            }
+
+            console.log(
+                "Fetching all problems avaliacoes for turma:",
+                selectedTurma.id_turma,
+            );
+
+            // Fetch all avaliacoes for all problems in the turma
+            const allAvaliacoes: AvaliacaoModel[] = [];
+
+            for (const problema of problemas) {
+                try {
+                    // Check if we already have this problem's avaliacoes in cache
+                    if (avaliacoesCache[problema.id_problema]) {
+                        console.log(
+                            `Using cached avaliacoes for problema ${problema.id_problema}`,
+                        );
+                        allAvaliacoes.push(
+                            ...avaliacoesCache[problema.id_problema],
+                        );
+                    } else {
+                        const data = await AvaliacoesService.getByProblema(
+                            problema.id_problema.toString(),
+                        );
+                        let processedData: AvaliacaoModel[] = [];
+
+                        if (Array.isArray(data)) {
+                            processedData = data;
+                        } else if (data && typeof data === "object") {
+                            processedData = [data];
+                        }
+
+                        // Cache individual problem avaliacoes
+                        avaliacoesCache[problema.id_problema] = processedData;
+                        allAvaliacoes.push(...processedData);
+                    }
+                } catch (err) {
+                    console.warn(
+                        `Failed to fetch avaliacoes for problema ${problema.id_problema}:`,
+                        err,
+                    );
+                }
+            }
+
+            avaliacoes = allAvaliacoes;
+            console.log(
+                "fetchAllProblemsAvaliacoes - total avaliacoes:",
+                avaliacoes.length,
+            );
+            buildEvaluationMatrix();
+        } catch (err) {
+            error =
+                err instanceof Error
+                    ? err.message
+                    : "Failed to fetch all problems avaliacoes";
+            console.error("Error fetching all problems avaliacoes:", err);
+            avaliacoes = [];
+        } finally {
+            loadingAvaliacoes = false;
+        }
+    }
+
     function buildEvaluationMatrix() {
         console.log("buildEvaluationMatrix - selectedTurma:", selectedTurma);
         console.log("buildEvaluationMatrix - avaliacoes:", avaliacoes);
@@ -455,26 +724,84 @@
         });
 
         // Fill matrix with evaluation data
-        avaliacoes.forEach((avaliacao, index) => {
-            if (avaliacao.aluno_avaliador?.id && avaliacao.aluno_avaliado?.id) {
-                const sum =
-                    MediaCalculator.calculateRawSumFromAvaliacao(avaliacao);
-                /* console.log(
-                    `Evaluation ${index}: ${avaliacao.aluno_avaliador.id} -> ${avaliacao.aluno_avaliado.id} = ${sum}`,
-                ); */
+        if (selectedProblema?.id_problema === -1) {
+            // Calculate averages across all problems
+            const evaluationCounts: {
+                [evaluatorId: number]: { [evaluatedId: number]: number };
+            } = {};
+            const evaluationSums: {
+                [evaluatorId: number]: { [evaluatedId: number]: number };
+            } = {};
 
-                // Check if evaluator exists in matrix
-                if (evaluationMatrix[avaliacao.aluno_avaliador.id]) {
-                    evaluationMatrix[avaliacao.aluno_avaliador.id][
-                        avaliacao.aluno_avaliado.id
-                    ] = sum;
-                } else {
-                    console.warn(
-                        `Evaluator ID not found in matrix: evaluator=${avaliacao.aluno_avaliador.id}`,
-                    );
+            // Initialize counts and sums
+            alunos.forEach((evaluator) => {
+                evaluationCounts[evaluator.id] = {};
+                evaluationSums[evaluator.id] = {};
+                alunos.forEach((evaluated) => {
+                    evaluationCounts[evaluator.id][evaluated.id] = 0;
+                    evaluationSums[evaluator.id][evaluated.id] = 0;
+                });
+            });
+
+            // Sum up all evaluations
+            avaliacoes.forEach((avaliacao) => {
+                if (
+                    avaliacao.aluno_avaliador?.id &&
+                    avaliacao.aluno_avaliado?.id
+                ) {
+                    const sum =
+                        MediaCalculator.calculateRawSumFromAvaliacao(avaliacao);
+
+                    if (evaluationSums[avaliacao.aluno_avaliador.id]) {
+                        evaluationSums[avaliacao.aluno_avaliador.id][
+                            avaliacao.aluno_avaliado.id
+                        ] += sum;
+                        evaluationCounts[avaliacao.aluno_avaliador.id][
+                            avaliacao.aluno_avaliado.id
+                        ]++;
+                    }
                 }
-            }
-        });
+            });
+
+            // Calculate averages
+            alunos.forEach((evaluator) => {
+                alunos.forEach((evaluated) => {
+                    const count = evaluationCounts[evaluator.id][evaluated.id];
+                    const sum = evaluationSums[evaluator.id][evaluated.id];
+
+                    if (count > 0) {
+                        evaluationMatrix[evaluator.id][evaluated.id] = Number(
+                            (sum / count).toFixed(2),
+                        );
+                    }
+                });
+            });
+        } else {
+            // Single problem - use original logic
+            avaliacoes.forEach((avaliacao, index) => {
+                if (
+                    avaliacao.aluno_avaliador?.id &&
+                    avaliacao.aluno_avaliado?.id
+                ) {
+                    const sum =
+                        MediaCalculator.calculateRawSumFromAvaliacao(avaliacao);
+                    /* console.log(
+                        `Evaluation ${index}: ${avaliacao.aluno_avaliador.id} -> ${avaliacao.aluno_avaliado.id} = ${sum}`,
+                    ); */
+
+                    // Check if evaluator exists in matrix
+                    if (evaluationMatrix[avaliacao.aluno_avaliador.id]) {
+                        evaluationMatrix[avaliacao.aluno_avaliador.id][
+                            avaliacao.aluno_avaliado.id
+                        ] = sum;
+                    } else {
+                        console.warn(
+                            `Evaluator ID not found in matrix: evaluator=${avaliacao.aluno_avaliador.id}`,
+                        );
+                    }
+                }
+            });
+        }
 
         console.log("Final evaluation matrix:", evaluationMatrix);
     }
@@ -501,7 +828,26 @@
     async function handleProblemaSelect(event: CustomEvent) {
         const problemaId = event.detail;
 
-        if (problemaId) {
+        if (problemaId === -1) {
+            // Handle average of all problems
+            selectedProblema = {
+                id_problema: -1,
+                nome_problema: "Média de Todos os Problemas",
+                media_geral: null,
+                id_turma: selectedTurma?.id_turma || 0,
+                created_at: new Date(),
+                turma: selectedTurma,
+                criterios: {},
+                definicao_arquivos_de_avaliacao: [],
+                data_e_hora_criterios_e_arquivos: {},
+                faltas_por_tag: {},
+            } as ProblemaModel;
+            await fetchAllProblemsAvaliacoes();
+            console.log(
+                "fetchAllProblemsAvaliacoes - selectedProblema:",
+                selectedProblema,
+            );
+        } else if (problemaId) {
             selectedProblema =
                 problemas.find((p) => p.id_problema === problemaId) || null;
             if (selectedProblema) {
@@ -524,6 +870,9 @@
         problemas = [];
         avaliacoes = [];
         evaluationMatrix = {};
+
+        // Clear caches when switching professors
+        avaliacoesCache = {};
 
         // Fetch turmas for the selected professor
         await fetchTurmas();
@@ -731,20 +1080,34 @@
         cellWidth: `${Math.round(60 * zoomLevel)}px`,
         nameWidth: `${Math.round(120 * zoomLevel)}px`,
         numberWidth: `${Math.round(50 * zoomLevel)}px`,
-        averageWidth: `${Math.round(70 * zoomLevel)}px`,
+        finalMediaWidth: `${Math.round(70 * zoomLevel)}px`,
         padding: `${Math.round(0.75 * zoomLevel)}rem ${Math.round(0.5 * zoomLevel)}rem`,
         headerPadding: `${Math.round(0.75 * zoomLevel)}rem ${Math.round(0.5 * zoomLevel)}rem`,
         namePadding: `${Math.round(0.75 * zoomLevel)}rem ${Math.round(0.75 * zoomLevel)}rem`,
         numberLeft: `${Math.round(120 * zoomLevel)}px`,
-        averageLeft: `${Math.round(120 * zoomLevel) + Math.round(50 * zoomLevel)}px`,
     };
     // $: console.log("Zoom styles updated:", zoomStyles);
 
     // 1. Add a derived variable for professor evaluations and a helper to get professor's grade for each student
 
-    $: professor = selectedTurma?.professor;
+    $: professor =
+        selectedProfessorId && $currentUser && isCoordenador($currentUser)
+            ? professores.find((p) => p.id === selectedProfessorId) ||
+              selectedTurma?.professor
+            : selectedTurma?.professor;
     $: professorAvaliacao = Array.isArray(avaliacoes)
-        ? avaliacoes.filter((a) => a.id_professor)
+        ? avaliacoes.filter((a) => {
+              // If coordenador has selected a specific professor, filter by that professor
+              if (
+                  selectedProfessorId &&
+                  $currentUser &&
+                  isCoordenador($currentUser)
+              ) {
+                  return a.id_professor === selectedProfessorId;
+              }
+              // Otherwise, show evaluations from the turma's professor
+              return a.id_professor;
+          })
         : [];
 
     function getProfessorGradeFor(studentId: number): number | null {
@@ -761,16 +1124,26 @@
     // CSV Export
     function exportMatrixAsCSV() {
         if (!alunos.length || !Object.keys(evaluationMatrix).length) return;
-        let csv = "Aluno,Número,Média";
+
+        const isAllProblems = selectedProblema?.id_problema === -1;
+        const title = isAllProblems
+            ? "Média de Todos os Problemas"
+            : selectedProblema?.nome_problema || "matriz";
+
+        let csv = "Aluno,Número,Prof.,Auto,Pares,Total";
         alunos.forEach((aluno, idx) => {
             csv += `,${idx + 1}`;
         });
         csv += "\n";
         alunos.forEach((evaluator, evaluatorIdx) => {
+            const finalMedia = getFinalMediaForStudent(evaluator.id);
             const row = [
                 `"${evaluator.nome_completo?.split(" ").slice(0, 2).join(" ") || "N/A"}"`,
                 evaluatorIdx + 1,
-                getReceivedAverage(evaluator.id) || "-",
+                finalMedia.professor || "-",
+                finalMedia.auto || "-",
+                finalMedia.peers || "-",
+                finalMedia.total || "-",
             ];
             alunos.forEach((evaluated) => {
                 if (evaluator.id === evaluated.id) {
@@ -789,6 +1162,9 @@
                 `"${professor.nome_completo?.split(" ").slice(0, 2).join(" ") || "Professor"}"`,
                 "Prof.",
                 "-",
+                "-",
+                "-",
+                "-",
             ];
             alunos.forEach((evaluated) => {
                 if (professor.id === evaluated.id) {
@@ -803,10 +1179,7 @@
         const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.setAttribute(
-            "download",
-            `relatorio_${selectedProblema?.nome_problema || "matriz"}.csv`,
-        );
+        link.setAttribute("download", `relatorio_${title}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -819,7 +1192,7 @@
             evaluationMatrix,
             selectedProblema,
             professor,
-            getReceivedAverage,
+            getFinalMediaForStudent,
             getProfessorGradeFor,
             formatGrade,
         );
@@ -839,39 +1212,94 @@
 
         let details = `<strong>${evaluator.nome_completo}</strong> avaliou <strong>${evaluated.nome_completo}</strong><br><br>`;
 
-        // Get the specific evaluation
-        const evaluation = avaliacoes.find(
-            (av) =>
-                av.aluno_avaliador?.id === evaluatorId &&
-                av.aluno_avaliado?.id === evaluatedId,
-        );
+        if (selectedProblema.id_problema === -1) {
+            // Show average across all problems
+            details +=
+                "📊 <strong>Média de todos os problemas:</strong><br><br>";
 
-        if (!evaluation) {
-            details += "❌ <strong>Avaliação não enviada</strong>";
-            return details;
-        }
+            const problemEvaluations: {
+                [problemaId: number]: { nota: number; problemaNome: string };
+            } = {};
 
-        try {
-            const notas = evaluation.notas;
-            details += "📊 <strong>Detalhes da avaliação:</strong><br>";
-
-            Object.entries(notas).forEach(([tag, criterios]) => {
-                if (typeof criterios === "object" && criterios !== null) {
-                    details += `<br><strong>${tag}:</strong><br>`;
-                    Object.entries(criterios).forEach(([criterio, nota]) => {
-                        if (typeof nota === "number") {
-                            details += `  • ${criterio}: ${formatGrade(nota).toFixed(1)}<br>`;
-                        }
-                    });
+            // Group evaluations by problem
+            avaliacoes.forEach((avaliacao) => {
+                if (
+                    avaliacao.aluno_avaliador?.id === evaluatorId &&
+                    avaliacao.aluno_avaliado?.id === evaluatedId &&
+                    avaliacao.id_problema
+                ) {
+                    const problema = problemas.find(
+                        (p) => p.id_problema === avaliacao.id_problema,
+                    );
+                    if (problema) {
+                        const sum =
+                            MediaCalculator.calculateRawSumFromAvaliacao(
+                                avaliacao,
+                            );
+                        problemEvaluations[avaliacao.id_problema] = {
+                            nota: sum,
+                            problemaNome:
+                                problema.nome_problema ||
+                                "Problema desconhecido",
+                        };
+                    }
                 }
             });
 
-            // Add sum
-            const sum =
-                MediaCalculator.calculateRawSumFromAvaliacao(evaluation);
-            details += `<br><strong>Soma final: ${formatGrade(sum).toFixed(2)}</strong>`;
-        } catch (error) {
-            details += "❌ <strong>Erro ao processar avaliação</strong>";
+            if (Object.keys(problemEvaluations).length === 0) {
+                details += "❌ <strong>Nenhuma avaliação encontrada</strong>";
+            } else {
+                Object.entries(problemEvaluations).forEach(
+                    ([problemaId, data]) => {
+                        details += `• <strong>${data.problemaNome}:</strong> ${formatGrade(data.nota).toFixed(2)}<br>`;
+                    },
+                );
+
+                const average =
+                    Object.values(problemEvaluations).reduce(
+                        (sum, data) => sum + data.nota,
+                        0,
+                    ) / Object.values(problemEvaluations).length;
+                details += `<br><strong>Média final: ${formatGrade(average).toFixed(2)}</strong>`;
+            }
+        } else {
+            // Single problem - use original logic
+            // Get the specific evaluation
+            const evaluation = avaliacoes.find(
+                (av) =>
+                    av.aluno_avaliador?.id === evaluatorId &&
+                    av.aluno_avaliado?.id === evaluatedId,
+            );
+
+            if (!evaluation) {
+                details += "❌ <strong>Avaliação não enviada</strong>";
+                return details;
+            }
+
+            try {
+                const notas = evaluation.notas;
+                details += "📊 <strong>Detalhes da avaliação:</strong><br>";
+
+                Object.entries(notas).forEach(([tag, criterios]) => {
+                    if (typeof criterios === "object" && criterios !== null) {
+                        details += `<br><strong>${tag}:</strong><br>`;
+                        Object.entries(criterios).forEach(
+                            ([criterio, nota]) => {
+                                if (typeof nota === "number") {
+                                    details += `  • ${criterio}: ${formatGrade(nota).toFixed(1)}<br>`;
+                                }
+                            },
+                        );
+                    }
+                });
+
+                // Add sum
+                const sum =
+                    MediaCalculator.calculateRawSumFromAvaliacao(evaluation);
+                details += `<br><strong>Soma final: ${formatGrade(sum).toFixed(2)}</strong>`;
+            } catch (error) {
+                details += "❌ <strong>Erro ao processar avaliação</strong>";
+            }
         }
 
         return details;
@@ -948,6 +1376,13 @@
         const evaluatedFaltaInfo = getEvaluatedFaltaInfo(evaluatedId);
 
         return evaluationDetails + evaluatorFaltaInfo + evaluatedFaltaInfo;
+    }
+
+    // Helper function to clear all caches (useful for debugging or manual refresh)
+    function clearAllCaches() {
+        console.log("Clearing all caches");
+        problemasCache = {};
+        avaliacoesCache = {};
     }
 </script>
 
@@ -1047,6 +1482,11 @@
                         Empty
                     {/if}
                 </p>
+                <p>
+                    <strong>Cache Status:</strong>
+                    Problemas: {Object.keys(problemasCache).length} turmas,
+                    Avaliacoes: {Object.keys(avaliacoesCache).length} problemas
+                </p>
             </div>
         {/if} -->
 
@@ -1065,6 +1505,11 @@
                 <p class="matrix-subtitle">
                     Linhas: Quem avaliou | Colunas: Quem foi avaliado (por
                     número)
+                    {#if selectedProblema.id_problema === -1}
+                        <br /><span style="color: #6c63ff; font-weight: 600;"
+                            >📊 Mostrando média de todos os problemas da turma</span
+                        >
+                    {/if}
                 </p>
 
                 <!-- Matrix Controls -->
@@ -1099,33 +1544,29 @@
                                         style="min-width: {zoomStyles.numberWidth}; max-width: {zoomStyles.numberWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize}; left: {zoomStyles.numberLeft};"
                                         >Número</th
                                     >
-                                    <th
-                                        class="average-header"
-                                        style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize}; left: {zoomStyles.averageLeft};"
-                                        >Média</th
-                                    >
+
                                     <!-- New columns for final media calculation -->
                                     <th
                                         class="final-media-header"
-                                        style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                        style="min-width: {zoomStyles.finalMediaWidth}; max-width: {zoomStyles.finalMediaWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
                                         title="Nota do Professor (10 pontos)"
                                         >Prof.</th
                                     >
                                     <th
                                         class="final-media-header"
-                                        style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                        style="min-width: {zoomStyles.finalMediaWidth}; max-width: {zoomStyles.finalMediaWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
                                         title="Auto Avaliação (10 pontos)"
                                         >Auto</th
                                     >
                                     <th
                                         class="final-media-header"
-                                        style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                        style="min-width: {zoomStyles.finalMediaWidth}; max-width: {zoomStyles.finalMediaWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
                                         title="Avaliação dos Pares (10 pontos)"
                                         >Pares</th
                                     >
                                     <th
                                         class="final-media-header"
-                                        style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                        style="min-width: {zoomStyles.finalMediaWidth}; max-width: {zoomStyles.finalMediaWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
                                         title="Total Final (30 pontos)"
                                         >Total</th
                                     >
@@ -1161,38 +1602,32 @@
                                         >
                                             {evaluatorIndex + 1}
                                         </td>
-                                        <td
-                                            class="average-cell"
-                                            style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize}; left: {zoomStyles.averageLeft};"
-                                        >
-                                            {getReceivedAverage(evaluator.id) ||
-                                                "-"}
-                                        </td>
+
                                         <!-- New columns for final media calculation -->
                                         <td
                                             class="final-media-cell"
-                                            style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                            style="min-width: {zoomStyles.finalMediaWidth}; max-width: {zoomStyles.finalMediaWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
                                             title="Nota do Professor (10 pontos)"
                                         >
                                             {finalMedia.professor || "-"}
                                         </td>
                                         <td
                                             class="final-media-cell"
-                                            style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                            style="min-width: {zoomStyles.finalMediaWidth}; max-width: {zoomStyles.finalMediaWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
                                             title="Auto Avaliação (10 pontos)"
                                         >
                                             {finalMedia.auto || "-"}
                                         </td>
                                         <td
                                             class="final-media-cell"
-                                            style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                            style="min-width: {zoomStyles.finalMediaWidth}; max-width: {zoomStyles.finalMediaWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
                                             title="Avaliação dos Pares (10 pontos)"
                                         >
                                             {finalMedia.peers || "-"}
                                         </td>
                                         <td
                                             class="final-media-cell"
-                                            style="min-width: {zoomStyles.averageWidth}; max-width: {zoomStyles.averageWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
+                                            style="min-width: {zoomStyles.finalMediaWidth}; max-width: {zoomStyles.finalMediaWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
                                             title="Total Final (30 pontos)"
                                         >
                                             {finalMedia.total || "-"}

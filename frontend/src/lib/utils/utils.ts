@@ -435,7 +435,7 @@ export class PDFExportUtils {
         evaluationMatrix: { [evaluatorId: number]: { [evaluatedId: number]: number } },
         selectedProblema: any,
         professor: any,
-        getReceivedAverage: (studentId: number) => number,
+        getFinalMediaForStudent: (studentId: number) => { professor: number; auto: number; peers: number; total: number },
         getProfessorGradeFor: (studentId: number) => number | null,
         formatGrade: (grade: number) => number
     ) {
@@ -464,7 +464,7 @@ export class PDFExportUtils {
 
         // Calculate page size based on table width
         const tableWidth =
-            leftMargin + nameColWidth + otherColWidth * (alunos.length + 2); // +2 for number and average columns
+            leftMargin + nameColWidth + otherColWidth * (alunos.length + 5); // +5 for number, prof, auto, pares, total columns
         const pageWidth = Math.max(800, tableWidth + 40); // Add some margin
         const pageHeight = Math.max(
             600,
@@ -488,7 +488,10 @@ export class PDFExportUtils {
         const headers = [
             "Aluno",
             "Número",
-            "Média",
+            "Prof.",
+            "Auto",
+            "Pares",
+            "Total",
             ...alunos.map((_, idx) => (idx + 1).toString()),
         ];
         headers.forEach((header, i) => {
@@ -565,8 +568,10 @@ export class PDFExportUtils {
                 color: rgb(0, 0, 0),
             });
             x += otherColWidth;
-            // Média
-            const avg = getReceivedAverage(evaluator.id) || "-";
+            // Prof, Auto, Pares, Total columns
+            const finalMedia = getFinalMediaForStudent(evaluator.id);
+
+            // Prof
             page.drawRectangle({
                 x,
                 y,
@@ -575,10 +580,64 @@ export class PDFExportUtils {
                 borderColor,
                 borderWidth: 1,
             });
-            page.drawText(avg.toString(), {
-                x: x + 20, // Reduced from 24 to 20
-                y: y + rowHeight / 2 - 5, // Reduced from 6 to 5
-                size: 11, // Reduced from 13 to 11
+            page.drawText((finalMedia.professor || "-").toString(), {
+                x: x + 20,
+                y: y + rowHeight / 2 - 5,
+                size: 11,
+                font,
+                color: rgb(0, 0, 0),
+            });
+            x += otherColWidth;
+
+            // Auto
+            page.drawRectangle({
+                x,
+                y,
+                width: otherColWidth,
+                height: rowHeight,
+                borderColor,
+                borderWidth: 1,
+            });
+            page.drawText((finalMedia.auto || "-").toString(), {
+                x: x + 20,
+                y: y + rowHeight / 2 - 5,
+                size: 11,
+                font,
+                color: rgb(0, 0, 0),
+            });
+            x += otherColWidth;
+
+            // Pares
+            page.drawRectangle({
+                x,
+                y,
+                width: otherColWidth,
+                height: rowHeight,
+                borderColor,
+                borderWidth: 1,
+            });
+            page.drawText((finalMedia.peers || "-").toString(), {
+                x: x + 20,
+                y: y + rowHeight / 2 - 5,
+                size: 11,
+                font,
+                color: rgb(0, 0, 0),
+            });
+            x += otherColWidth;
+
+            // Total
+            page.drawRectangle({
+                x,
+                y,
+                width: otherColWidth,
+                height: rowHeight,
+                borderColor,
+                borderWidth: 1,
+            });
+            page.drawText((finalMedia.total || "-").toString(), {
+                x: x + 20,
+                y: y + rowHeight / 2 - 5,
+                size: 11,
                 font,
                 color: rgb(0, 0, 0),
             });
@@ -669,7 +728,8 @@ export class PDFExportUtils {
                 color: rgb(0, 0, 0),
             });
             x += otherColWidth;
-            // Média
+            // Prof, Auto, Pares, Total columns for professor row
+            // Prof
             page.drawRectangle({
                 x,
                 y,
@@ -679,9 +739,63 @@ export class PDFExportUtils {
                 borderWidth: 1,
             });
             page.drawText("-", {
-                x: x + 20, // Reduced from 24 to 20
-                y: y + rowHeight / 2 - 5, // Reduced from 6 to 5
-                size: 11, // Reduced from 13 to 11
+                x: x + 20,
+                y: y + rowHeight / 2 - 5,
+                size: 11,
+                font,
+                color: rgb(0, 0, 0),
+            });
+            x += otherColWidth;
+
+            // Auto
+            page.drawRectangle({
+                x,
+                y,
+                width: otherColWidth,
+                height: rowHeight,
+                borderColor,
+                borderWidth: 1,
+            });
+            page.drawText("-", {
+                x: x + 20,
+                y: y + rowHeight / 2 - 5,
+                size: 11,
+                font,
+                color: rgb(0, 0, 0),
+            });
+            x += otherColWidth;
+
+            // Pares
+            page.drawRectangle({
+                x,
+                y,
+                width: otherColWidth,
+                height: rowHeight,
+                borderColor,
+                borderWidth: 1,
+            });
+            page.drawText("-", {
+                x: x + 20,
+                y: y + rowHeight / 2 - 5,
+                size: 11,
+                font,
+                color: rgb(0, 0, 0),
+            });
+            x += otherColWidth;
+
+            // Total
+            page.drawRectangle({
+                x,
+                y,
+                width: otherColWidth,
+                height: rowHeight,
+                borderColor,
+                borderWidth: 1,
+            });
+            page.drawText("-", {
+                x: x + 20,
+                y: y + rowHeight / 2 - 5,
+                size: 11,
                 font,
                 color: rgb(0, 0, 0),
             });
