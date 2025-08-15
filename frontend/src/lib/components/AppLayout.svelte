@@ -22,7 +22,7 @@
     });
 
     function checkMobile() {
-        isMobile = window.innerWidth < 768;
+        isMobile = window.innerWidth < 900;
         if (!isMobile && !sidebarOpen) {
             sidebarOpen = true;
         }
@@ -199,7 +199,7 @@
         class:generic-layout={userType === "generic"}
         style="margin-left: {userType === 'generic' || isMobile
             ? '0'
-            : '250px'};"
+            : 'min(25vw, 250px)'};"
     >
         <div
             class="main-card"
@@ -279,7 +279,7 @@
         border: none !important;
         padding-bottom: 0 !important;
         transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        width: 250px;
+        width: 25vw;
         max-width: 250px;
         height: 100dvh;
         min-height: 100dvh;
@@ -290,6 +290,7 @@
         flex-direction: initial;
         align-items: initial;
         transform: translateX(0);
+        box-sizing: border-box;
     }
     .sidebar.mobile {
         transform: translateX(-100%);
@@ -394,7 +395,7 @@
         flex: 1;
         background-color: var(--color-bg-white);
         overflow-y: auto;
-        margin-left: 250px;
+        margin-left: min(25vw, 250px);
         display: flex;
         grid-template-columns: 1fr;
         align-items: flex-start;
@@ -440,7 +441,7 @@
             0 8px 15px rgba(0, 0, 0, 0.06);
         transform: translateY(-2px);
     }
-    @media (max-width: 768px) {
+    @media (max-width: 900px) {
         .mobile-menu-btn {
             display: flex;
         }
