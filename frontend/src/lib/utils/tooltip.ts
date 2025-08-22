@@ -83,6 +83,33 @@ export const tooltip: Action<HTMLElement, TooltipParams> = (node, params) => {
 
         dialogContent.appendChild(header);
         dialogContent.appendChild(content);
+
+        // Add a footer with an explicit OK button to close the dialog on mobile
+        const footer = document.createElement('div');
+        footer.style.cssText = `
+            display: flex;
+            justify-content: center; /* centraliza o botão */
+            margin-top: 16px;
+        `;
+
+        const okButton = document.createElement('button');
+        okButton.type = 'button';
+        okButton.textContent = 'OK';
+        okButton.style.cssText = `
+            
+            background: #16a34a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        `;
+        okButton.addEventListener('click', () => hideTooltip());
+
+        footer.appendChild(okButton);
+        dialogContent.appendChild(footer);
         newDialogElement.appendChild(dialogContent);
         document.body.appendChild(newDialogElement);
 
