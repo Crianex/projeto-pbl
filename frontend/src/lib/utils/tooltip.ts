@@ -34,7 +34,6 @@ export const tooltip: Action<HTMLElement, TooltipParams> = (node, params) => {
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             line-height: 1.4;
             pointer-events: none;
-            transform: translate(10px, -100%);
             display: none;
         `;
         document.body.appendChild(tooltipElement);
@@ -134,9 +133,35 @@ export const tooltip: Action<HTMLElement, TooltipParams> = (node, params) => {
             // On desktop, show tooltip
             if (tooltipElement) {
                 tooltipElement.innerHTML = params.title;
-                tooltipElement.style.left = `${event.clientX}px`;
-                tooltipElement.style.top = `${event.clientY}px`;
+
+                // Exibe para medir, mas sem piscar (invisível)
                 tooltipElement.style.display = 'block';
+                (tooltipElement.style as any).visibility = 'hidden';
+
+                const rect = tooltipElement.getBoundingClientRect();
+                const margin = 8;
+                const dx = 10; // afastamento horizontal do cursor
+                const dy = 12; // afastamento vertical do cursor
+
+                // Preferir acima do cursor
+                let left = event.clientX + dx;
+                let top = event.clientY - rect.height - dy;
+
+                // Se não cabe acima, posiciona abaixo
+                if (top < margin) {
+                    top = event.clientY + dy;
+                }
+
+                // Clamp horizontal
+                left = Math.max(margin, Math.min(left, window.innerWidth - rect.width - margin));
+                // Clamp vertical
+                top = Math.max(margin, Math.min(top, window.innerHeight - rect.height - margin));
+
+                tooltipElement.style.left = `${left}px`;
+                tooltipElement.style.top = `${top}px`;
+
+                // Tornar visível agora
+                (tooltipElement.style as any).visibility = 'visible';
                 visible = true;
             }
         }
