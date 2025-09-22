@@ -150,22 +150,26 @@ export const Utils = {
 
         try {
             // Check if user exists as professor
-            const { data: professor, error } = await SupabaseWrapper.get()
+            const { data: professores, error } = await SupabaseWrapper.get()
                 .from('professores')
                 .select('id_professor, email, nome_completo')
-                .eq('email', email)
-                .single();
+                .eq('email', email);
 
             if (error) {
                 utilsLogger.error(`Error checking professor: ${error.message}`);
                 return null;
             }
 
-            if (!professor) {
-                utilsLogger.error(`Professor not found with email: ${email}`);
+            if (!professores || professores.length === 0) {
                 return null;
             }
 
+            // If multiple professors found, use the first one and log a warning
+            if (professores.length > 1) {
+                utilsLogger.warn(`Multiple professor records found for email ${email}, using first one`);
+            }
+
+            const professor = professores[0];
             return {
                 id: professor.id_professor,
                 email: professor.email,
@@ -191,22 +195,26 @@ export const Utils = {
 
         try {
             // Check if user exists as coordenador
-            const { data: coordenador, error } = await SupabaseWrapper.get()
+            const { data: coordenadores, error } = await SupabaseWrapper.get()
                 .from('coordenadores')
                 .select('*')
-                .eq('email', email)
-                .single();
+                .eq('email', email);
 
             if (error) {
                 utilsLogger.error(`Error checking coordenador: ${error.message}`);
                 return null;
             }
 
-            if (!coordenador) {
-                utilsLogger.error(`Coordenador not found with email: ${email}`);
+            if (!coordenadores || coordenadores.length === 0) {
                 return null;
             }
 
+            // If multiple coordenadores found, use the first one and log a warning
+            if (coordenadores.length > 1) {
+                utilsLogger.warn(`Multiple coordenador records found for email ${email}, using first one`);
+            }
+
+            const coordenador = coordenadores[0];
             return {
                 id: coordenador.id_coordenador,
                 email: coordenador.email,

@@ -72,6 +72,16 @@
     async function handlePageChange(event: CustomEvent<{ page: number }>) {
         const newIndex = event.detail.page - 1; // Convert from 1-based to 0-based
         if (newIndex >= 0 && newIndex < sortedAlunos.length) {
+            // Auto-save current evaluation before navigating
+            const saveSuccess = await saveEvaluation();
+            if (!saveSuccess) {
+                // If save failed, don't navigate
+                toastStore.error(
+                    "Erro ao salvar avaliação. Navegação cancelada.",
+                );
+                return;
+            }
+
             const targetAluno = sortedAlunos[newIndex];
 
             // Update the URL without reloading
@@ -684,49 +694,71 @@
         showDialog = false;
     }
 
-    async function handleSubmit() {
+    async function saveEvaluation(alunoId?: number) {
         try {
             isSubmitting = true;
+            logger.info(
+                `Starting save evaluation for aluno ${alunoId || "current"}`,
+            );
 
-            // Get the current aluno being evaluated
-            const currentAluno = sortedAlunos[currentAlunoIndex];
-            if (!currentAluno) {
+            // Get the aluno to evaluate (current one if not specified)
+            const alunoToEvaluate = alunoId
+                ? sortedAlunos.find((aluno) => aluno.id === alunoId)
+                : sortedAlunos[currentAlunoIndex];
+
+            if (!alunoToEvaluate) {
                 error = "Aluno não encontrado.";
-                return;
+                return false;
             }
 
             if (!id_problema) {
                 error = "Parâmetros obrigatórios não fornecidos.";
-                return;
+                return false;
             }
 
             // 1. Fetch only the potentially duplicate evaluations using filtered queries
             let possibleDuplicates = [] as any[];
             if (isProfessorEvaluation) {
+                logger.info(
+                    `Fetching duplicates for professor evaluation: problema ${id_problema}, professor ${id_professor}, aluno ${alunoToEvaluate.id}`,
+                );
                 const byAvaliado =
                     await AvaliacoesService.getByProblemaForAvaliado(
                         parseInt(id_problema),
-                        currentAluno.id,
+                        alunoToEvaluate.id,
                     );
                 possibleDuplicates = byAvaliado.filter(
                     (av) => av.id_professor === parseInt(id_professor!),
                 );
             } else {
+                logger.info(
+                    `Fetching duplicates for student evaluation: problema ${id_problema}, avaliador ${id_aluno_avaliador}, aluno ${alunoToEvaluate.id}`,
+                );
                 const byAvaliador =
                     await AvaliacoesService.getByProblemaForAvaliador(
                         parseInt(id_problema),
                         parseInt(id_aluno_avaliador!),
                     );
                 possibleDuplicates = byAvaliador.filter(
-                    (av) => av.aluno_avaliado?.id === currentAluno.id,
+                    (av) => av.aluno_avaliado?.id === alunoToEvaluate.id,
                 );
             }
 
-            // 3. Delete duplicates
-            for (const av of possibleDuplicates) {
-                await AvaliacoesService.delete(
-                    av.id_avaliacao.toString(),
-                    id_problema.toString(),
+            logger.info(
+                `Found ${possibleDuplicates.length} duplicate evaluations to delete`,
+            );
+
+            // 3. Delete duplicates (batch operation to reduce API calls)
+            if (possibleDuplicates.length > 0) {
+                const deletePromises = possibleDuplicates.map((av) =>
+                    AvaliacoesService.delete(
+                        av.id_avaliacao.toString(),
+                        id_problema.toString(),
+                    ),
+                );
+                await Promise.all(deletePromises);
+                logger.info(
+                    `Deleted ${possibleDuplicates.length} duplicate evaluations`,
                 );
             }
 
@@ -734,16 +766,22 @@
 
             if (isProfessorEvaluation) {
                 // Use the new avaliacoes/create endpoint for professor evaluations
+                logger.info(
+                    `Creating professor evaluation via /avaliacoes/create`,
+                );
                 const payload = {
                     id_problema: parseInt(id_problema),
                     id_professor: parseInt(id_professor!),
-                    id_aluno_avaliado: currentAluno.id,
+                    id_aluno_avaliado: alunoToEvaluate.id,
                     notas: JSON.stringify(notas),
                     notas_por_arquivo: JSON.stringify(fileGrades),
                 };
                 await AvaliacoesService.create(payload);
             } else {
                 // Use the existing problemas/add-avaliacao endpoint for student evaluations
+                logger.info(
+                    `Creating student evaluation via /problemas/add-avaliacao`,
+                );
                 const media =
                     MediaCalculator.calculateCurrentMedia(currentValues);
                 const notasWithMedia = {
@@ -753,20 +791,44 @@
                 const payload = {
                     id_problema: parseInt(id_problema),
                     id_aluno_avaliador: parseInt(id_aluno_avaliador!),
-                    id_aluno_avaliado: currentAluno.id,
+                    id_aluno_avaliado: alunoToEvaluate.id,
                     notas: JSON.stringify(notasWithMedia),
                 };
                 await AvaliacoesService.create(payload);
             }
 
-            toastStore.success("Avaliação salva com sucesso!");
-            history.back();
+            logger.info(
+                `Successfully saved evaluation for aluno ${alunoToEvaluate.id}`,
+            );
+            return true;
         } catch (e: any) {
-            logger.error(e);
+            logger.error(`Error saving evaluation: ${e.message}`, e);
             error = e.message || "Erro ao salvar avaliação";
-            toastStore.error(error || "Erro ao salvar avaliação");
+            return false;
         } finally {
             isSubmitting = false;
+        }
+    }
+
+    async function handleBack() {
+        // Auto-save current evaluation before going back
+        const saveSuccess = await saveEvaluation();
+        if (saveSuccess) {
+            history.back();
+        } else {
+            // If save failed, still go back but show error
+            toastStore.error("Erro ao salvar avaliação antes de voltar.");
+            history.back();
+        }
+    }
+
+    async function handleSubmit() {
+        const success = await saveEvaluation();
+        if (success) {
+            toastStore.success("Avaliação salva com sucesso!");
+            history.back();
+        } else {
+            toastStore.error(error || "Erro ao salvar avaliação");
         }
     }
 
@@ -775,7 +837,7 @@
 
 <div class="evaluation-container">
     <div class="back-section">
-        <BackButton text="Voltar" on:click={() => history.back()} />
+        <BackButton text="Voltar" on:click={handleBack} />
         {#if sortedAlunos.length > 1}
             <div class="mobile-pagination">
                 <Pagination

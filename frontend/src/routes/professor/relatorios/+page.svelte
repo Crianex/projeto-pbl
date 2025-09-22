@@ -706,7 +706,13 @@
             return;
         }
 
-        alunos = selectedTurma.alunos || [];
+        alunos = (selectedTurma.alunos || []).sort((a, b) =>
+            (a.nome_completo || "").localeCompare(
+                b.nome_completo || "",
+                "pt-BR",
+                { sensitivity: "base" },
+            ),
+        );
         evaluationMatrix = {};
 
         console.log("Building matrix with:", {
