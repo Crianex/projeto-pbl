@@ -195,7 +195,7 @@
                     results.length === 0 ||
                     results.every((a) => selected.has(a.id.toString()))}
             >
-                {loadingAll ? "Carregando..." : "Selecionar Todos"}
+                {loadingAll ? "Carregando..." : "Nenhum Selecionado"}
             </Button>
         </div>
 

@@ -28,7 +28,7 @@
 
     let turmas: TurmaModel[] = [];
     let selectedTurma: TurmaModel | null = null;
-    let selectedProblema: ProblemaModel | null = null;
+    let selectedProblemas: ProblemaModel[] = [];
     let problemas: ProblemaModel[] = [];
     let avaliacoes: AvaliacaoModel[] = [];
     let loading = true;
@@ -95,9 +95,9 @@
         peers: number;
         total: number;
     } {
-        if (!selectedProblema || !avaliacoes || !alunos) {
+        if (!selectedProblemas.length || !avaliacoes || !alunos) {
             console.log("getFinalMediaForStudent: Missing data", {
-                selectedProblema: !!selectedProblema,
+                selectedProblemas: selectedProblemas.length,
                 avaliacoes: avaliacoes?.length,
                 alunos: alunos?.length,
                 studentId,
@@ -105,13 +105,14 @@
             return { professor: 0, auto: 0, peers: 0, total: 0 };
         }
 
-        // If showing average of all problems, calculate average across all problems
-        if (selectedProblema.id_problema === -1) {
-            return getAverageFinalMediaAcrossAllProblems(studentId);
+        // If multiple problems selected, calculate average across selected problems
+        if (selectedProblemas.length > 1) {
+            return getAverageFinalMediaAcrossSelectedProblems(studentId);
         }
 
         try {
-            // Parse criterios and file definitions from the problem
+            // Parse criterios and file definitions from the single selected problem
+            const selectedProblema = selectedProblemas[0];
             let criteriosGroup = {};
             let fileDefs = [];
             try {
@@ -186,14 +187,14 @@
         }
     }
 
-    // Helper function to calculate average final media across all problems
-    function getAverageFinalMediaAcrossAllProblems(studentId: number): {
+    // Helper function to calculate average final media across selected problems
+    function getAverageFinalMediaAcrossSelectedProblems(studentId: number): {
         professor: number;
         auto: number;
         peers: number;
         total: number;
     } {
-        if (!problemas || problemas.length === 0) {
+        if (!selectedProblemas || selectedProblemas.length === 0) {
             return { professor: 0, auto: 0, peers: 0, total: 0 };
         }
 
@@ -204,8 +205,8 @@
             total: number;
         }[] = [];
 
-        // Calculate final media for each problem
-        for (const problema of problemas) {
+        // Calculate final media for each selected problem
+        for (const problema of selectedProblemas) {
             try {
                 // Get avaliacoes for this specific problem
                 const problemAvaliacoes = avaliacoes.filter(
@@ -413,15 +414,13 @@
                 problemas,
             );
 
-            // Auto-select the first problema if available
-            if (problemas.length > 1) {
-                selectedProblema = problemas[0];
-                if (selectedProblema.id_problema === -1) {
-                    selectedProblema = problemas[1];
-                }
-                await fetchAvaliacoes(selectedProblema.id_problema);
+            // Auto-select ALL problems when turma is loaded (excluding the "average" option)
+            const realProblemas = problemas.filter((p) => p.id_problema !== -1);
+            if (realProblemas.length > 0) {
+                selectedProblemas = realProblemas; // Select all problems instead of just the first
+                await fetchSelectedProblemasAvaliacoes(); // Fetch all selected problems
             } else {
-                selectedProblema = null;
+                selectedProblemas = [];
                 avaliacoes = [];
                 evaluationMatrix = {};
             }
@@ -457,15 +456,18 @@
                     ...problemas,
                 ];
 
-                // Auto-select first problem if this is the initial load (no selectedProblema yet)
-                if (!selectedProblema && problemas.length > 1) {
-                    selectedProblema = problemas[0];
-                    if (selectedProblema.id_problema === -1) {
-                        selectedProblema = problemas[1];
-                    }
-                    await fetchAvaliacoes(selectedProblema.id_problema);
+                // Auto-select ALL problems if this is the initial load (no selectedProblemas yet)
+                const realProblemas = problemas.filter(
+                    (p) => p.id_problema !== -1,
+                );
+                if (
+                    selectedProblemas.length === 0 &&
+                    realProblemas.length > 0
+                ) {
+                    selectedProblemas = realProblemas; // Select all problems instead of just the first
+                    await fetchSelectedProblemasAvaliacoes(); // Fetch all selected problems
                 } else {
-                    selectedProblema = null;
+                    selectedProblemas = [];
                     avaliacoes = [];
                     evaluationMatrix = {};
                 }
@@ -511,15 +513,15 @@
                 ...problemas,
             ];
 
-            // Auto-select first problem if this is the initial load (no selectedProblema yet)
-            if (!selectedProblema && sortedData.length > 0) {
-                selectedProblema = sortedData[0];
-                if (selectedProblema.id_problema === -1) {
-                    selectedProblema = sortedData[1];
-                }
-                await fetchAvaliacoes(selectedProblema.id_problema);
+            // Auto-select ALL problems if this is the initial load (no selectedProblemas yet)
+            const realProblemas = sortedData.filter(
+                (p) => p.id_problema !== -1,
+            );
+            if (selectedProblemas.length === 0 && realProblemas.length > 0) {
+                selectedProblemas = realProblemas; // Select all problems instead of just the first
+                await fetchSelectedProblemasAvaliacoes(); // Fetch all selected problems
             } else {
-                selectedProblema = null;
+                selectedProblemas = [];
                 avaliacoes = [];
                 evaluationMatrix = {};
             }
@@ -531,7 +533,7 @@
             console.error("Error fetching problemas:", err);
             // Even if there's an error, clear the data
             problemas = [];
-            selectedProblema = null;
+            selectedProblemas = [];
             avaliacoes = [];
             evaluationMatrix = {};
         } finally {
@@ -599,25 +601,27 @@
         }
     }
 
-    async function fetchAllProblemsAvaliacoes() {
+    async function fetchSelectedProblemasAvaliacoes() {
         try {
             loadingAvaliacoes = true;
             error = null;
 
-            if (!selectedTurma || problemas.length === 0) {
+            if (!selectedTurma || selectedProblemas.length === 0) {
                 avaliacoes = [];
                 buildEvaluationMatrix();
                 return;
             }
 
-            // Check if we already have all problems cached
-            const allProblemsCached = problemas.every(
+            // Check if we already have all selected problems cached
+            const allSelectedProblemsCached = selectedProblemas.every(
                 (problema) => avaliacoesCache[problema.id_problema],
             );
 
-            if (allProblemsCached) {
-                console.log("All problems already cached, combining data...");
-                const allAvaliacoes = problemas.flatMap(
+            if (allSelectedProblemsCached) {
+                console.log(
+                    "All selected problems already cached, combining data...",
+                );
+                const allAvaliacoes = selectedProblemas.flatMap(
                     (problema) => avaliacoesCache[problema.id_problema],
                 );
                 avaliacoes = allAvaliacoes;
@@ -627,14 +631,14 @@
             }
 
             console.log(
-                "Fetching all problems avaliacoes for turma:",
+                "Fetching selected problems avaliacoes for turma:",
                 selectedTurma.id_turma,
             );
 
-            // Fetch all avaliacoes for all problems in the turma
+            // Fetch all avaliacoes for selected problems
             const allAvaliacoes: AvaliacaoModel[] = [];
 
-            for (const problema of problemas) {
+            for (const problema of selectedProblemas) {
                 try {
                     // Check if we already have this problem's avaliacoes in cache
                     if (avaliacoesCache[problema.id_problema]) {
@@ -670,7 +674,7 @@
 
             avaliacoes = allAvaliacoes;
             console.log(
-                "fetchAllProblemsAvaliacoes - total avaliacoes:",
+                "fetchSelectedProblemasAvaliacoes - total avaliacoes:",
                 avaliacoes.length,
             );
             buildEvaluationMatrix();
@@ -678,8 +682,8 @@
             error =
                 err instanceof Error
                     ? err.message
-                    : "Failed to fetch all problems avaliacoes";
-            console.error("Error fetching all problems avaliacoes:", err);
+                    : "Failed to fetch selected problems avaliacoes";
+            console.error("Error fetching selected problems avaliacoes:", err);
             avaliacoes = [];
         } finally {
             loadingAvaliacoes = false;
@@ -730,8 +734,8 @@
         });
 
         // Fill matrix with evaluation data
-        if (selectedProblema?.id_problema === -1) {
-            // Calculate averages across all problems
+        if (selectedProblemas.length > 1) {
+            // Calculate averages across multiple selected problems
             const evaluationCounts: {
                 [evaluatorId: number]: { [evaluatedId: number]: number };
             } = {};
@@ -783,8 +787,12 @@
                 });
             });
         } else {
-            // Single problem - use original logic
-            avaliacoes.forEach((avaliacao, index) => {
+            // Single problem - use original logic (filter avaliacoes by selected problem)
+            const selectedProblemaId = selectedProblemas[0]?.id_problema;
+            const filteredAvaliacoes = avaliacoes.filter(
+                (av) => av.id_problema === selectedProblemaId,
+            );
+            filteredAvaliacoes.forEach((avaliacao, index) => {
                 if (
                     avaliacao.aluno_avaliador?.id &&
                     avaliacao.aluno_avaliado?.id
@@ -817,14 +825,14 @@
 
         if (turmaId) {
             selectedTurma = turmas.find((t) => t.id_turma === turmaId) || null;
-            selectedProblema = null;
+            selectedProblemas = [];
             avaliacoes = [];
             evaluationMatrix = {};
             await fetchProblemas(turmaId);
         } else {
             // Handle case where no turma is selected
             selectedTurma = null;
-            selectedProblema = null;
+            selectedProblemas = [];
             problemas = [];
             avaliacoes = [];
             evaluationMatrix = {};
@@ -832,35 +840,25 @@
     }
 
     async function handleProblemaSelect(event: CustomEvent) {
-        const problemaId = event.detail;
+        const selectedProblemasArray = event.detail;
 
-        if (problemaId === -1) {
-            // Handle average of all problems
-            selectedProblema = {
-                id_problema: -1,
-                nome_problema: "Média de Todos os Problemas",
-                media_geral: null,
-                id_turma: selectedTurma?.id_turma || 0,
-                created_at: new Date(),
-                turma: selectedTurma,
-                criterios: {},
-                definicao_arquivos_de_avaliacao: [],
-                data_e_hora_criterios_e_arquivos: {},
-                faltas_por_tag: {},
-            } as ProblemaModel;
-            await fetchAllProblemsAvaliacoes();
-            console.log(
-                "fetchAllProblemsAvaliacoes - selectedProblema:",
-                selectedProblema,
-            );
-        } else if (problemaId) {
-            selectedProblema =
-                problemas.find((p) => p.id_problema === problemaId) || null;
-            if (selectedProblema) {
-                await fetchAvaliacoes(problemaId);
+        if (selectedProblemasArray && selectedProblemasArray.length > 0) {
+            selectedProblemas = selectedProblemasArray;
+
+            if (selectedProblemas.length === 1) {
+                // Single problem selected
+                await fetchAvaliacoes(selectedProblemas[0].id_problema);
+            } else {
+                // Multiple problems selected
+                await fetchSelectedProblemasAvaliacoes();
             }
+
+            console.log(
+                "handleProblemaSelect - selectedProblemas:",
+                selectedProblemas,
+            );
         } else {
-            selectedProblema = null;
+            selectedProblemas = [];
             avaliacoes = [];
             evaluationMatrix = {};
         }
@@ -872,7 +870,7 @@
 
         // Reset selections when professor changes
         selectedTurma = null;
-        selectedProblema = null;
+        selectedProblemas = [];
         problemas = [];
         avaliacoes = [];
         evaluationMatrix = {};
@@ -1070,7 +1068,7 @@
 
     // Make statistics reactive to evaluationMatrix and alunos changes, but not zoom changes
     $: statistics =
-        selectedProblema && alunos.length > 0
+        selectedProblemas.length > 0 && alunos.length > 0
             ? getMatrixStatistics(evaluationMatrix, alunos)
             : {
                   totalAlunos: 0,
@@ -1131,10 +1129,10 @@
     function exportMatrixAsCSV() {
         if (!alunos.length || !Object.keys(evaluationMatrix).length) return;
 
-        const isAllProblems = selectedProblema?.id_problema === -1;
-        const title = isAllProblems
-            ? "Média de Todos os Problemas"
-            : selectedProblema?.nome_problema || "matriz";
+        const isMultipleProblems = selectedProblemas.length > 1;
+        const title = isMultipleProblems
+            ? `Média de ${selectedProblemas.length} Problemas`
+            : selectedProblemas[0]?.nome_problema || "matriz";
 
         let csv = "Aluno,Número,Prof.,Auto,Pares,Total";
         alunos.forEach((aluno, idx) => {
@@ -1193,10 +1191,19 @@
 
     // PDF Export using pdf-lib
     async function exportMatrixAsPDF() {
+        // For PDF export, we'll use the first selected problem or create a combined title
+        const problemForPDF =
+            selectedProblemas.length === 1
+                ? selectedProblemas[0]
+                : {
+                      ...selectedProblemas[0],
+                      nome_problema: `Média de ${selectedProblemas.length} Problemas`,
+                  };
+
         await PDFExportUtils.exportMatrixAsPDF(
             alunos,
             evaluationMatrix,
-            selectedProblema,
+            problemForPDF,
             professor,
             getFinalMediaForStudent,
             getProfessorGradeFor,
@@ -1209,7 +1216,7 @@
         evaluatorId: number,
         evaluatedId: number,
     ): string {
-        if (!selectedProblema || !avaliacoes) return "";
+        if (!selectedProblemas.length || !avaliacoes) return "";
 
         const evaluator = alunos.find((a) => a.id === evaluatorId);
         const evaluated = alunos.find((a) => a.id === evaluatedId);
@@ -1218,8 +1225,8 @@
 
         let details = `<strong>${evaluator.nome_completo}</strong> avaliou <strong>${evaluated.nome_completo}</strong><br><br>`;
 
-        if (selectedProblema.id_problema === -1) {
-            // Show average across all problems
+        if (selectedProblemas.length > 1) {
+            // Show average across selected problems
             details +=
                 "📊 <strong>Média de todos os problemas:</strong><br><br>";
 
@@ -1227,14 +1234,14 @@
                 [problemaId: number]: { nota: number; problemaNome: string };
             } = {};
 
-            // Group evaluations by problem
+            // Group evaluations by selected problems
             avaliacoes.forEach((avaliacao) => {
                 if (
                     avaliacao.aluno_avaliador?.id === evaluatorId &&
                     avaliacao.aluno_avaliado?.id === evaluatedId &&
                     avaliacao.id_problema
                 ) {
-                    const problema = problemas.find(
+                    const problema = selectedProblemas.find(
                         (p) => p.id_problema === avaliacao.id_problema,
                     );
                     if (problema) {
@@ -1270,11 +1277,12 @@
             }
         } else {
             // Single problem - use original logic
-            // Get the specific evaluation
+            // Get the specific evaluation for the selected problem
             const evaluation = avaliacoes.find(
                 (av) =>
                     av.aluno_avaliador?.id === evaluatorId &&
-                    av.aluno_avaliado?.id === evaluatedId,
+                    av.aluno_avaliado?.id === evaluatedId &&
+                    av.id_problema === selectedProblemas[0]?.id_problema,
             );
 
             if (!evaluation) {
@@ -1313,60 +1321,86 @@
 
     // Helper to get falta information for tooltips
     function getFaltaInfo(studentId: number): string {
-        if (!selectedProblema || !selectedProblema.faltas_por_tag) return "";
+        if (!selectedProblemas.length) return "";
 
-        try {
-            const faltasPorTag = selectedProblema.faltas_por_tag;
-            const student = alunos.find((a) => a.id === studentId);
+        // For multiple problems, we'll show faltas from all selected problems
+        let allFaltasTags: string[] = [];
 
-            if (!student) return "";
+        selectedProblemas.forEach((problema) => {
+            if (!problema.faltas_por_tag) return;
 
-            const missedTags = Object.entries(faltasPorTag)
-                .filter(([tag, students]) => {
-                    if (typeof students === "object" && students !== null) {
-                        return (students as any)[studentId] === true;
-                    }
-                    return false;
-                })
-                .map(([tag]) => tag);
+            try {
+                const faltasPorTag = problema.faltas_por_tag;
+                const student = alunos.find((a) => a.id === studentId);
 
-            if (missedTags.length === 0) {
-                return "";
+                if (!student) return;
+
+                const missedTags = Object.entries(faltasPorTag)
+                    .filter(([tag, students]) => {
+                        if (typeof students === "object" && students !== null) {
+                            return (students as any)[studentId] === true;
+                        }
+                        return false;
+                    })
+                    .map(([tag]) => `${tag} (${problema.nome_problema})`);
+
+                allFaltasTags.push(...missedTags);
+            } catch (error) {
+                console.warn(
+                    "Error processing faltas for problema:",
+                    problema.id_problema,
+                );
             }
+        });
 
-            return `<br><br>⚠️ <strong>Faltas registradas:</strong><br>• ${missedTags.join("<br>• ")}`;
-        } catch (error) {
+        if (allFaltasTags.length === 0) {
             return "";
         }
+
+        return `<br><br>⚠️ <strong>Faltas registradas:</strong><br>• ${allFaltasTags.join("<br>• ")}`;
     }
 
     // Helper to get falta information for the evaluated student
     function getEvaluatedFaltaInfo(evaluatedId: number): string {
-        if (!selectedProblema || !selectedProblema.faltas_por_tag) return "";
+        if (!selectedProblemas.length) return "";
 
-        try {
-            const faltasPorTag = selectedProblema.faltas_por_tag;
-            const evaluatedStudent = alunos.find((a) => a.id === evaluatedId);
+        // For multiple problems, we'll show faltas from all selected problems
+        let allFaltasTags: string[] = [];
 
-            if (!evaluatedStudent) return "";
+        selectedProblemas.forEach((problema) => {
+            if (!problema.faltas_por_tag) return;
 
-            const missedTags = Object.entries(faltasPorTag)
-                .filter(([tag, students]) => {
-                    if (typeof students === "object" && students !== null) {
-                        return (students as any)[evaluatedId] === true;
-                    }
-                    return false;
-                })
-                .map(([tag]) => tag);
+            try {
+                const faltasPorTag = problema.faltas_por_tag;
+                const evaluatedStudent = alunos.find(
+                    (a) => a.id === evaluatedId,
+                );
 
-            if (missedTags.length === 0) {
-                return "";
+                if (!evaluatedStudent) return;
+
+                const missedTags = Object.entries(faltasPorTag)
+                    .filter(([tag, students]) => {
+                        if (typeof students === "object" && students !== null) {
+                            return (students as any)[evaluatedId] === true;
+                        }
+                        return false;
+                    })
+                    .map(([tag]) => `${tag} (${problema.nome_problema})`);
+
+                allFaltasTags.push(...missedTags);
+            } catch (error) {
+                console.warn(
+                    "Error processing evaluated faltas for problema:",
+                    problema.id_problema,
+                );
             }
+        });
 
-            return `<br><br>⚠️ <strong>AVISO: Aluno avaliado faltou em:</strong><br>• ${missedTags.join("<br>• ")}`;
-        } catch (error) {
+        if (allFaltasTags.length === 0) {
             return "";
         }
+
+        return `<br><br>⚠️ <strong>AVISO: Aluno avaliado faltou em:</strong><br>• ${allFaltasTags.join("<br>• ")}`;
     }
 
     // Helper to generate complete tooltip content
@@ -1428,7 +1462,7 @@
             {turmas}
             {selectedTurma}
             {problemas}
-            {selectedProblema}
+            {selectedProblemas}
             {professores}
             {selectedProfessorId}
             isCoordenador={$currentUser ? isCoordenador($currentUser) : false}
@@ -1497,23 +1531,31 @@
         {/if} -->
 
         <!-- Evaluation Matrix -->
-        {#if selectedTurma && !selectedProblema}
+        {#if selectedTurma && selectedProblemas.length === 0}
             <div class="no-problema-selected">
-                <p>Selecione um problema para visualizar as avaliações</p>
+                <p>
+                    Selecione um ou mais problemas para visualizar as avaliações
+                </p>
             </div>
-        {:else if selectedProblema && alunos.length > 0}
+        {:else if selectedProblemas.length > 0 && alunos.length > 0}
             <ExportControls
                 on:exportCSV={exportMatrixAsCSV}
                 on:exportPDF={exportMatrixAsPDF}
             />
             <div class="matrix-section">
-                <h2>Matriz de Avaliações - {selectedProblema.nome_problema}</h2>
+                <h2>
+                    Matriz de Avaliações - {selectedProblemas.length === 1
+                        ? selectedProblemas[0].nome_problema
+                        : `${selectedProblemas.length} Problemas Selecionados`}
+                </h2>
                 <p class="matrix-subtitle">
                     Linhas: Quem avaliou | Colunas: Quem foi avaliado (por
                     número)
-                    {#if selectedProblema.id_problema === -1}
+                    {#if selectedProblemas.length > 1}
                         <br /><span style="color: #6c63ff; font-weight: 600;"
-                            >📊 Mostrando média de todos os problemas da turma</span
+                            >📊 Mostrando média dos problemas selecionados: {selectedProblemas
+                                .map((p) => p.nome_problema)
+                                .join(", ")}</span
                         >
                     {/if}
                 </p>
@@ -1636,7 +1678,9 @@
                                             style="min-width: {zoomStyles.finalMediaWidth}; max-width: {zoomStyles.finalMediaWidth}; padding: {zoomStyles.headerPadding}; height: {zoomStyles.cellHeight}; font-size: {zoomStyles.fontSize};"
                                             title="Total Final (30 pontos)"
                                         >
-                                            {finalMedia.total || "-"}
+                                            {(finalMedia.total / 3).toFixed(
+                                                2,
+                                            ) || "-"}
                                         </td>
                                         {#each alunos as evaluated}
                                             {@const grade =

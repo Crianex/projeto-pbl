@@ -1,5 +1,8 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
+    import Dropdown from "$lib/components/Dropdown.svelte";
+    import MultiSelectDropdown from "./MultiSelectDropdown.svelte";
+    import DropdownPortal from "$lib/components/DropdownPortal.svelte";
     import type {
         TurmaModel,
         ProblemaModel,
@@ -9,83 +12,98 @@
     export let turmas: TurmaModel[] = [];
     export let selectedTurma: TurmaModel | null = null;
     export let problemas: ProblemaModel[] = [];
-    export let selectedProblema: ProblemaModel | null = null;
+    export let selectedProblemas: ProblemaModel[] = [];
     export let professores: ProfessorModel[] = [];
     export let selectedProfessorId: number | null = null;
     export let isCoordenador: boolean = false;
 
     const dispatch = createEventDispatcher();
 
-    function handleProfessorSelect(event: Event) {
-        const target = event.target as HTMLSelectElement;
-        const professorId = parseInt(target.value);
+    // Convert data to dropdown format
+    $: turmaOptions = turmas.map((turma) => ({
+        value: turma.id_turma,
+        label: `${turma.nome_turma || "Turma sem nome"} (${turma.alunos?.length || 0} alunos)`,
+    }));
+
+    // Filter out the "Média de Todos os Problemas" option and convert to dropdown format
+    $: problemaOptions = problemas
+        .filter((problema) => problema.id_problema !== -1)
+        .map((problema) => ({
+            value: problema.id_problema,
+            label: problema.nome_problema || "Problema sem nome",
+        }));
+
+    $: professorOptions = professores.map((professor) => ({
+        value: professor.id,
+        label: professor.nome_completo || "Professor sem nome",
+    }));
+
+    // Get selected problema IDs for the multiselect
+    $: selectedProblemaIds = selectedProblemas.map((p) => p.id_problema);
+
+    function handleProfessorSelect(event: CustomEvent) {
+        const professorId = event.detail.value;
         dispatch("professorSelect", professorId);
     }
 
-    function handleTurmaSelect(event: Event) {
-        const target = event.target as HTMLSelectElement;
-        const turmaId = parseInt(target.value);
+    function handleTurmaSelect(event: CustomEvent) {
+        const turmaId = event.detail.value;
         dispatch("turmaSelect", turmaId);
     }
 
-    function handleProblemaSelect(event: Event) {
-        const target = event.target as HTMLSelectElement;
-        const problemaId = parseInt(target.value);
-        dispatch("problemaSelect", problemaId);
+    function handleProblemaSelect(event: CustomEvent) {
+        const selectedIds = event.detail.value;
+        const selectedProblemasArray = problemas.filter((problema) =>
+            selectedIds.includes(problema.id_problema),
+        );
+        dispatch("problemaSelect", selectedProblemasArray);
     }
 </script>
 
 <div class="filters-section">
     {#if isCoordenador}
         <div class="filter-group">
-            <label for="professor-select">Professor:</label>
-            <select
+            <Dropdown
                 id="professor-select"
-                value={selectedProfessorId || ""}
+                label="Professor:"
+                options={professorOptions}
+                value={selectedProfessorId}
+                placeholder="Todos os professores"
                 on:change={handleProfessorSelect}
-                class="filter-select"
-            >
-                <option value="">Todos os professores</option>
-                {#each professores as professor}
-                    <option value={professor.id}>
-                        {professor.nome_completo}
-                    </option>
-                {/each}
-            </select>
+                disabled={false}
+                variant="neutral"
+                size="md"
+            />
         </div>
     {/if}
 
     <div class="filter-group">
-        <label for="turma-select">Turma:</label>
-        <select
+        <Dropdown
             id="turma-select"
-            value={selectedTurma?.id_turma || ""}
+            label="Turma:"
+            options={turmaOptions}
+            value={selectedTurma?.id_turma || null}
+            placeholder="Selecione uma turma"
             on:change={handleTurmaSelect}
-            class="filter-select"
-        >
-            {#each turmas as turma}
-                <option value={turma.id_turma}>
-                    {turma.nome_turma} ({turma.alunos?.length || 0} alunos)
-                </option>
-            {/each}
-        </select>
+            disabled={turmaOptions.length === 0}
+            variant="neutral"
+            size="md"
+        />
     </div>
 
     <div class="filter-group">
-        <label for="problema-select">Problema:</label>
-        <select
+        <MultiSelectDropdown
             id="problema-select"
-            value={selectedProblema?.id_problema || ""}
+            label="Problemas:"
+            options={problemaOptions}
+            value={selectedProblemaIds}
+            placeholder="Selecione problemas..."
             on:change={handleProblemaSelect}
-            class="filter-select"
-            disabled={!selectedTurma || problemas.length === 0}
-        >
-            {#each problemas as problema}
-                <option value={problema.id_problema}>
-                    {problema.nome_problema}
-                </option>
-            {/each}
-        </select>
+            disabled={!selectedTurma || problemaOptions.length === 0}
+            variant="neutral"
+            size="md"
+            showSelectAll={true}
+        />
     </div>
 </div>
 
@@ -97,7 +115,7 @@
         padding: 0.7rem 0.7rem;
         display: flex;
         gap: 0.7rem;
-        align-items: end;
+        align-items: stretch;
         box-shadow: none;
     }
 
@@ -106,35 +124,7 @@
         flex-direction: column;
         gap: 0.2rem;
         min-width: 120px;
-    }
-
-    .filter-group label {
-        font-weight: 600;
-        color: #22223b;
-        font-size: 0.92rem;
-    }
-
-    .filter-select {
-        padding: 0.4rem 0.6rem;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        background: #f8fafc;
-        font-size: 0.97rem;
-        cursor: pointer;
-        transition: border-color 0.2s;
-    }
-
-    .filter-select:hover:not(:disabled),
-    .filter-select:focus {
-        border-color: #6c63ff;
-        outline: none;
-        box-shadow: 0 0 0 2px #e0e7ff;
-    }
-
-    .filter-select:disabled {
-        background: #f1f1f1;
-        color: #b0b0b0;
-        cursor: not-allowed;
+        flex: 1;
     }
 
     @media (max-width: 768px) {
@@ -148,11 +138,6 @@
         .filter-group {
             min-width: 100%;
             gap: 0.1rem;
-        }
-
-        .filter-select {
-            font-size: 0.93rem;
-            padding: 0.2rem 0.3rem;
         }
     }
 

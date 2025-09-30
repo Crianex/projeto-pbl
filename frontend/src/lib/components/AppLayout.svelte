@@ -8,6 +8,7 @@
     import Container from "./Container.svelte";
     import Toast from "./Toast.svelte";
     import { toastStore } from "$lib/utils/toast";
+    import DropdownPortal from "./DropdownPortal.svelte";
 
     export let userType: "aluno" | "professor" | "coordenador" | "generic" =
         "aluno";
@@ -227,6 +228,8 @@
         />
     {/if}
 </div>
+
+<DropdownPortal />
 
 <style>
     .layout {
