@@ -1,5 +1,5 @@
 import type { AlunoDB, AlunoModel, AvaliacaoDB, AvaliacaoModel, AvaliacaoNota, ProblemaDB, TurmaDB } from "$lib/interfaces/interfaces";
-import { Parsers } from "$lib/interfaces/parsers";
+import { Parsers, parseNotasPorArquivo } from "$lib/interfaces/parsers";
 import { api } from "$lib/utils/api";
 import { logger } from "$lib/utils/logger";
 
@@ -31,7 +31,7 @@ async function getAvaliacoes(id_problema: number): Promise<AvaliacaoModel[]> {
             aluno_avaliado: alunosPorID.get(avaliacao.id_aluno_avaliado!)!,
             notas: JSON.parse(avaliacao.notas) as AvaliacaoNota,
             id_professor: avaliacao.id_professor || null,
-            notas_por_arquivo: JSON.parse(avaliacao.notas_por_arquivo) as { [tag: string]: number }
+            notas_por_arquivo: parseNotasPorArquivo(JSON.parse(avaliacao.notas_por_arquivo))
         }
     });
 

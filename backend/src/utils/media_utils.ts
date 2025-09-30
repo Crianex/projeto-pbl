@@ -55,7 +55,13 @@ export class MediaCalculator {
         function sumFileGrades(notas_por_arquivo: any) {
             let sum = 0;
             Object.values(notas_por_arquivo || {}).forEach((v: any) => {
-                if (typeof v === 'number') sum += v;
+                if (typeof v === 'number') {
+                    // Backwards compatibility: old format was just a number
+                    sum += v;
+                } else if (typeof v === 'object' && v !== null && typeof v.nota === 'number') {
+                    // New format: object with nota property
+                    sum += v.nota;
+                }
             });
             return sum;
         }

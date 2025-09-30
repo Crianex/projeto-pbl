@@ -47,6 +47,11 @@
     let loadingFiles = false;
     let filesError: string | null = null;
 
+    // File grades and observations for professor evaluations
+    let fileGrades: {
+        [fileType: string]: { nota: number; observacao: string };
+    } = {};
+
     // Paginação para avaliações enviadas
     let currentPageEnviadas = 1;
     let itemsPerPage = 10;
@@ -308,6 +313,50 @@
                     av.aluno_avaliado.id === currentAlunoId && av.id_professor,
             );
 
+            // Load file grades from professor evaluation
+            if (avaliacaoProfessor?.notas_por_arquivo) {
+                try {
+                    const parsedFileGrades =
+                        typeof avaliacaoProfessor.notas_por_arquivo === "string"
+                            ? JSON.parse(avaliacaoProfessor.notas_por_arquivo)
+                            : avaliacaoProfessor.notas_por_arquivo;
+
+                    // Convert to the expected format for display
+                    const formattedFileGrades: {
+                        [fileType: string]: {
+                            nota: number;
+                            observacao: string;
+                        };
+                    } = {};
+                    Object.entries(parsedFileGrades).forEach(
+                        ([fileType, grade]: [string, any]) => {
+                            if (typeof grade === "number") {
+                                // Old format: just a number
+                                formattedFileGrades[fileType] = {
+                                    nota: grade,
+                                    observacao: "",
+                                };
+                            } else if (
+                                typeof grade === "object" &&
+                                grade !== null
+                            ) {
+                                // New format: object with nota and observacao
+                                formattedFileGrades[fileType] = {
+                                    nota: grade.nota || 0,
+                                    observacao: grade.observacao || "",
+                                };
+                            }
+                        },
+                    );
+
+                    fileGrades = formattedFileGrades;
+                    console.log("Loaded file grades:", fileGrades);
+                } catch (e) {
+                    console.warn("Failed to parse file grades:", e);
+                    fileGrades = {};
+                }
+            }
+
             // Carregar arquivos do aluno
             await loadAlunoFiles();
         } catch (e: any) {
@@ -452,9 +501,18 @@
                         ? JSON.parse(avaliacaoProfessor.notas_por_arquivo)
                         : avaliacaoProfessor.notas_por_arquivo;
 
-                Object.values(fileGrades).forEach((grade) => {
+                Object.values(fileGrades).forEach((grade: any) => {
                     if (typeof grade === "number" && !isNaN(grade)) {
+                        // Backwards compatibility: old format
                         arquivosSum += grade;
+                    } else if (
+                        typeof grade === "object" &&
+                        grade !== null &&
+                        typeof grade.nota === "number" &&
+                        !isNaN(grade.nota)
+                    ) {
+                        // New format: object with nota property
+                        arquivosSum += grade.nota;
                     }
                 });
             }
@@ -483,12 +541,24 @@
 
             let result = "";
 
-            Object.entries(arquivosObj).forEach(([fileType, grade], index) => {
-                if (typeof grade === "number") {
-                    if (index > 0) result += "<br>";
-                    result += `<span style="color: #6b7280; font-weight: 500;">${fileType}: ${grade.toFixed(2)}</span>`;
-                }
-            });
+            Object.entries(arquivosObj).forEach(
+                ([fileType, grade]: [string, any], index) => {
+                    if (typeof grade === "number") {
+                        // Backwards compatibility: old format
+                        if (index > 0) result += "<br>";
+                        result += `<span style="color: #6b7280; font-weight: 500;">${fileType}: ${grade.toFixed(2)}</span>`;
+                    } else if (
+                        typeof grade === "object" &&
+                        grade !== null &&
+                        typeof grade.nota === "number"
+                    ) {
+                        // New format: object with nota and observacao
+                        if (index > 0) result += "<br>";
+                        result += `<span style="color: #6b7280; font-weight: 500;">${fileType}: ${grade.nota.toFixed(2)}`;
+                        result += "</span>";
+                    }
+                },
+            );
 
             return result || "Nenhuma nota de arquivo encontrada";
         } catch (error) {
@@ -755,6 +825,17 @@
                                                 : "Data não disponível"}
                                         </span>
                                     </div>
+                                    {#if fileGrades && file.nome_tipo && fileGrades[file.nome_tipo]?.observacao}
+                                        <div class="file-observation">
+                                            <div class="observation-label">
+                                                Observação:
+                                            </div>
+                                            <div class="observation-text">
+                                                {fileGrades[file.nome_tipo]
+                                                    .observacao}
+                                            </div>
+                                        </div>
+                                    {/if}
                                 </div>
                             </div>
                             <div class="file-actions">
@@ -1044,6 +1125,30 @@
         gap: 0.25rem;
     }
 
+    .file-observation {
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .observation-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 0.25rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .observation-text {
+        font-size: 0.875rem;
+        color: #2d3748;
+        line-height: 1.4;
+        background: #f8f9fa;
+        padding: 0.5rem;
+        border-radius: 4px;
+    }
+
     .file-actions {
         display: flex;
         gap: 0.5rem;
@@ -1178,6 +1283,20 @@
             font-size: 0.85rem;
         }
 
+        .file-observation {
+            margin-top: 0.375rem;
+            padding-top: 0.375rem;
+        }
+
+        .observation-label {
+            font-size: 0.7rem;
+        }
+
+        .observation-text {
+            font-size: 0.8rem;
+            padding: 0.375rem;
+        }
+
         .download-btn {
             padding: 0.4rem 0.6rem;
             font-size: 0.75rem;
@@ -1232,6 +1351,20 @@
         .file-actions {
             width: 100%;
             justify-content: flex-end;
+        }
+
+        .file-observation {
+            margin-top: 0.25rem;
+            padding-top: 0.25rem;
+        }
+
+        .observation-label {
+            font-size: 0.65rem;
+        }
+
+        .observation-text {
+            font-size: 0.75rem;
+            padding: 0.25rem;
         }
 
         .download-btn {

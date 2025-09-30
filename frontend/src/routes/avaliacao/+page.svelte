@@ -14,7 +14,7 @@
         UploadedFile,
         AlunoModel,
     } from "$lib/interfaces/interfaces";
-    import { Parsers } from "$lib/interfaces/parsers";
+    import { Parsers, parseNotasPorArquivo } from "$lib/interfaces/parsers";
     import { logger } from "$lib/utils/logger";
     import { MediaCalculator } from "$lib/utils/utils";
     import { currentUser } from "$lib/utils/auth";
@@ -62,7 +62,8 @@
     let uploadedFilesByType: Map<string, UploadedFile[]> = new Map();
     let loadingFiles = false;
     let filesError: string | null = null;
-    let fileGrades: { [fileId: string]: number } = {};
+    let fileGrades: { [fileId: string]: { nota: number; observacao: string } } =
+        {};
 
     // Navigation state for moving between alunos
     let sortedAlunos: AlunoModel[] = [];
@@ -168,10 +169,10 @@
                     existingAvaliacao.notas_por_arquivo
                 ) {
                     try {
-                        const existingFileGrades = JSON.parse(
-                            existingAvaliacao.notas_por_arquivo,
+                        const parsedFileGrades = parseNotasPorArquivo(
+                            JSON.parse(existingAvaliacao.notas_por_arquivo),
                         );
-                        fileGrades = { ...existingFileGrades };
+                        fileGrades = { ...parsedFileGrades };
                         console.log("Loaded existing file grades:", fileGrades);
                     } catch (e) {
                         console.warn(
@@ -479,9 +480,26 @@
         if (!isNaN(value)) {
             fileGrades = {
                 ...fileGrades,
-                [nomeTipo]: value,
+                [nomeTipo]: {
+                    nota: value,
+                    observacao: fileGrades[nomeTipo]?.observacao || "",
+                },
             };
         }
+    }
+
+    // Handle file observation changes
+    function handleFileObservationChange(nomeTipo: string, event: Event) {
+        const textarea = event.target as HTMLTextAreaElement;
+        const observacao = textarea.value;
+        const currentGrade = fileGrades[nomeTipo]?.nota || 0;
+        fileGrades = {
+            ...fileGrades,
+            [nomeTipo]: {
+                nota: currentGrade,
+                observacao: observacao,
+            },
+        };
     }
 
     // Parse query parameters
@@ -1120,7 +1138,7 @@
                                                             10}
                                                         value={fileGrades[
                                                             nomeTipo
-                                                        ] || 0}
+                                                        ]?.nota || 0}
                                                         on:input={(e) =>
                                                             handleFileGradeChange(
                                                                 nomeTipo,
@@ -1137,13 +1155,39 @@
                                                         class="file-value-display"
                                                     >
                                                         {(
-                                                            fileGrades[
-                                                                nomeTipo
-                                                            ] || 0
+                                                            fileGrades[nomeTipo]
+                                                                ?.nota || 0
                                                         ).toFixed(1)}
                                                     </div>
                                                 </div>
                                             </label>
+
+                                            <!-- Observação field -->
+                                            <div
+                                                class="file-observation-section"
+                                            >
+                                                <label
+                                                    class="file-observation-label"
+                                                >
+                                                    <span
+                                                        class="file-observation-label-text"
+                                                        >Observação:</span
+                                                    >
+                                                    <textarea
+                                                        class="file-observation-textarea"
+                                                        placeholder="Digite uma observação sobre este arquivo..."
+                                                        value={fileGrades[
+                                                            nomeTipo
+                                                        ]?.observacao || ""}
+                                                        on:input={(e) =>
+                                                            handleFileObservationChange(
+                                                                nomeTipo,
+                                                                e,
+                                                            )}
+                                                        rows="2"
+                                                    ></textarea>
+                                                </label>
+                                            </div>
                                         </div>
                                     </div>
                                 {:else}
@@ -1803,10 +1847,44 @@
     }
 
     .file-grade-section {
-        display: flex;
-        align-items: center;
         gap: 0.5rem;
         margin-left: 1rem;
+    }
+
+    .file-observation-section {
+    }
+
+    .file-observation-label {
+        display: block;
+        font-size: 0.875rem;
+        color: #495057;
+        font-weight: 500;
+        gap: 0.5rem;
+    }
+    .file-observation-label-text {
+        margin-right: 0.5rem;
+    }
+
+    .file-observation-textarea {
+        width: 100%;
+        min-height: 200px;
+        padding: 0.5rem;
+        box-sizing: border-box;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.9);
+        font-size: 0.875rem;
+        color: #374151;
+        resize: vertical;
+        transition:
+            border-color 0.2s,
+            box-shadow 0.2s;
+    }
+
+    .file-observation-textarea:focus {
+        outline: none;
+        border-color: #5a67d8;
+        box-shadow: 0 0 0 3px rgba(90, 103, 216, 0.1);
     }
 
     .file-evaluation-section {
@@ -1978,8 +2056,6 @@
         }
 
         .file-grade-section {
-            flex-direction: column;
-            align-items: flex-start;
             gap: 0.5rem;
             width: 100%;
         }

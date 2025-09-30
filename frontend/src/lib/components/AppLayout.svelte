@@ -101,6 +101,12 @@
                           text: "Turmas",
                           active: $page.url.pathname.includes("/turmas"),
                       },
+                      {
+                          href: "/coordenador/professores",
+                          icon: `<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />`,
+                          text: "Professores",
+                          active: $page.url.pathname.includes("/professores"),
+                      },
                   ]
                 : [];
 </script>
@@ -113,6 +119,7 @@
             class:visible={isMobile}
             on:click={toggleSidebar}
             transition:fade
+            aria-label="Toggle navigation menu"
         >
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -136,6 +143,14 @@
             <div
                 class="sidebar-overlay"
                 on:click={closeSidebar}
+                on:keydown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        closeSidebar();
+                    }
+                }}
+                role="button"
+                tabindex="0"
+                aria-label="Close navigation menu"
                 transition:fade={{ duration: 200 }}
             ></div>
         {/if}

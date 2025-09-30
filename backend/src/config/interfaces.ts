@@ -77,7 +77,6 @@ export interface Professor {
     nome_completo: string | null;
     email: string | null;
     link_avatar: string | null;
-    id_turma: number | null;
 }
 
 export interface Turma {

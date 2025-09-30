@@ -37,8 +37,8 @@ async function list(): Promise<ProfessorModel[]> {
 
 async function create(professorData: { nome_completo: string; email: string }): Promise<ProfessorModel> {
     try {
-        logger.info('Creating new professor', professorData);
-        const response = await api.post('/professores/create', professorData);
+        logger.info('Creating new professor from admin', professorData);
+        const response = await api.post('/professores/create-from-admin', professorData);
         const createdProfessor = Parsers.parseProfessor(response);
 
         logger.info('Professor created successfully', { id: createdProfessor.id });

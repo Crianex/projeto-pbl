@@ -64,6 +64,7 @@
     let uploadProgress = { current: 0, total: 0 };
     let resetFileUploads = false;
     let hasProfessorEvaluation = false;
+    let professorEvaluation: any = null; // Store the professor evaluation with file grades
 
     // Reactive statement to track file upload state
     $: allUploadedFilesCount = Array.from(uploadedFilesByType.values()).reduce(
@@ -130,6 +131,40 @@
         return Object.keys(problema.criterios || {}).some((tag) =>
             DateUtils.isNowWithinTagDateRange(problema, tag),
         );
+    }
+
+    // Helper to get file grade for a specific file type from professor evaluation
+    function getFileGrade(
+        fileType: string,
+    ): { nota: number; observacao: string } | null {
+        if (!professorEvaluation || !professorEvaluation.notas_por_arquivo) {
+            return null;
+        }
+
+        const notasPorArquivo = professorEvaluation.notas_por_arquivo;
+
+        // Handle both old format (number) and new format (object)
+        const grade = notasPorArquivo[fileType];
+        if (grade === undefined || grade === null) {
+            return null;
+        }
+
+        if (typeof grade === "number") {
+            // Old format: convert to new format
+            return { nota: grade, observacao: "" };
+        } else if (
+            typeof grade === "object" &&
+            grade !== null &&
+            typeof grade.nota === "number"
+        ) {
+            // New format
+            return {
+                nota: grade.nota,
+                observacao: grade.observacao || "",
+            };
+        }
+
+        return null;
     }
     // Helper to get tag status array for display
     function getTagStatusArr() {
@@ -260,10 +295,13 @@
 
             problema = problemaResult;
 
+            // Store professor evaluation data for file grade display
+            professorEvaluation =
+                (avaliacoesMeAvaliaram || []).find((av) => !!av.id_professor) ||
+                null;
+
             // Detect if there is any professor evaluation for the current user
-            hasProfessorEvaluation = (avaliacoesMeAvaliaram || []).some(
-                (av) => !!av.id_professor,
-            );
+            hasProfessorEvaluation = !!professorEvaluation;
 
             // We only need the evaluations created by the current user to populate rows
             const filteredAvaliacoesData = minhasAvaliacoes || [];
@@ -715,6 +753,31 @@
                                                 nomeTipo
                                             ].data_e_hora_fim,
                                         ).toLocaleString()}
+                                    {/if}
+                                </div>
+                            {/if}
+
+                            <!-- Display file grade if professor evaluation exists -->
+                            {#if getFileGrade(nomeTipo)}
+                                {@const fileGrade = getFileGrade(nomeTipo)}
+                                <div class="file-grade-display">
+                                    <div class="file-grade-header">
+                                        <span class="file-grade-label"
+                                            >Nota do Professor:</span
+                                        >
+                                        <span class="file-grade-value"
+                                            >{fileGrade!.nota.toFixed(2)}</span
+                                        >
+                                    </div>
+                                    {#if fileGrade!.observacao && fileGrade!.observacao.trim()}
+                                        <div class="file-grade-observation">
+                                            <p class="observation-label">
+                                                Observação:
+                                            </p>
+                                            <span class="observation-text"
+                                                >{fileGrade!.observacao}</span
+                                            >
+                                        </div>
                                     {/if}
                                 </div>
                             {/if}
@@ -1291,5 +1354,60 @@
         opacity: 0.5;
         background: #e2e8f0;
         color: #888;
+    }
+
+    /* File Grade Display Styles */
+    .file-grade-display {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border: 1px solid #cbd5e0;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
+    }
+
+    .file-grade-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+
+    .file-grade-label {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #2d3748;
+    }
+
+    .file-grade-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #5a67d8;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+    }
+
+    .file-grade-observation {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .observation-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 0.75rem;
+    }
+
+    .observation-text {
+        font-size: 0.9rem;
+        line-height: 1.4;
+        padding: 0.5rem;
+        box-sizing: border-box;
+        border-radius: 6px;
     }
 </style>

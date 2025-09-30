@@ -153,7 +153,10 @@ export interface AvaliacaoModel {
     notas: AvaliacaoNota;
     id_professor?: number | null; // NEW: track professor evaluations
     notas_por_arquivo: {
-        [tag: string]: number;
+        [tag: string]: {
+            observacao: string;
+            nota: number;
+        };
     }
 }
 

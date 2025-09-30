@@ -18,6 +18,7 @@
 
     // Event handlers
     export let onChange: ((e: Event) => void) | undefined = undefined;
+    export let onInput: ((e: Event) => void) | undefined = undefined;
     export let onBlur: ((e: Event) => void) | undefined = undefined;
     export let onFocus: ((e: Event) => void) | undefined = undefined;
     export let onKeydown: ((e: KeyboardEvent) => void) | undefined = undefined;
@@ -47,6 +48,10 @@
 
     function handleChange(e: Event) {
         if (onChange) onChange(e);
+    }
+
+    function handleInput(e: Event) {
+        if (onInput) onInput(e);
     }
 
     function handleBlur(e: Event) {
@@ -96,10 +101,10 @@
         class:error
         class:disabled
         on:change={handleChange}
+        on:input={handleInput}
         on:blur={handleBlur}
         on:focus={handleFocus}
         on:keydown={handleKeydown}
-        on:input
     ></textarea>
 
     {#if error}

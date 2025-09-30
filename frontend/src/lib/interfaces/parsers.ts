@@ -22,6 +22,8 @@ export const Parsers = {
     parseUploadedFiles,
 }
 
+export { parseNotasPorArquivo };
+
 function parseAluno(data: any): AlunoModel {
     return parseToAlunoModel(data);
 }
@@ -137,6 +139,28 @@ function parseCriterios(criteriosString: string): CriteriosGroup {
     return object;
 }
 
+function parseNotasPorArquivo(data: any): { [tag: string]: { observacao: string; nota: number } } {
+    const result: { [tag: string]: { observacao: string; nota: number } } = {};
+
+    if (!data || typeof data !== 'object') return result;
+
+    Object.keys(data).forEach(tag => {
+        const value = data[tag];
+        if (typeof value === 'number') {
+            // Backwards compatibility: if it's a number, convert to object with empty observacao
+            result[tag] = { nota: value, observacao: '' };
+        } else if (typeof value === 'object' && value !== null && typeof value.nota === 'number') {
+            // New format: already an object with nota and observacao
+            result[tag] = {
+                nota: value.nota,
+                observacao: value.observacao || ''
+            };
+        }
+    });
+
+    return result;
+}
+
 function parseAvaliacao(data: any): AvaliacaoModel {
 
 
@@ -150,7 +174,7 @@ function parseAvaliacao(data: any): AvaliacaoModel {
         aluno_avaliado: data.avaliado ? parseAluno(data.avaliado) : null,
         notas: data.notas ? JSON.parse(data.notas) : {},
         id_professor: data.id_professor || null,
-        notas_por_arquivo: data.notas_por_arquivo ? JSON.parse(data.notas_por_arquivo) : {},
+        notas_por_arquivo: data.notas_por_arquivo ? parseNotasPorArquivo(JSON.parse(data.notas_por_arquivo)) : {},
     };
 }
 

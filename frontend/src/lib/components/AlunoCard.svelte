@@ -88,9 +88,19 @@
                     if (Object.keys(fileGrades).length > 0) {
                         details += `<br><strong>Arquivos:</strong><br>`;
                         Object.entries(fileGrades).forEach(
-                            ([fileType, grade]) => {
+                            ([fileType, grade]: [string, any]) => {
                                 if (typeof grade === "number") {
+                                    // Backwards compatibility: old format
                                     details += `  • ${fileType}: ${formatGrade(grade).toFixed(1)}<br>`;
+                                } else if (
+                                    typeof grade === "object" &&
+                                    grade !== null &&
+                                    typeof grade.nota === "number"
+                                ) {
+                                    // New format: object with nota and observacao
+                                    details += `  • ${fileType}: ${formatGrade(grade.nota).toFixed(1)}`;
+
+                                    details += "<br>";
                                 }
                             },
                         );

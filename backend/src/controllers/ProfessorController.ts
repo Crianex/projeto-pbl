@@ -11,10 +11,10 @@ export const ProfessorController: EndpointController = {
     name: 'professores',
     routes: {
         'list': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            // Require professor or coordenador authentication for listing professores
-            const authUser = await Utils.validateProfessorOrCoordenador(req);
+            // Require coordenador authentication for listing professores
+            const authUser = await Utils.validateCoordenador(req);
             if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid professor or coordenador authentication required' });
+                return res.status(401).json({ error: 'Unauthorized: Valid coordenador authentication required' });
             }
 
             const { data, error } = await supabase
@@ -30,10 +30,10 @@ export const ProfessorController: EndpointController = {
         }),
 
         'get': new Pair(RequestType.GET, async (req: Request, res: Response) => {
-            // Require professor authentication for getting professor details
-            const authUser = await Utils.validateProfessor(req);
+            // Require coordenador authentication for getting professor details
+            const authUser = await Utils.validateCoordenador(req);
             if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+                return res.status(401).json({ error: 'Unauthorized: Valid coordenador authentication required' });
             }
 
             const { id_professor } = req.params;
@@ -150,11 +150,70 @@ export const ProfessorController: EndpointController = {
             return res.status(201).json(data[0]);
         }),
 
-        'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
-            // Require professor authentication for updating professores
-            const authUser = await Utils.validateProfessor(req);
+        'create-from-admin': new Pair(RequestType.POST, async (req: Request, res: Response) => {
+            logger.info('Creating professor from admin');
+            // Require coordenador authentication for creating professors from admin
+            const authUser = await Utils.validateCoordenador(req);
             if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+                return res.status(401).json({ error: 'Unauthorized: Valid coordenador authentication required' });
+            }
+
+            const { nome_completo, email } = req.body;
+
+            // Check if user already exists in either professores or alunos table
+            const [professoresResult, alunosResult] = await Promise.all([
+                supabase.from('professores').select('*').eq('email', email),
+                supabase.from('alunos').select('*').eq('email', email)
+            ]);
+
+            if (professoresResult.error) {
+                logger.error(`Error checking existing professor: ${professoresResult.error.message}`);
+                return res.status(500).json({ error: professoresResult.error.message });
+            }
+
+            if (alunosResult.error) {
+                logger.error(`Error checking existing aluno: ${alunosResult.error.message}`);
+                return res.status(500).json({ error: alunosResult.error.message });
+            }
+
+            // If user exists in professores table, return existing user
+            if (professoresResult.data && professoresResult.data.length > 0) {
+                logger.info(`Professor with email ${email} already exists`);
+                return res.json(professoresResult.data[0]);
+            }
+
+            // If user exists in alunos table, return error
+            if (alunosResult.data && alunosResult.data.length > 0) {
+                logger.warn(`Email ${email} already exists as aluno`);
+                return res.status(409).json({
+                    error: 'Este e-mail já está registrado como aluno',
+                    existingUserType: 'aluno'
+                });
+            }
+
+            // Create new user if doesn't exist in either table
+            const { data, error } = await supabase
+                .from('professores')
+                .insert([{
+                    nome_completo,
+                    email
+                }])
+                .select();
+
+            if (error) {
+                logger.error(`Error creating professor from admin: ${error.message}`);
+                return res.status(500).json({ error: error.message });
+            }
+
+            logger.info(`Professor created from admin: ${data[0].id_professor}`);
+            return res.status(201).json(data[0]);
+        }),
+
+        'update': new Pair(RequestType.PUT, async (req: Request, res: Response) => {
+            // Require coordenador authentication for updating professores
+            const authUser = await Utils.validateCoordenador(req);
+            if (!authUser) {
+                return res.status(401).json({ error: 'Unauthorized: Valid coordenador authentication required' });
             }
 
             const { id_professor } = req.params;
@@ -178,10 +237,10 @@ export const ProfessorController: EndpointController = {
         }),
 
         'delete': new Pair(RequestType.DELETE, async (req: Request, res: Response) => {
-            // Require professor authentication for deleting professores
-            const authUser = await Utils.validateProfessor(req);
+            // Require coordenador authentication for deleting professores
+            const authUser = await Utils.validateCoordenador(req);
             if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+                return res.status(401).json({ error: 'Unauthorized: Valid coordenador authentication required' });
             }
 
             const { id_professor } = req.params;
@@ -199,10 +258,10 @@ export const ProfessorController: EndpointController = {
         }),
 
         'uploadAvatar': new Pair(RequestType.POST, async (req: Request, res: Response) => {
-            // Require professor authentication for uploading avatar
-            const authUser = await Utils.validateProfessor(req);
+            // Require coordenador authentication for uploading professor avatar
+            const authUser = await Utils.validateCoordenador(req);
             if (!authUser) {
-                return res.status(401).json({ error: 'Unauthorized: Valid professor authentication required' });
+                return res.status(401).json({ error: 'Unauthorized: Valid coordenador authentication required' });
             }
 
             const { id_professor } = req.query;
