@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     sudo \
     && rm -rf /var/lib/apt/lists/*
+    
 
 # Create a symbolic link for python command
 RUN ln -s /usr/bin/python3 /usr/bin/python
