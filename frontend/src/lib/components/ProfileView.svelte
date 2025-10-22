@@ -1,6 +1,6 @@
 <script lang="ts">
-    import Avatar from "./Avatar.svelte";
-    import Button from "./Button.svelte";
+    import Avatar from "$lib/design_system/components/Avatar.svelte";
+    import Button from "$lib/design_system/components/Button.svelte";
     import { get } from "svelte/store";
     import { currentUser } from "$lib/utils/auth";
 

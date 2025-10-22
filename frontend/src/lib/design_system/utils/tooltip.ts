@@ -1,5 +1,5 @@
 import type { Action } from 'svelte/action';
-import { Utils } from './utils';
+import { Utils } from '../../utils/utils';
 
 interface TooltipParams {
     title: string;

@@ -1,7 +1,7 @@
 import type { AlunoDB, AlunoModel, AvaliacaoDB, AvaliacaoModel, AvaliacaoNota, ProblemaDB, TurmaDB } from "$lib/interfaces/interfaces";
 import { Parsers, parseNotasPorArquivo } from "$lib/interfaces/parsers";
-import { api } from "$lib/utils/api";
-import { logger } from "$lib/utils/logger";
+import { api } from "$lib/design_system/utils/api";
+import { logger } from "$lib/design_system/utils/logger";
 
 export const AvaliacoesService = {
     getAvaliacoes,

@@ -1,6 +1,6 @@
 <script lang="ts">
-    import Button from "./Button.svelte";
-    import { tooltip } from "$lib/utils/tooltip";
+    import Button from "$lib/design_system/components/Button.svelte";
+    import { tooltip } from "$lib/design_system/utils/tooltip";
     import type {
         AlunoModel,
         AvaliacaoModel,

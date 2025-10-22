@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Input from "./Input.svelte";
+    import Input from "$lib/design_system/components/Input.svelte";
 
     export let startDate: string = "";
     export let endDate: string = "";

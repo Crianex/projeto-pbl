@@ -2,17 +2,17 @@
     import { onMount } from "svelte";
     import { page } from "$app/stores";
     import { goto } from "$app/navigation";
-    import { api } from "$lib/utils/api";
-    import { logger } from "$lib/utils/logger";
+    import { api } from "$lib/design_system/utils/api";
+    import { logger } from "$lib/design_system/utils/logger";
     import type { ProblemaModel, TurmaModel } from "$lib/interfaces/interfaces";
     import { ProblemasService } from "$lib/services/problemas_service";
     import { TurmasService } from "$lib/services/turmas_service";
-    import { problemaStore } from "$lib/utils/stores";
+    import { problemaStore } from "$lib/design_system/utils/stores";
     import CardList from "$lib/components/CardList.svelte";
     import ProblemaCard from "$lib/components/ProblemaCard.svelte";
-    import BackButton from "$lib/components/BackButton.svelte";
-    import Button from "$lib/components/Button.svelte";
-    import Dialog from "$lib/components/Dialog.svelte";
+    import BackButton from "$lib/design_system/components/BackButton.svelte";
+    import Button from "$lib/design_system/components/Button.svelte";
+    import Dialog from "$lib/design_system/components/Dialog.svelte";
     import PageHeader from "$lib/components/PageHeader.svelte";
     import { currentUser } from "$lib/utils/auth";
 

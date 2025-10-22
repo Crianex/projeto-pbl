@@ -3,13 +3,13 @@
     import { onMount } from "svelte";
     import { page } from "$app/stores";
     import { afterNavigate } from "$app/navigation";
-    import Table from "$lib/components/Table.svelte";
-    import Container from "$lib/components/Container.svelte";
+    import Table from "$lib/design_system/components/Table.svelte";
+    import Container from "$lib/design_system/components/Container.svelte";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
-    import Button from "$lib/components/Button.svelte";
-    import Toast from "$lib/components/Toast.svelte";
+    import Button from "$lib/design_system/components/Button.svelte";
+    import Toast from "$lib/design_system/components/Toast.svelte";
     import type { Column } from "$lib/interfaces/column";
-    import { api } from "$lib/utils/api";
+    import { api } from "$lib/design_system/utils/api";
     import { DateUtils, Utils, MediaCalculator } from "$lib/utils/utils";
     import type {
         AlunoModel,

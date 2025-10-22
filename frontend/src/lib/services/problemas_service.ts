@@ -1,7 +1,7 @@
 import type { ProblemaModel } from "$lib/interfaces/interfaces";
-import { api } from "$lib/utils/api";
+import { api } from "$lib/design_system/utils/api";
 import { Parsers } from "$lib/interfaces/parsers";
-import { logger } from "$lib/utils/logger";
+import { logger } from "$lib/design_system/utils/logger";
 
 export const ProblemasService = {
     getByTurma,

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { Column } from "../interfaces/column";
+    import type { Column } from "../../src/lib/interfaces/column";
     import Button from "./Button.svelte";
 
     export let columns: Column[] = [];

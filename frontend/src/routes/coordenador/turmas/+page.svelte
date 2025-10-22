@@ -2,17 +2,17 @@
     import { onMount } from "svelte";
     import { page } from "$app/stores";
     import { goto } from "$app/navigation";
-    import { api } from "$lib/utils/api";
-    import { logger } from "$lib/utils/logger";
+    import { api } from "$lib/design_system/utils/api";
+    import { logger } from "$lib/design_system/utils/logger";
     import type { TurmaModel } from "$lib/interfaces/interfaces";
     import { TurmasService } from "$lib/services/turmas_service";
     import { currentUser } from "$lib/utils/auth";
     import CardList from "$lib/components/CardList.svelte";
     import TurmaCard from "$lib/components/TurmaCard.svelte";
-    import SearchBar from "$lib/components/SearchBar.svelte";
-    import Pagination from "$lib/components/Pagination.svelte";
-    import Dialog from "$lib/components/Dialog.svelte";
-    import Button from "$lib/components/Button.svelte";
+    import SearchBar from "$lib/design_system/components/SearchBar.svelte";
+    import Pagination from "$lib/design_system/components/Pagination.svelte";
+    import Dialog from "$lib/design_system/components/Dialog.svelte";
+    import Button from "$lib/design_system/components/Button.svelte";
     import PageHeader from "$lib/components/PageHeader.svelte";
 
     let turmas: TurmaModel[] = [];

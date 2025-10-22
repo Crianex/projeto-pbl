@@ -1,10 +1,10 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import Button from "$lib/components/Button.svelte";
-    import BackButton from "$lib/components/BackButton.svelte";
-    import { api } from "$lib/utils/api";
+    import Button from "$lib/design_system/components/Button.svelte";
+    import BackButton from "$lib/design_system/components/BackButton.svelte";
+    import { api } from "$lib/design_system/utils/api";
     import SearchAlunoDialog from "../SearchAlunoDialog.svelte";
-    import Dialog from "$lib/components/Dialog.svelte";
+    import Dialog from "$lib/design_system/components/Dialog.svelte";
     import { TurmasService } from "$lib/services/turmas_service";
     import { ProfessoresService } from "$lib/services/professores_service";
     import type {
@@ -12,11 +12,11 @@
         ProfessorModel,
     } from "$lib/interfaces/interfaces";
     import PageHeader from "$lib/components/PageHeader.svelte";
-    import Input from "$lib/components/Input.svelte";
-    import Select from "$lib/components/Select.svelte";
+    import Input from "$lib/design_system/components/Input.svelte";
+    import Select from "$lib/design_system/components/Select.svelte";
     import TrashIcon from "$lib/components/TrashIcon.svelte";
     import { currentUser } from "$lib/utils/auth";
-    import { toastStore } from "$lib/utils/toast";
+    import { toastStore } from "$lib/design_system/utils/toast";
 
     let turma = {
         nome_turma: "",

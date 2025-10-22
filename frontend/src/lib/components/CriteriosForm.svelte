@@ -1,8 +1,8 @@
 <script lang="ts">
-    import Button from "./Button.svelte";
-    import Input from "./Input.svelte";
+    import Button from "$lib/design_system/components/Button.svelte";
+    import Input from "$lib/design_system/components/Input.svelte";
     import DeleteButton from "./DeleteButton.svelte";
-    import TextArea from "./TextArea.svelte";
+    import TextArea from "$lib/design_system/components/TextArea.svelte";
     import type { CriteriosGroup } from "$lib/interfaces/interfaces";
     import { formatToDateTime, parseToDate } from "brazilian-values";
     import { createEventDispatcher } from "svelte";

@@ -1,6 +1,6 @@
 <script lang="ts">
-    import Button from "./Button.svelte";
-    import Dialog from "./Dialog.svelte";
+    import Button from "$lib/design_system/components/Button.svelte";
+    import Dialog from "$lib/design_system/components/Dialog.svelte";
     import { createEventDispatcher } from "svelte";
 
     const dispatch = createEventDispatcher();

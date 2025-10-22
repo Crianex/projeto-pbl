@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Button from "./Button.svelte";
+    import Button from "$lib/design_system/components/Button.svelte";
     import DeleteButton from "./DeleteButton.svelte";
     import type { ProblemaModel } from "$lib/interfaces/interfaces";
     import { goto } from "$app/navigation";
@@ -135,8 +135,6 @@
         background-color: #f8f9fa;
         color: #0d6efd;
     }
-
-
 
     .problema-tags-status {
         margin: 0.2rem 0 0.5rem 0;

@@ -8,19 +8,19 @@
     import type { ProblemaModel } from "$lib/interfaces/interfaces";
     import type { Column } from "$lib/interfaces/column";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
-    import Table from "$lib/components/Table.svelte";
-    import Container from "$lib/components/Container.svelte";
+    import Table from "$lib/design_system/components/Table.svelte";
+    import Container from "$lib/design_system/components/Container.svelte";
     import FileUpload from "$lib/components/FileUpload.svelte";
-    import Button from "$lib/components/Button.svelte";
+    import Button from "$lib/design_system/components/Button.svelte";
     import DeleteButton from "$lib/components/DeleteButton.svelte";
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
     import { ProblemasService } from "$lib/services/problemas_service";
-    import Pagination from "$lib/components/Pagination.svelte";
+    import Pagination from "$lib/design_system/components/Pagination.svelte";
     import { MediaCalculator } from "$lib/utils/utils";
-    import { api } from "$lib/utils/api";
-    import BackButton from "$lib/components/BackButton.svelte";
+    import { api } from "$lib/design_system/utils/api";
+    import BackButton from "$lib/design_system/components/BackButton.svelte";
     import { DateUtils } from "$lib/utils/utils";
-    import { tooltip } from "$lib/utils/tooltip";
+    import { tooltip } from "$lib/design_system/utils/tooltip";
 
     interface Avaliacao {
         id_avaliacao: number;

@@ -2,14 +2,14 @@
     import { page } from "$app/stores";
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
-    import Button from "$lib/components/Button.svelte";
+    import Button from "$lib/design_system/components/Button.svelte";
     import CriteriosForm from "$lib/components/CriteriosForm.svelte";
-    import Input from "$lib/components/Input.svelte";
-    import TextArea from "$lib/components/TextArea.svelte";
+    import Input from "$lib/design_system/components/Input.svelte";
+    import TextArea from "$lib/design_system/components/TextArea.svelte";
     import PageHeader from "$lib/components/PageHeader.svelte";
     import DateRangeInput from "$lib/components/DateRangeInput.svelte";
     import ArquivosForm from "$lib/components/ArquivosForm.svelte";
-    import { api } from "$lib/utils/api";
+    import { api } from "$lib/design_system/utils/api";
     import { Parsers } from "$lib/interfaces/parsers";
     import type {
         CriteriosGroup,

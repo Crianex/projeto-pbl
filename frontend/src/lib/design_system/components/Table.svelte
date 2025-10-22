@@ -26,7 +26,7 @@
 -->
 
 <script lang="ts">
-    import type { Column } from "../interfaces/column";
+    import type { Column } from "../../src/lib/interfaces/column";
     import TableRow from "./TableRow.svelte";
     import Button from "./Button.svelte";
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Button from "$lib/components/Button.svelte";
+    import Button from "$lib/design_system/components/Button.svelte";
     import CardSection from "$lib/components/CardSection.svelte";
     import BrandLogo from "$lib/components/BrandLogo.svelte";
     import { goto } from "$app/navigation";

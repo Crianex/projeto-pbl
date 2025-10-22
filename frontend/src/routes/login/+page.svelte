@@ -1,12 +1,12 @@
 <script lang="ts">
-    import Button from "$lib/components/Button.svelte";
-    import Input from "$lib/components/Input.svelte";
+    import Button from "$lib/design_system/components/Button.svelte";
+    import Input from "$lib/design_system/components/Input.svelte";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
-    import BackButton from "$lib/components/BackButton.svelte";
+    import BackButton from "$lib/design_system/components/BackButton.svelte";
     import { supabase } from "$lib/supabase";
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
-    import { logger } from "$lib/utils/logger";
+    import { logger } from "$lib/design_system/utils/logger";
     import { currentUser, logout } from "$lib/utils/auth";
     import PageHeader from "$lib/components/PageHeader.svelte";
 

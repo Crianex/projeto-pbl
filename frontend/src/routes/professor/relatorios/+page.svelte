@@ -13,18 +13,18 @@
         ProblemaModel,
         ProfessorModel,
     } from "$lib/interfaces/interfaces";
-    import Button from "$lib/components/Button.svelte";
+    import Button from "$lib/design_system/components/Button.svelte";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
 
-    import Tooltip from "$lib/components/Tooltip.svelte";
-    import { tooltip } from "$lib/utils/tooltip";
+    import Tooltip from "$lib/design_system/components/Tooltip.svelte";
+    import { tooltip } from "$lib/design_system/utils/tooltip";
     import MatrixLegend from "$lib/components/MatrixLegend.svelte";
     import ExportControls from "$lib/components/ExportControls.svelte";
     import EmptyStates from "$lib/components/EmptyStates.svelte";
     import StatisticsHeader from "$lib/components/StatisticsHeader.svelte";
     import RelatoriosFilters from "$lib/components/RelatoriosFilters.svelte";
     import MatrixControls from "$lib/components/MatrixControls.svelte";
-    import { turmaCache } from "$lib/utils/cache";
+    import { turmaCache } from "$lib/design_system/utils/cache";
 
     let turmas: TurmaModel[] = [];
     let selectedTurma: TurmaModel | null = null;

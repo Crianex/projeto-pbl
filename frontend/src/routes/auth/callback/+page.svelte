@@ -2,11 +2,11 @@
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { supabase } from "$lib/supabase";
-    import { logger } from "$lib/utils/logger";
+    import { logger } from "$lib/design_system/utils/logger";
     import { currentUser, initializeAuth } from "$lib/utils/auth";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
-    import Container from "$lib/components/Container.svelte";
-    import Toast from "$lib/components/Toast.svelte";
+    import Container from "$lib/design_system/components/Container.svelte";
+    import Toast from "$lib/design_system/components/Toast.svelte";
 
     let loading = true;
     let loadingText = "Processando login...";

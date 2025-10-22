@@ -1,12 +1,12 @@
 <script lang="ts">
-    import Button from "$lib/components/Button.svelte";
-    import Input from "$lib/components/Input.svelte";
-    import Container from "$lib/components/Container.svelte";
+    import Button from "$lib/design_system/components/Button.svelte";
+    import Input from "$lib/design_system/components/Input.svelte";
+    import Container from "$lib/design_system/components/Container.svelte";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
-    import Toast from "$lib/components/Toast.svelte";
+    import Toast from "$lib/design_system/components/Toast.svelte";
     import { page } from "$app/stores";
     import { supabase } from "$lib/supabase";
-    import { logger } from "$lib/utils/logger";
+    import { logger } from "$lib/design_system/utils/logger";
     import { goto } from "$app/navigation";
 
     let password = "";

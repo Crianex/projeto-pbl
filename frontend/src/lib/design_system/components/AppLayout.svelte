@@ -1,13 +1,13 @@
 <script lang="ts">
     import { page } from "$app/stores";
     import { logout } from "$lib/utils/auth";
-    import { logger } from "$lib/utils/logger";
+    import { logger } from "$lib/design_system/utils/logger";
     import { onMount } from "svelte";
     import { fade, fly } from "svelte/transition";
     import { goto } from "$app/navigation";
     import Container from "./Container.svelte";
     import Toast from "./Toast.svelte";
-    import { toastStore } from "$lib/utils/toast";
+    import { toastStore } from "$lib/design_system/utils/toast";
     import DropdownPortal from "./DropdownPortal.svelte";
 
     export let userType: "aluno" | "professor" | "coordenador" | "generic" =

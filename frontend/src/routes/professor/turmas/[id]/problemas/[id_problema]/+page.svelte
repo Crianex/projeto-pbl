@@ -2,8 +2,8 @@
     import { onMount } from "svelte";
     import { page } from "$app/stores";
     import { goto } from "$app/navigation";
-    import { api } from "$lib/utils/api";
-    import { logger } from "$lib/utils/logger";
+    import { api } from "$lib/design_system/utils/api";
+    import { logger } from "$lib/design_system/utils/logger";
     import type {
         AlunoModel,
         AvaliacaoModel,
@@ -11,14 +11,14 @@
         TurmaModel,
     } from "$lib/interfaces/interfaces";
     import { Parsers } from "$lib/interfaces/parsers";
-    import Button from "$lib/components/Button.svelte";
-    import Container from "$lib/components/Container.svelte";
-    import BackButton from "$lib/components/BackButton.svelte";
-    import SearchBar from "$lib/components/SearchBar.svelte";
+    import Button from "$lib/design_system/components/Button.svelte";
+    import Container from "$lib/design_system/components/Container.svelte";
+    import BackButton from "$lib/design_system/components/BackButton.svelte";
+    import SearchBar from "$lib/design_system/components/SearchBar.svelte";
     import { ProblemasService } from "$lib/services/problemas_service";
     import { TurmasService } from "$lib/services/turmas_service";
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
-    import Pagination from "$lib/components/Pagination.svelte";
+    import Pagination from "$lib/design_system/components/Pagination.svelte";
     import { currentUser } from "$lib/utils/auth";
     import { MediaCalculator } from "$lib/utils/utils";
     import CardList from "$lib/components/CardList.svelte";

@@ -1,9 +1,9 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import Container from "$lib/components/Container.svelte";
+    import Container from "$lib/design_system/components/Container.svelte";
     import ProfileView from "$lib/components/ProfileView.svelte";
     import ProfileForm from "$lib/components/ProfileForm.svelte";
-    import Toast from "$lib/components/Toast.svelte";
+    import Toast from "$lib/design_system/components/Toast.svelte";
     import { AvatarService } from "$lib/services/avatar_service";
     import { currentUser } from "$lib/utils/auth";
     import { get } from "svelte/store";

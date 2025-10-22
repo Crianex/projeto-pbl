@@ -1,8 +1,8 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
-    import Dropdown from "$lib/components/Dropdown.svelte";
+    import Dropdown from "$lib/design_system/components/Dropdown.svelte";
     import MultiSelectDropdown from "./MultiSelectDropdown.svelte";
-    import DropdownPortal from "$lib/components/DropdownPortal.svelte";
+    import DropdownPortal from "$lib/design_system/components/DropdownPortal.svelte";
     import type {
         TurmaModel,
         ProblemaModel,

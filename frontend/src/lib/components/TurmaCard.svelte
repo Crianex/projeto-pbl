@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Button from "./Button.svelte";
+    import Button from "$lib/design_system/components/Button.svelte";
     import type { TurmaModel } from "$lib/interfaces/interfaces";
     import { goto } from "$app/navigation";
 

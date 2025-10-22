@@ -1,7 +1,7 @@
 <script lang="ts">
-    import Dialog from "$lib/components/Dialog.svelte";
-    import Button from "$lib/components/Button.svelte";
-    import Avatar from "$lib/components/Avatar.svelte";
+    import Dialog from "$lib/design_system/components/Dialog.svelte";
+    import Button from "$lib/design_system/components/Button.svelte";
+    import Avatar from "$lib/design_system/components/Avatar.svelte";
     import { debounce } from "lodash-es";
     import { onMount, afterUpdate } from "svelte";
 
@@ -26,7 +26,7 @@
     import type { AlunoModel } from "$lib/interfaces/interfaces";
     import { Parsers } from "$lib/interfaces/parsers";
     import { AlunosService } from "$lib/services/alunos_service";
-    import Input from "$lib/components/Input.svelte";
+    import Input from "$lib/design_system/components/Input.svelte";
     const dispatch = createEventDispatcher();
 
     // Fetch first page when dialog opens

@@ -1,7 +1,7 @@
 <script lang="ts">
-    import Button from "./Button.svelte";
-    import Input from "./Input.svelte";
-    import TextArea from "./TextArea.svelte";
+    import Button from "$lib/design_system/components/Button.svelte";
+    import Input from "$lib/design_system/components/Input.svelte";
+    import TextArea from "$lib/design_system/components/TextArea.svelte";
     import DeleteButton from "./DeleteButton.svelte";
     import { createEventDispatcher } from "svelte";
     import type { DefinicaoArquivoDeAvaliacao } from "$lib/interfaces/interfaces";

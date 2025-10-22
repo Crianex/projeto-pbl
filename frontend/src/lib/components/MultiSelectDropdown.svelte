@@ -2,7 +2,7 @@
     import { createEventDispatcher } from "svelte";
     import { onMount, onDestroy } from "svelte";
     import { writable } from "svelte/store";
-    import { activeDropdowns } from "./DropdownPortal";
+    import { activeDropdowns } from "$lib/design_system/components/DropdownPortal";
 
     export let options: Array<{ value: any; label: string }> = [];
     export let value: any[] = [];

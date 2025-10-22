@@ -1,11 +1,11 @@
 <script lang="ts">
     import { page } from "$app/stores";
     import { fade } from "svelte/transition";
-    import { api } from "$lib/utils/api";
+    import { api } from "$lib/design_system/utils/api";
     import { onMount } from "svelte";
-    import Dialog from "$lib/components/Dialog.svelte";
-    import Container from "$lib/components/Container.svelte";
-    import BackButton from "$lib/components/BackButton.svelte";
+    import Dialog from "$lib/design_system/components/Dialog.svelte";
+    import Container from "$lib/design_system/components/Container.svelte";
+    import BackButton from "$lib/design_system/components/BackButton.svelte";
     import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
     import type {
         CriteriosGroup,
@@ -15,15 +15,15 @@
         AlunoModel,
     } from "$lib/interfaces/interfaces";
     import { Parsers, parseNotasPorArquivo } from "$lib/interfaces/parsers";
-    import { logger } from "$lib/utils/logger";
+    import { logger } from "$lib/design_system/utils/logger";
     import { MediaCalculator } from "$lib/utils/utils";
     import { currentUser } from "$lib/utils/auth";
     import { AvaliacoesService } from "$lib/services/avaliacoes_service";
     import { ProblemasService } from "$lib/services/problemas_service";
     import { DateUtils } from "$lib/utils/utils";
-    import Button from "$lib/components/Button.svelte";
-    import Pagination from "$lib/components/Pagination.svelte";
-    import { toastStore } from "$lib/utils/toast";
+    import Button from "$lib/design_system/components/Button.svelte";
+    import Pagination from "$lib/design_system/components/Pagination.svelte";
+    import { toastStore } from "$lib/design_system/utils/toast";
 
     interface AvaliacaoData {
         aluno: {

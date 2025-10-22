@@ -1,5 +1,5 @@
 import { logger } from './logger';
-import { supabase } from '../supabase';
+import { supabase } from '../../supabase';
 
 const API_URL = import.meta.env.DEV
     ? 'http://localhost:5919'

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import AppLayout from "$lib/components/AppLayout.svelte";
+    import AppLayout from "$lib/design_system/components/AppLayout.svelte";
 </script>
 
 <AppLayout userType="generic">

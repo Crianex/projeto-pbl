@@ -1,8 +1,8 @@
 import { goto } from '$app/navigation';
 import { writable } from 'svelte/store';
-import { supabase } from '../supabase';
-import { api, APIError } from '../design_system/utils/api';
-import { logger } from '../design_system/utils/logger';
+import { supabase } from '../../supabase';
+import { api, APIError } from './api';
+import { logger } from './logger';
 import { parseToAlunoModel, parseToProfessorModel, parseToCoordenadorModel, type AlunoModel, type BaseUser, type ProfessorModel, type CoordenadorModel } from '$lib/interfaces/interfaces';
 import { redirect } from '@sveltejs/kit';
 

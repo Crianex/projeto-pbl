@@ -1,7 +1,7 @@
 <script lang="ts">
     import { FontAwesomeIcon } from "@fortawesome/svelte-fontawesome";
     import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-    import * as icons from "../utils/fontawesome";
+    import * as icons from "$lib/design_system/utils/fontawesome";
 
     export let name: string;
     export let icon: IconDefinition | undefined = undefined;
